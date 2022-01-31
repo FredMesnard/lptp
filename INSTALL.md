@@ -153,11 +153,11 @@ This command concatenates all Prolog source files into one big file `lptp.pl`.
 
     - You can change the tmp directory as follows:
 
-```prolog
-        ?- load(lptp).
-        ?- set(tmp,'/tmp').
-        ?- consult('all.pl').
-```
+    ```prolog
+            ?- load(lptp).
+            ?- set(tmp,'/tmp').
+            ?- consult('all.pl').
+    ```
 
     - When the tests are done, quit Prolog and go to the directory `lptp/tmp`. You should see there several `*.thm` and  `*.tex` files.
 
@@ -168,8 +168,8 @@ This command concatenates all Prolog source files into one big file `lptp.pl`.
     Example:
 
 ```
-        tex nat.tex
-        xdvi nat.dvi
+    tex nat.tex
+    xdvi nat.dvi
 ```
 
 - Note: Some `*.tex` files require `*.aux` files. You have  to typeset the `*.tex` files in the right order. For example, you 
@@ -212,23 +212,23 @@ have to typeset the file `nat.tex` before you typeset the file `list.tex`.
 
     - Example (Sicstus Prolog):
 
-```lisp
-        (defvar prolog-program-name "/usr/local/bin/sicstus"
-            "Program name for invoking an inferior Prolog process.")
+    ```lisp
+            (defvar prolog-program-name "/usr/local/bin/sicstus"
+                "Program name for invoking an inferior Prolog process.")
 
-        (defvar lptp-start-string "load('/home/staerk/lptp/bin/lptp').\n"
-            "The Prolog command to load the LPTP system into Prolog.")
-```
+            (defvar lptp-start-string "load('/home/staerk/lptp/bin/lptp').\n"
+                "The Prolog command to load the LPTP system into Prolog.")
+    ```
 
     - Example (GNU Prolog):
 
-```lisp
-        (defvar prolog-program-name "/home/staerk/lptp/bin/lptp"
-            "Program name for invoking an inferior Prolog process.")
+    ```lisp
+            (defvar prolog-program-name "/home/staerk/lptp/bin/lptp"
+                "Program name for invoking an inferior Prolog process.")
 
-        (defvar lptp-start-string ""
-            "The Prolog command to load the LPTP system into Prolog.")
-```
+            (defvar lptp-start-string ""
+                "The Prolog command to load the LPTP system into Prolog.")
+    ```
 
 ### (2) Compiling `lptp-mode.el`:
 
@@ -248,7 +248,7 @@ have to typeset the file `nat.tex` before you typeset the file `list.tex`.
             (cons '("\\.pr$" . lptp-mode) auto-mode-alist))
         (transient-mark-mode 1)
 ````
-    Note: You have to change the string `"/home/staerk/lptp/etc/lptp-mode"`.
+Note: You have to change the string `"/home/staerk/lptp/etc/lptp-mode"`.
 
 
 ### (4) Testing the Emacs mode:
@@ -280,19 +280,19 @@ have to typeset the file `nat.tex` before you typeset the file `list.tex`.
 
 - If you want to change the colors, include the following into  your `.emacs` file:
 
-```lisp
-        (add-hook 'font-lock-mode-hook
-          (lambda ()
-            (set-face-foreground font-lock-keyword-face "RoyalBlue")
-            (set-face-foreground font-lock-reference-face "ForestGreen")
-            (set-face-foreground font-lock-comment-face "OrangeRed") ))
-```
+    ```lisp
+            (add-hook 'font-lock-mode-hook
+              (lambda ()
+                (set-face-foreground font-lock-keyword-face "RoyalBlue")
+                (set-face-foreground font-lock-reference-face "ForestGreen")
+                (set-face-foreground font-lock-comment-face "OrangeRed") ))
+    ```
 
 - If you want that `lptp-mode` uses `font-lock-mode` per default, include the following into your `.emacs` file:
 
-```lisp
-    (add-hook 'lptp-mode-hook 'turn-on-font-lock)
-```
+    ```lisp
+        (add-hook 'lptp-mode-hook 'turn-on-font-lock)
+    ```
 
 ### (6) How to use Emacs tags tables to browse through the library?
 
