@@ -1,0 +1,24 @@
+A verified tautology checker
+============================
+
+Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+
+Files:
+	taut.pl		The source code of the tautolgy checker.
+	taut.pr		The formal correctness proof.
+
+Literature:
+
+@INPROCEEDINGS{staerk95b,
+	AUTHOR = {R. F. St{\"a}rk},
+	TITLE = {Total correctness of pure {P}rolog programs: A formal 
+                 approach},
+	BOOKTITLE = {Proceedings of the 5th International Workshop on 
+                     Extensions of Logic Programming, ELP '96},
+	YEAR = {1996},
+	EDITOR = {R. Dyckhoff and H. Herre and P. Schroeder-Heister},
+	PUBLISHER = {Springer-Verlag,
+		     Lecture Notes in Artificial Intelligence 1050},
+	ADDRESS = {Leipzig, Germany},
+	PAGES = {237--254}
+}

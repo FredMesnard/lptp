@@ -1,0 +1,1100 @@
+/*   Author: Robert Staerk <staerk@math.stanford.edu> */
+/*  Created: 8/16/95, 3:48 PM */
+/* Filename: precedence.pr */
+/* Abstract: Properties of prefix_prec/3, infix_prec/4 and postfix_prec/3. */
+
+:- initialize.
+
+:- tex_file($(tmp)/precedence).
+:- thm_file($(tmp)/precedence).
+
+:- needs_gr($(examples)/parser/src/grammar).
+:- needs_gr($(examples)/parser/src/read).
+
+:- needs_thm($(tmp)/axioms).
+
+:- needs_gr($(lib)/list/list).
+:- needs_thm($(lib)/list/list).
+
+:- lemma(prefix_prec:integer,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) =>
+ succeeds integer(?m) & succeeds integer(?m1),
+assume(succeeds prefix_prec(?x,?m,?m1),
+ [def succeeds prefix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1) by lemma((is):integer:predecessor)],
+   ?m1 = ?m & succeeds current_op(?m,fy,?x),
+   [succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1)],
+   succeeds integer(?m) & succeeds integer(?m1))],
+ succeeds integer(?m) & succeeds integer(?m1))
+).
+
+:- lemma(infix_prec:integer,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) =>
+ succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2),
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ [def succeeds infix_prec(?x,?m,?m1,?m2) by completion,
+  cases(
+   [case(
+     ?m2 = ?m1 & succeeds current_op(?m,xfx,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds integer(?m) by axiom(current_op:integer),
+      succeeds integer(?m1) by lemma((is):integer:predecessor),
+      succeeds integer(?m2)]),
+    case(?m2 = ?m & succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds integer(?m) by axiom(current_op:integer),
+      succeeds integer(?m1) by lemma((is):integer:predecessor),
+      succeeds integer(?m2)]),
+    case(?m1 = ?m & succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     [succeeds integer(?m) by axiom(current_op:integer),
+      succeeds integer(?m1),
+      succeeds integer(?m2) by lemma((is):integer:predecessor)])],
+   succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2))],
+ succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2))
+).
+
+:- lemma(postfix_prec:integer,
+all [x,m,m1]: succeeds postfix_prec(?x,?m,?m1) =>
+ succeeds integer(?m) & succeeds integer(?m1),
+assume(succeeds postfix_prec(?x,?m,?m1),
+ [def succeeds postfix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1) by lemma((is):integer:predecessor)],
+    ?m1 = ?m & succeeds current_op(?m,yf,?x),
+   [succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1)],
+   succeeds integer(?m) & succeeds integer(?m1))],
+ succeeds integer(?m) & succeeds integer(?m1))
+).
+
+:- lemma(consistent_op:precedence,
+all [x,y,m,n]: succeeds consistent_op &
+ succeeds current_op(?m,?y,?x) & succeeds current_op(?n,?y,?x) => ?m = ?n,
+assume(succeeds consistent_op & succeeds current_op(?m,?y,?x) & 
+ succeeds current_op(?n,?y,?x),
+ [?m = ?n \/ ?m <> ?n,
+  cases(?m = ?n,
+   [],
+   ?m <> ?n,
+   [succeeds inconsistent_op by sld,
+    fails consistent_op by completion,
+    ff],
+   ?m = ?n)],
+ ?m = ?n)
+).
+
+:- lemma(prefix_prec:function,
+all [x,m,m1,n,n1]: succeeds consistent_op &
+ succeeds prefix_prec(?x,?m,?m1) & succeeds prefix_prec(?x,?n,?n1) => 
+  ?m = ?n & ?m1 = ?n1,
+assume(succeeds consistent_op & succeeds prefix_prec(?x,?m,?m1) & 
+ succeeds prefix_prec(?x,?n,?n1),
+ [def succeeds prefix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m1 is ?m - 1,
+   [def succeeds prefix_prec(?x,?n,?n1) by completion,
+    cases(succeeds current_op(?n,fx,?x) & succeeds ?n1 is ?n - 1,
+     [?m = ?n by lemma(consistent_op:precedence),
+      ?m - 1 = ?n - 1,
+      succeeds ?n1 is ?m - 1,
+      ?m1 = ?n1 by axiom((is):function)],
+     ?n1 = ?n & succeeds current_op(?n,fy,?x),
+     [succeeds inconsistent_op by sld,
+      fails consistent_op by completion,
+      ff],
+     ?m = ?n & ?m1 = ?n1)],
+   ?m1 = ?m & succeeds current_op(?m,fy,?x),
+   [def succeeds prefix_prec(?x,?n,?n1) by completion,
+    cases(succeeds current_op(?n,fx,?x) & succeeds ?n1 is ?n - 1,
+     [succeeds inconsistent_op by sld,
+      fails consistent_op by completion,
+      ff],
+     ?n1 = ?n & succeeds current_op(?n,fy,?x),
+     [?m = ?n by lemma(consistent_op:precedence),
+      ?m1 = ?n1],
+     ?m = ?n & ?m1 = ?n1)],
+   ?m = ?n & ?m1 = ?n1)],
+ ?m = ?n & ?m1 = ?n1)
+).
+
+:- lemma(infix_prec:function,
+all [x,m,m1,m2,n,n1,n2]: succeeds consistent_op &
+ succeeds infix_prec(?x,?m,?m1,?m2) & succeeds infix_prec(?x,?n,?n1,?n2) => 
+  ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2,
+assume(succeeds consistent_op & succeeds infix_prec(?x,?m,?m1,?m2) & 
+ succeeds infix_prec(?x,?n,?n1,?n2),
+ [def succeeds infix_prec(?x,?m,?m1,?m2) by completion,
+  cases(
+   [case(?m2 = ?m1 & succeeds current_op(?m,xfx,?x) & succeeds ?m1 is ?m - 1,
+     [def succeeds infix_prec(?x,?n,?n1,?n2) by completion,
+      cases(
+       [case(?n2 = ?n1 & succeeds current_op(?n,xfx,?x) &
+         succeeds ?n1 is ?n - 1,
+         [?m = ?n by lemma(consistent_op:precedence),
+	  succeeds ?n1 is ?m - 1,
+          ?m1 = ?n1 by axiom((is):function),
+	  ?m2 = ?n2]),
+        case(?n2 = ?n & succeeds current_op(?n,xfy,?x) & 
+         succeeds ?n1 is ?n - 1,
+         [succeeds infix_type(xfx) by sld,
+          succeeds infix_type(xfy) by sld,
+          xfx <> xfy,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff]),
+        case(?n1 = ?n & succeeds current_op(?n,yfx,?x) & 
+         succeeds ?n2 is ?n - 1,
+         [succeeds infix_type(xfx) by sld,
+          succeeds infix_type(yfx) by sld,
+          xfx <> yfx,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff])],
+       ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2)]),
+    case(?m2 = ?m & succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     [def succeeds infix_prec(?x,?n,?n1,?n2) by completion,
+      cases(
+       [case(?n2 = ?n1 & succeeds current_op(?n,xfx,?x) &
+         succeeds ?n1 is ?n - 1,
+         [succeeds infix_type(xfy) by sld,
+          succeeds infix_type(xfx) by sld,
+          xfy <> xfx,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff]),
+        case(?n2 = ?n & succeeds current_op(?n,xfy,?x) & 
+         succeeds ?n1 is ?n - 1,
+         [?m = ?n by lemma(consistent_op:precedence),
+	  succeeds ?n1 is ?m - 1,
+          ?m1 = ?n1 by axiom((is):function),
+	  ?m2 = ?n2]),
+        case(?n1 = ?n & succeeds current_op(?n,yfx,?x) & 
+         succeeds ?n2 is ?n - 1,
+         [succeeds infix_type(xfy) by sld,
+          succeeds infix_type(yfx) by sld,
+          xfy <> yfx,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff])],
+       ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2)]),
+    case(?m1 = ?m & succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     [def succeeds infix_prec(?x,?n,?n1,?n2) by completion,
+      cases(
+       [case(?n2 = ?n1 & succeeds current_op(?n,xfx,?x) &
+         succeeds ?n1 is ?n - 1,
+         [succeeds infix_type(yfx) by sld,
+          succeeds infix_type(xfx) by sld,
+          yfx <> xfx,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff]),
+        case(?n2 = ?n & succeeds current_op(?n,xfy,?x) & 
+         succeeds ?n1 is ?n - 1,
+         [succeeds infix_type(yfx) by sld,
+          succeeds infix_type(xfy) by sld,
+          yfx <> xfy,
+          succeeds inconsistent_op by sld,
+          fails consistent_op by completion,
+          ff]),
+        case(?n1 = ?n & succeeds current_op(?n,yfx,?x) & 
+         succeeds ?n2 is ?n - 1,
+         [?m = ?n by lemma(consistent_op:precedence),
+          ?m1 = ?n1,
+	  succeeds ?n2 is ?m - 1,
+          ?m2 = ?n2 by axiom((is):function)])],
+       ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2)])],
+   ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2)],
+ ?m = ?n & ?m1 = ?n1 & ?m2 = ?n2)
+).
+
+:- lemma(postfix_prec:function,
+all [x,m,m1,n,n1]: succeeds consistent_op &
+ succeeds postfix_prec(?x,?m,?m1) & succeeds postfix_prec(?x,?n,?n1) => 
+  ?m = ?n & ?m1 = ?n1,
+assume(succeeds consistent_op & succeeds postfix_prec(?x,?m,?m1) & 
+ succeeds postfix_prec(?x,?n,?n1),
+ [def(succeeds postfix_prec(?x,?m,?m1)) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m1 is ?m - 1,
+   [def(succeeds postfix_prec(?x,?n,?n1)) by completion,
+    cases(succeeds current_op(?n,xf,?x) & succeeds ?n1 is ?n - 1,
+     [?m = ?n by lemma(consistent_op:precedence),
+      succeeds ?n1 is ?m - 1,
+      ?m1 = ?n1 by axiom((is):function)],
+     ?n1 = ?n & succeeds current_op(?n,yf,?x),
+     [succeeds inconsistent_op by sld,
+      fails consistent_op by completion,
+      ff],
+     ?m = ?n & ?m1 = ?n1)],
+   ?m1 = ?m & succeeds current_op(?m,yf,?x),
+   [def(succeeds postfix_prec(?x,?n,?n1)) by completion,
+    cases(succeeds current_op(?n,xf,?x) & succeeds ?n1 is ?n - 1,
+     [succeeds inconsistent_op by sld,
+      fails consistent_op by completion,
+      ff],
+     ?n1 = ?n & succeeds current_op(?n,yf,?x),
+     [?m = ?n by lemma(consistent_op:precedence),
+      ?m1 = ?n1],
+     ?m = ?n & ?m1 = ?n1)],
+   ?m = ?n & ?m1 = ?n1)],
+ ?m = ?n & ?m1 = ?n1)
+).
+
+:- lemma(prefix_prec:leq,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) =>
+ succeeds ?m1 =< ?m,
+assume(succeeds prefix_prec(?x,?m,?m1),
+ [succeeds integer(?m) & succeeds integer(?m1)
+   by lemma(prefix_prec:integer),
+  def succeeds prefix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds ?m1 < ?m by axiom(less:predecessor),
+    succeeds ?m1 =< ?m by axiom(less:leq)],
+   ?m1 = ?m & succeeds current_op(?m,fy,?x),
+   succeeds ?m =< ?m by axiom(leq:reflexive),
+   succeeds ?m1 =< ?m)],
+ succeeds ?m1 =< ?m)
+).
+
+:- lemma(infix_prec:leq,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) =>
+ succeeds ?m1 =< ?m & succeeds ?m2 =< ?m,
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ [succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2)
+   by lemma(infix_prec:integer),
+  def succeeds infix_prec(?x,?m,?m1,?m2) by completion,
+  cases(
+   [case(?m2 = ?m1 & succeeds current_op(?m,xfx,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds ?m1 < ?m by axiom(less:predecessor),
+      succeeds ?m1 =< ?m by axiom(less:leq),
+      succeeds ?m2 < ?m]),
+    case(?m2 = ?m & succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds ?m1 < ?m by axiom(less:predecessor),
+      succeeds ?m1 =< ?m by axiom(less:leq),
+      succeeds ?m =< ?m by axiom(leq:reflexive)]),
+    case(?m1 = ?m & succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     [succeeds ?m =< ?m by axiom(leq:reflexive),
+      succeeds ?m2 < ?m by axiom(less:predecessor),
+      succeeds ?m2 =< ?m by axiom(less:leq)])],
+   succeeds ?m1 =< ?m & succeeds ?m2 =< ?m)],
+ succeeds ?m1 =< ?m & succeeds ?m2 =< ?m)
+).
+
+:- lemma(postfix_prec:leq,
+all [x,m,m1]: succeeds postfix_prec(?x,?m,?m1) => succeeds ?m1 =< ?m,
+assume(succeeds postfix_prec(?x,?m,?m1),
+ [succeeds integer(?m) & succeeds integer(?m1)
+   by lemma(postfix_prec:integer),
+  def succeeds postfix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds ?m1 < ?m by axiom(less:predecessor),
+    succeeds ?m1 =< ?m by axiom(less:leq)],
+   ?m1 = ?m & succeeds current_op(?m,yf,?x),
+   succeeds ?m =< ?m by axiom(leq:reflexive),
+   succeeds ?m1 =< ?m)],
+ succeeds ?m1 =< ?m)
+).
+
+:- lemma(prefix_prec:precedence,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) =>
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1,
+assume(succeeds prefix_prec(?x,?m,?m1),
+ [def succeeds prefix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+    succeeds 0 =< ?m1 by axiom((is):leq:zero)],
+   ?m1 = ?m & succeeds current_op(?m,fy,?x),
+   [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+    succeeds 1 =< ?m1,
+    succeeds 0 =< 1 by builtin,
+    succeeds integer(0) by builtin,
+    succeeds integer(1) by builtin,
+    succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1),
+    succeeds 0 =< ?m1 by axiom(leq:leq:transitive)],
+   succeeds ?m =< 1200 & succeeds 0 =< ?m1)],
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1)
+).
+
+:- corollary(prefix_prec:zero,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) => succeeds 0 =< ?m1,
+assume(succeeds prefix_prec(?x,?m,?m1),
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1 by lemma(prefix_prec:precedence),
+ succeeds 0 =< ?m1)
+).
+
+:- lemma(infix_prec:precedence,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) =>
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1 & succeeds 0 =< ?m2,
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ [def succeeds infix_prec(?x,?m,?m1,?m2) by completion,
+  succeeds integer(0) by builtin,
+  succeeds integer(1) by builtin,
+  succeeds 0 =< 1 by builtin,
+  cases(
+   [case(?m2 = ?m1 & succeeds current_op(?m,xfx,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+      succeeds 0 =< ?m1 by axiom((is):leq:zero),
+      succeeds 0 =< ?m2]),
+    case(?m2 = ?m & succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+      succeeds integer(?m) by axiom(current_op:integer),
+      succeeds 0 =< ?m1 by axiom((is):leq:zero),
+      succeeds integer(?m2),
+      succeeds 1 =< ?m2,
+      succeeds 0 =< ?m2 by axiom(leq:leq:transitive)]),
+    case(?m1 = ?m & succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+      succeeds integer(?m) by axiom(current_op:integer),
+      succeeds integer(?m1),
+      succeeds 1 =< ?m1,
+      succeeds 0 =< ?m1 by axiom(leq:leq:transitive),
+      succeeds 0 =< ?m2 by axiom((is):leq:zero)])],
+   succeeds ?m =< 1200 & succeeds 0 =< ?m1 & succeeds 0 =< ?m2)],
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1 & succeeds 0 =< ?m2)
+).
+
+:- corollary(infix_prec:zero,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) =>
+ succeeds 0 =< ?m2,
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1 & succeeds 0 =< ?m2
+  by lemma(infix_prec:precedence),
+ succeeds 0 =< ?m2)
+).
+
+:- lemma(postfix_prec:precedence,
+all [x,m,m1]: succeeds postfix_prec(?x,?m,?m1) =>
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1,
+assume(succeeds postfix_prec(?x,?m,?m1),
+ [def succeeds postfix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m1 is ?m - 1,
+   [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+    succeeds 0 =< ?m1 by axiom((is):leq:zero)],
+   ?m1 = ?m & succeeds current_op(?m,yf,?x),
+   [succeeds 1 =< ?m & succeeds ?m =< 1200 by axiom(current_op:precedence),
+    succeeds 1 =< ?m1,
+    succeeds 0 =< 1 by builtin,
+    succeeds integer(0) by builtin,
+    succeeds integer(1) by builtin,
+    succeeds integer(?m) by axiom(current_op:integer),
+    succeeds integer(?m1),
+    succeeds 0 =< ?m1 by axiom(leq:leq:transitive)],
+   succeeds ?m =< 1200 & succeeds 0 =< ?m1)],
+ succeeds ?m =< 1200 & succeeds 0 =< ?m1)
+).
+
+:- lemma(prefix_prec:prefix_op,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) =>
+ succeeds prefix_op(?x),
+assume(succeeds prefix_prec(?x,?m,?m1),
+ [def succeeds prefix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m1 is ?m - 1,
+   [],
+   ?m1 = ?m & succeeds current_op(?m,fy,?x),
+   [],
+   succeeds prefix_op(?x))],
+ succeeds prefix_op(?x))
+).
+
+:- lemma(infix_prec:infix_op,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) =>
+ succeeds infix_op(?x),
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ [def succeeds infix_prec(?x,?m,?m1,?m2) by completion,
+  cases(
+   [case(?m2 = ?m1 & succeeds current_op(?m,xfx,?x) & succeeds ?m1 is ?m - 1,
+     []),
+    case(?m2 = ?m & succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     []),
+    case(?m1 = ?m & succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     [])],
+   succeeds infix_op(?x))],
+ succeeds infix_op(?x))
+).
+
+:- lemma(postfix_prec:postfix_op,
+all [x,m,m1]: succeeds postfix_prec(?x,?m,?m1) =>
+ succeeds postfix_op(?x),
+assume(succeeds postfix_prec(?x,?m,?m1),
+ [def succeeds postfix_prec(?x,?m,?m1) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m1 is ?m - 1,
+   [],
+   ?m1 = ?m & succeeds current_op(?m,yf,?x),
+   [],
+   succeeds postfix_op(?x))],
+ succeeds postfix_op(?x))
+).
+
+:- lemma(symbol_op:termination,
+all x: succeeds atom(?x) => terminates symbol_op(?x),
+assume(succeeds atom(?x),
+ [terminates current_op(?0,?1,?x) by axiom(current_op:termination),
+  gr(?x) by axiom(atom:gr),
+  terminates (current_op(?0,?1,?x) & ~ ?x = (',')),
+  all [0,1]: terminates (current_op(?0,?1,?x) & ~ ?x = (',')),
+  terminates symbol_op(?x) by completion],
+ terminates symbol_op(?x))
+).
+
+:- lemma(prefix_op:termination,
+all x: succeeds atom(?x) => terminates prefix_op(?x),
+assume(succeeds atom(?x),
+ [terminates current_op(?0,fx,?x) by axiom(current_op:termination),
+  terminates current_op(?0,fy,?x) by axiom(current_op:termination),
+  (all 0: terminates current_op(?0,fx,?x)) & 
+  (all 0: terminates current_op(?0,fy,?x)),
+  terminates prefix_op(?x) by completion],
+ terminates prefix_op(?x))
+).
+
+:- lemma(infix_op:termination,
+all x: succeeds atom(?x) => terminates infix_op(?x),
+assume(succeeds atom(?x),
+ [terminates current_op(?0,xfx,?x) by axiom(current_op:termination),
+  terminates current_op(?0,xfy,?x) by axiom(current_op:termination),
+  terminates current_op(?0,yfx,?x) by axiom(current_op:termination),
+  (all 0: terminates current_op(?0,xfx,?x)) & 
+  (all 0: terminates current_op(?0,xfy,?x)) & 
+  (all 0: terminates current_op(?0,yfx,?x)),
+  terminates infix_op(?x) by completion],
+ terminates infix_op(?x))
+).
+
+:- lemma(postfix_op:termination,
+all x: succeeds atom(?x) => terminates postfix_op(?x),
+assume(succeeds atom(?x),
+ [terminates current_op(?0,xf,?x) by axiom(current_op:termination),
+  terminates current_op(?0,yf,?x) by axiom(current_op:termination),
+  (all 0: terminates current_op(?0,xf,?x)) & 
+  (all 0: terminates current_op(?0,yf,?x)),
+  terminates postfix_op(?x) by completion],
+ terminates postfix_op(?x))
+).
+
+:- lemma(prefix_op:prefix_prec,
+all x: succeeds prefix_op(?x) =>
+ (ex [n,n1]: succeeds prefix_prec(?x,?n,?n1)),
+assume(succeeds prefix_op(?x),
+ [def succeeds prefix_op(?x) by completion,
+  cases(ex m: succeeds current_op(?m,fx,?x),
+   exist(m,
+    succeeds current_op(?m,fx,?x),
+    [succeeds integer(?m) by axiom(current_op:integer),
+     ex m1: succeeds ?m1 is ?m - 1 by 
+      lemma((is):integer:predecessor:existence),
+     exist(m1,
+      succeeds ?m1 is ?m - 1,
+       succeeds prefix_prec(?x,?m,?m1) by sld,
+      ex [n,n1]: succeeds prefix_prec(?x,?n,?n1))],
+    ex [n,n1]: succeeds prefix_prec(?x,?n,?n1)),
+   ex m: succeeds current_op(?m,fy,?x),
+   exist(m,
+    succeeds current_op(?m,fy,?x),
+     succeeds prefix_prec(?x,?m,?m) by sld,
+    ex [n,n1]: succeeds prefix_prec(?x,?n,?n1)),
+   ex [n,n1]: succeeds prefix_prec(?x,?n,?n1))],
+ ex [n,n1]: succeeds prefix_prec(?x,?n,?n1))
+).
+
+:- lemma(infix_op:infix_prec,
+all x: succeeds infix_op(?x) =>
+ (ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2)),
+assume(succeeds infix_op(?x),
+ [def succeeds infix_op(?x) by completion,
+  cases(
+   [case(ex m: succeeds current_op(?m,xfx,?x),
+     exist(m,
+      succeeds current_op(?m,xfx,?x),
+      [succeeds integer(?m) by axiom(current_op:integer),
+       ex m1: succeeds ?m1 is ?m - 1 by 
+        lemma((is):integer:predecessor:existence),
+       exist(m1,
+        succeeds ?m1 is ?m - 1,
+         succeeds infix_prec(?x,?m,?m1,?m1) by sld,
+        ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))],
+      ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))),
+    case(ex m: succeeds current_op(?m,xfy,?x),
+     exist(m,
+      succeeds current_op(?m,xfy,?x),
+      [succeeds integer(?m) by axiom(current_op:integer),
+       ex m1: succeeds ?m1 is ?m - 1 by 
+        lemma((is):integer:predecessor:existence),
+       exist(m1,
+        succeeds ?m1 is ?m - 1,
+         succeeds infix_prec(?x,?m,?m1,?m) by sld,
+        ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))],
+      ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))),
+    case(ex m: succeeds current_op(?m,yfx,?x),
+     exist(m,
+      succeeds current_op(?m,yfx,?x),
+      [succeeds integer(?m) by axiom(current_op:integer),
+       ex m1: succeeds ?m1 is ?m - 1 by 
+        lemma((is):integer:predecessor:existence),
+       exist(m1,
+        succeeds ?m1 is ?m - 1,
+         succeeds infix_prec(?x,?m,?m,?m1) by sld,
+        ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))],
+      ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2)))],
+   ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))],
+ ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2))
+).
+
+:- lemma(postfix_op:postfix_prec,
+all x: succeeds postfix_op(?x) =>
+ (ex [n,n1]: succeeds postfix_prec(?x,?n,?n1)),
+assume(succeeds postfix_op(?x),
+ [def succeeds postfix_op(?x) by completion,
+  cases(ex m: succeeds current_op(?m,xf,?x),
+   exist(m,
+    succeeds current_op(?m,xf,?x),
+    [succeeds integer(?m) by axiom(current_op:integer),
+     ex m1: succeeds ?m1 is ?m - 1 by 
+      lemma((is):integer:predecessor:existence),
+     exist(m1,
+      succeeds ?m1 is ?m - 1,
+       succeeds postfix_prec(?x,?m,?m1) by sld,
+      ex [n,n1]: succeeds postfix_prec(?x,?n,?n1))],
+    ex [n,n1]: succeeds postfix_prec(?x,?n,?n1)),
+   ex m: succeeds current_op(?m,yf,?x),
+   exist(m,
+    succeeds current_op(?m,yf,?x),
+     succeeds postfix_prec(?x,?m,?m) by sld,
+    ex [n,n1]: succeeds postfix_prec(?x,?n,?n1)),
+   ex [n,n1]: succeeds postfix_prec(?x,?n,?n1))],
+ ex [n,n1]: succeeds postfix_prec(?x,?n,?n1))
+).
+
+:- lemma(prefix_prec:termination,
+all [x,m,m1]: succeeds atom(?x) => terminates prefix_prec(?x,?m,?m1),
+assume(succeeds atom(?x),
+ [terminates current_op(?m,fx,?x) by axiom(current_op:termination),
+  assume(succeeds current_op(?m,fx,?x),
+   [succeeds integer(?m) by axiom(current_op:integer),
+    terminates ?m1 is ?m - 1 by lemma((is):termination:predecessor)],
+   terminates ?m1 is ?m - 1),
+  terminates (current_op(?m,fx,?x) & ?m1 is ?m - 1),
+  assume(?m1 = ?m,
+   terminates current_op(?m,fy,?x) by axiom(current_op:termination),
+   terminates current_op(?m,fy,?x)),
+  terminates (current_op(?m,fx,?x) & ?m1 is ?m - 1) & 
+  (?m1 = ?m => terminates current_op(?m,fy,?x)),
+  terminates prefix_prec(?x,?m,?m1) by completion],
+ terminates prefix_prec(?x,?m,?m1))
+).
+
+:- lemma(infix_prec:termination,
+all [x,m,m1,m2]: succeeds atom(?x) => terminates infix_prec(?x,?m,?m1,?m2),
+assume(succeeds atom(?x),
+ [assume(?m2 = ?m1,
+   [terminates current_op(?m,xfx,?x) by axiom(current_op:termination),
+    assume(succeeds current_op(?m,xfx,?x),
+     [succeeds integer(?m) by axiom(current_op:integer),
+      terminates ?m1 is ?m - 1 by lemma((is):termination:predecessor)],
+     terminates ?m1 is ?m - 1),
+    terminates (current_op(?m,xfx,?x) & ?m1 is ?m - 1)],
+   terminates (current_op(?m,xfx,?x) & ?m1 is ?m - 1)),
+  assume(?m2 = ?m,
+   [terminates current_op(?m,xfy,?x) by axiom(current_op:termination),
+    assume(succeeds current_op(?m,xfy,?x),
+     [succeeds integer(?m) by axiom(current_op:integer),
+      terminates ?m1 is ?m - 1 by lemma((is):termination:predecessor)],
+     terminates ?m1 is ?m - 1),
+    terminates (current_op(?m,xfy,?x) & ?m1 is ?m - 1)],
+   terminates (current_op(?m,xfy,?x) & ?m1 is ?m - 1)),
+  assume(?m1 = ?m,
+   [terminates current_op(?m,yfx,?x) by axiom(current_op:termination),
+    assume(succeeds current_op(?m,yfx,?x),
+     [succeeds integer(?m) by axiom(current_op:integer),
+      terminates ?m2 is ?m - 1 by lemma((is):termination:predecessor)],
+     terminates ?m2 is ?m - 1),
+    terminates (current_op(?m,yfx,?x) & ?m2 is ?m - 1)],
+   terminates (current_op(?m,yfx,?x) & ?m2 is ?m - 1)),
+  (?m2 = ?m1 => terminates (current_op(?m,xfx,?x) & ?m1 is ?m - 1)) & 
+  (?m2 = ?m => terminates (current_op(?m,xfy,?x) & ?m1 is ?m - 1)) & 
+  (?m1 = ?m => terminates (current_op(?m,yfx,?x) & ?m2 is ?m - 1)),
+  terminates infix_prec(?x,?m,?m1,?m2) by completion],
+ terminates infix_prec(?x,?m,?m1,?m2))
+).
+
+:- lemma(postfix_prec:termination,
+all [x,m,m1]: succeeds atom(?x) => terminates postfix_prec(?x,?m,?m1),
+assume(succeeds atom(?x),
+ [terminates current_op(?m,xf,?x) by axiom(current_op:termination),
+  assume(succeeds current_op(?m,xf,?x),
+   [succeeds integer(?m) by axiom(current_op:integer),
+    terminates ?m1 is ?m - 1 by lemma((is):termination:predecessor)],
+   terminates ?m1 is ?m - 1),
+  terminates (current_op(?m,xf,?x) & ?m1 is ?m - 1),
+  assume(?m1 = ?m,
+   terminates current_op(?m,yf,?x) by axiom(current_op:termination),
+   terminates current_op(?m,yf,?x)),
+  terminates (current_op(?m,xf,?x) & ?m1 is ?m - 1) & 
+  (?m1 = ?m => terminates current_op(?m,yf,?x)),
+  terminates postfix_prec(?x,?m,?m1) by completion],
+ terminates postfix_prec(?x,?m,?m1))
+).
+
+:- lemma(prefix_op:atom,
+all x: succeeds prefix_op(?x) => succeeds atom(?x),
+assume(succeeds prefix_op(?x),
+ [def succeeds prefix_op(?x) by completion,
+  cases(ex 0: succeeds current_op(?0,fx,?x),
+   exist(0,
+    succeeds current_op(?0,fx,?x),
+    succeeds atom(?x) by axiom(current_op:atom),
+    succeeds atom(?x)),
+   ex 0: succeeds current_op(?0,fy,?x),
+   exist(0,
+    succeeds current_op(?0,fy,?x),
+    succeeds atom(?x) by axiom(current_op:atom),
+    succeeds atom(?x)),
+   succeeds atom(?x))],
+ succeeds atom(?x))
+).
+
+:- corollary(prefix_prec:atom,
+all [x,m,m1]: succeeds prefix_prec(?x,?m,?m1) => succeeds atom(?x),
+assume(succeeds prefix_prec(?x,?m,?m1),
+ [succeeds prefix_op(?x) by lemma(prefix_prec:prefix_op),
+  succeeds atom(?x) by lemma(prefix_op:atom)],
+ succeeds atom(?x))
+).
+
+:- lemma(infix_op:atom,
+all x: succeeds infix_op(?x) => succeeds atom(?x),
+assume(succeeds infix_op(?x),
+ [def succeeds infix_op(?x) by completion,
+  cases(
+   [case(ex 0: succeeds current_op(?0,xfx,?x),
+     exist(0,
+      succeeds current_op(?0,xfx,?x),
+      succeeds atom(?x) by axiom(current_op:atom),
+      succeeds atom(?x))),
+    case(ex 0: succeeds current_op(?0,xfy,?x),
+     exist(0,
+      succeeds current_op(?0,xfy,?x),
+      succeeds atom(?x) by axiom(current_op:atom),
+      succeeds atom(?x))),
+    case(ex 0: succeeds current_op(?0,yfx,?x),
+     exist(0,
+      succeeds current_op(?0,yfx,?x),
+      succeeds atom(?x) by axiom(current_op:atom),
+      succeeds atom(?x)))],
+   succeeds atom(?x))],
+ succeeds atom(?x))
+).
+
+:- corollary(infix_prec:atom,
+all [x,m,m1,m2]: succeeds infix_prec(?x,?m,?m1,?m2) => succeeds atom(?x),
+assume(succeeds infix_prec(?x,?m,?m1,?m2),
+ [succeeds infix_op(?x) by lemma(infix_prec:infix_op),
+  succeeds atom(?x) by lemma(infix_op:atom)],
+ succeeds atom(?x))
+).
+
+:- lemma(postfix_op:atom,
+all x: succeeds postfix_op(?x) => succeeds atom(?x),
+assume(succeeds postfix_op(?x),
+ [def succeeds postfix_op(?x) by completion,
+  cases(ex 0: succeeds current_op(?0,xf,?x),
+   exist(0,
+    succeeds current_op(?0,xf,?x),
+    succeeds atom(?x) by axiom(current_op:atom),
+    succeeds atom(?x)),
+   ex 0: succeeds current_op(?0,yf,?x),
+   exist(0,
+    succeeds current_op(?0,yf,?x),
+    succeeds atom(?x) by axiom(current_op:atom),
+    succeeds atom(?x)),
+   succeeds atom(?x))],
+ succeeds atom(?x))
+).
+
+:- corollary(postfix_prec:atom,
+all [x,m,m1]: succeeds postfix_prec(?x,?m,?m1) => succeeds atom(?x),
+assume(succeeds postfix_prec(?x,?m,?m1),
+ [succeeds postfix_op(?x) by lemma(postfix_prec:postfix_op),
+  succeeds atom(?x) by lemma(postfix_op:atom)],
+ succeeds atom(?x))
+).
+
+:- lemma(consistent_op:comma,
+all [n,x]: succeeds consistent_op => 
+ fails current_op(?n,fx,',') & fails current_op(?n,fy,','),
+assume(succeeds consistent_op,
+ [def succeeds consistent_op by completion,
+  succeeds current_op(1000,xfy,','),
+  succeeds atom(',') by builtin,
+  terminates current_op(?n,fx,',') by axiom(current_op:termination),
+  succeeds current_op(?n,fx,',') \/ fails current_op(?n,fx,','),
+  cases(succeeds current_op(?n,fx,','),
+   [fx <> xfy,
+    succeeds inconsistent_op by sld,
+    fails consistent_op by completion,
+    ff],
+   fails current_op(?n,fx,','),
+   [],
+   fails current_op(?n,fx,',')),
+  terminates current_op(?n,fy,',') by axiom(current_op:termination),
+  succeeds current_op(?n,fy,',') \/ fails current_op(?n,fy,','),
+  cases(succeeds current_op(?n,fy,','),
+   [fy <> xfy,
+    succeeds inconsistent_op by sld,
+    fails consistent_op by completion,
+    ff],
+   fails current_op(?n,fy,','),
+   [],
+   fails current_op(?n,fy,','))],
+ fails current_op(?n,fx,',') & fails current_op(?n,fy,','))
+).
+
+:- lemma(prefix_prec:symbol_op,
+all [x,n,m]: succeeds consistent_op & fails symbol_op(?x) =>
+ fails prefix_op(?x),
+assume(succeeds consistent_op & fails symbol_op(?x),
+ [?x = (',') \/ ?x <> (','),
+  cases(?x = (','),
+   [fails current_op(?n,fx,',') & fails current_op(?n,fy,',')
+     by lemma(consistent_op:comma),
+    fails current_op(?n,fx,?x),
+    fails current_op(?n,fy,?x),
+    (all n: fails current_op(?n,fx,?x)) & 
+    (all n: fails current_op(?n,fy,?x)),
+    fails prefix_op(?x) by completion],
+   ?x <> (','),
+   [def fails symbol_op(?x) by completion,
+    fails current_op(?n,fx,?x) \/ ?x = (','),
+    cases(fails current_op(?n,fx,?x),
+     [],
+     ?x = (','),
+     [],
+     fails current_op(?n,fx,?x)),
+    fails current_op(?n,fy,?x) \/ ?x = (','),
+    cases(fails current_op(?n,fy,?x),
+     [],
+     ?x = (','),
+     [],
+     fails current_op(?n,fy,?x)),
+    (all n: fails current_op(?n,fx,?x)) & 
+    (all n: fails current_op(?n,fy,?x)),
+    fails prefix_op(?x) by completion],
+   fails prefix_op(?x))],
+ fails prefix_op(?x))
+).
+
+:- lemma(consistent_op:minus,
+succeeds consistent_op => succeeds prefix_prec(-,500,499),
+assume(succeeds consistent_op,
+ [def succeeds consistent_op by completion,
+  fails inconsistent_op & succeeds current_op(1000,xfy,',') &
+  succeeds current_op(500,fx,-),
+  succeeds 499 is 500 - 1 by builtin,
+  succeeds prefix_prec(-,500,499) by sld],
+ succeeds prefix_prec(-,500,499))
+).
+
+:- lemma(prefix_prec:fy,
+all [x,m]: succeeds prefix_prec(?x,?m,?m) => 
+ succeeds current_op(?m,fy,?x),
+assume(succeeds prefix_prec(?x,?m,?m),
+ [def succeeds prefix_prec(?x,?m,?m) by completion,
+  cases(succeeds current_op(?m,fx,?x) & succeeds ?m is ?m - 1,
+   [succeeds integer(?m) by axiom(current_op:integer),
+    fails ?m is ?m - 1 by axiom((is):predecessor),
+    ff],
+   succeeds current_op(?m,fy,?x),
+   [],
+   succeeds current_op(?m,fy,?x))],
+ succeeds current_op(?m,fy,?x))
+).
+
+:- lemma(infix_prec:yfx,
+all [x,m,m2]: succeeds infix_prec(?x,?m,?m,?m2) => 
+ succeeds current_op(?m,yfx,?x),
+assume(succeeds infix_prec(?x,?m,?m,?m2),
+ [succeeds integer(?m) & succeeds integer(?m) & succeeds integer(?m2)
+   by lemma(infix_prec:integer),
+  fails ?m is ?m - 1 by axiom((is):predecessor),
+  def succeeds infix_prec(?x,?m,?m,?m2) by completion,
+  cases(
+   [case(?m = ?m2 & succeeds current_op(?m,xfx,?x) & succeeds ?m is ?m - 1,
+     [ff]),
+    case(?m = ?m2 & succeeds current_op(?m,xfy,?x) & succeeds ?m is ?m - 1,
+     [ff]),
+    case(succeeds current_op(?m,yfx,?x) & succeeds ?m2 is ?m - 1,
+     succeeds current_op(?m,yfx,?x))],
+   succeeds current_op(?m,yfx,?x))],
+ succeeds current_op(?m,yfx,?x))
+).
+
+:- lemma(infix_prec:xfy,
+all [x,m,m1]: succeeds infix_prec(?x,?m,?m1,?m) => 
+ succeeds current_op(?m,xfy,?x),
+assume(succeeds infix_prec(?x,?m,?m1,?m),
+ [succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m)
+   by lemma(infix_prec:integer),
+  fails ?m is ?m - 1 by axiom((is):predecessor),
+  def succeeds infix_prec(?x,?m,?m1,?m) by completion,
+  cases(
+   [case(?m1 = ?m & succeeds current_op(?m1,xfx,?x) & succeeds ?m1 is ?m1 - 1,
+     [succeeds ?m is ?m - 1,
+      ff]),
+    case(succeeds current_op(?m,xfy,?x) & succeeds ?m1 is ?m - 1,
+     succeeds current_op(?m,xfy,?x)),
+    case(?m = ?m1 & succeeds current_op(?m,yfx,?x) & succeeds ?m is ?m - 1,
+     [ff])],
+   succeeds current_op(?m,xfy,?x))],
+ succeeds current_op(?m,xfy,?x))
+).
+
+:- lemma(postfix_prec:yf,
+all [x,m]: succeeds postfix_prec(?x,?m,?m) => 
+ succeeds current_op(?m,yf,?x),
+assume(succeeds postfix_prec(?x,?m,?m),
+ [def succeeds postfix_prec(?x,?m,?m) by completion,
+  cases(succeeds current_op(?m,xf,?x) & succeeds ?m is ?m - 1,
+   [succeeds integer(?m) by axiom(current_op:integer),
+    fails ?m is ?m - 1 by axiom((is):predecessor),
+    ff],
+   succeeds current_op(?m,yf,?x),
+   [],
+   succeeds current_op(?m,yf,?x))],
+ succeeds current_op(?m,yf,?x))
+).
+
+:- lemma(prefix_prec:postfix_prec,
+all [x,m,m1,y,n,n1]: succeeds consistent_op &
+ succeeds prefix_prec(?x,?m,?m1) & succeeds postfix_prec(?y,?n,?n1) &
+ succeeds ?m =< ?n1 => succeeds ?m1 < ?n,
+assume(succeeds consistent_op & succeeds prefix_prec(?x,?m,?m1) & 
+ succeeds postfix_prec(?y,?n,?n1) & succeeds ?m =< ?n1,
+ [succeeds ?m1 =< ?m by lemma(prefix_prec:leq),
+  succeeds ?n1 =< ?n by lemma(postfix_prec:leq),
+  succeeds integer(?m) & succeeds integer(?m1) 
+   by lemma(prefix_prec:integer),
+  succeeds integer(?n) & succeeds integer(?n1) 
+   by lemma(postfix_prec:integer),
+  ?m1 = ?m \/ succeeds ?m1 < ?m by axiom(leq:less),
+  ?n1 = ?n \/ succeeds ?n1 < ?n by axiom(leq:less),
+  cases(?m1 = ?m,
+   cases(?n1 = ?n,
+     [succeeds prefix_prec(?x,?m,?m),
+      succeeds current_op(?m,fy,?x) by lemma(prefix_prec:fy),
+      succeeds postfix_prec(?y,?n,?n),
+      succeeds current_op(?n,yf,?y) by lemma(postfix_prec:yf),
+      ?m = ?n \/ ?m <> ?n,
+      cases(?m = ?n,
+       [succeeds current_op(?m,yf,?y),
+        succeeds inconsistent_op by sld,
+        fails consistent_op by completion,
+        ff],
+       ?m <> ?n,
+       [succeeds ?m =< ?n,
+        succeeds ?m < ?n by axiom(leq:different),
+        succeeds ?m1 < ?n],
+       succeeds ?m1 < ?n)],
+     succeeds ?n1 < ?n,
+     [succeeds ?m1 =< ?n1,
+      succeeds ?m1 < ?n by axiom(leq:less:transitive)],
+     succeeds ?m1 < ?n),
+   succeeds ?m1 < ?m,
+   cases(?n1 = ?n,
+     [succeeds ?m =< ?n,
+      succeeds ?m1 < ?n by axiom(less:leq:transitive)],
+     succeeds ?n1 < ?n,
+     [succeeds ?m1 < ?n1 by axiom(less:leq:transitive),
+      succeeds ?m1 < ?n by axiom(less:less:transitive)],
+     succeeds ?m1 < ?n),
+   succeeds ?m1 < ?n)],
+ succeeds ?m1 < ?n)
+).
+
+:- lemma(prefix_prec:infix_prec,
+all [x,m,m1,y,n,n1,n2]: succeeds consistent_op &
+ succeeds prefix_prec(?x,?m,?m1) & succeeds infix_prec(?y,?n,?n1,?n2) &
+ succeeds ?m =< ?n1 => succeeds ?m1 < ?n,
+assume(succeeds consistent_op & succeeds prefix_prec(?x,?m,?m1) & 
+ succeeds infix_prec(?y,?n,?n1,?n2) & succeeds ?m =< ?n1,
+ [succeeds ?m1 =< ?m by lemma(prefix_prec:leq),
+  succeeds integer(?m) & succeeds integer(?m1) 
+   by lemma(prefix_prec:integer),
+  succeeds ?n1 =< ?n & succeeds ?n2 =< ?n by lemma(infix_prec:leq),
+  succeeds integer(?n) & succeeds integer(?n1) & succeeds integer(?n2)
+   by lemma(infix_prec:integer),
+  ?m1 = ?m \/ succeeds ?m1 < ?m by axiom(leq:less),
+  ?n1 = ?n \/ succeeds ?n1 < ?n by axiom(leq:less),
+  cases(?m1 = ?m,
+   cases(?n1 = ?n,
+    [succeeds prefix_prec(?x,?m,?m),
+     succeeds current_op(?m,fy,?x) by lemma(prefix_prec:fy),
+     succeeds infix_prec(?y,?n,?n,?n2),
+     succeeds current_op(?n,yfx,?y) by lemma(infix_prec:yfx),
+     ?m = ?n \/ ?m <> ?n,
+     cases(?m = ?n,
+      [succeeds current_op(?m,yfx,?y),
+       succeeds inconsistent_op by sld,
+       fails consistent_op by completion,
+       ff],
+      ?m <> ?n,
+      [succeeds ?m =< ?n,
+       succeeds ?m < ?n by axiom(leq:different),
+       succeeds ?m1 < ?n],
+      succeeds ?m1 < ?n)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m1 =< ?n1,
+     succeeds ?m1 < ?n by axiom(leq:less:transitive)],
+    succeeds ?m1 < ?n),
+   succeeds ?m1 < ?m,
+   cases(?n1 = ?n,
+    [succeeds ?m =< ?n,
+     succeeds ?m1 < ?n by axiom(less:leq:transitive)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m1 < ?n1 by axiom(less:leq:transitive),
+      succeeds ?m1 < ?n by axiom(less:less:transitive)],
+    succeeds ?m1 < ?n),
+   succeeds ?m1 < ?n)],
+ succeeds ?m1 < ?n)
+).
+
+:- lemma(consistent_op:comma:infix_prec,
+succeeds consistent_op => succeeds infix_prec(',',1000,999,1000),
+assume(succeeds consistent_op,
+ [def succeeds consistent_op by completion,
+  fails inconsistent_op & succeeds current_op(1000,xfy,',') &
+  succeeds current_op(500,fx,-),
+  succeeds 999 is 1000 - 1 by builtin,
+  succeeds infix_prec(',',1000,999,1000)],
+ succeeds infix_prec(',',1000,999,1000))
+).
+
+:- lemma(infix_prec:postfix_prec,
+all [x,m,m1,m2,y,n,n1]: succeeds consistent_op &
+ succeeds infix_prec(?x,?m,?m1,?m2) & succeeds postfix_prec(?y,?n,?n1) &
+ succeeds ?m =< ?n1 => succeeds ?m2 < ?n,
+assume(succeeds consistent_op & succeeds infix_prec(?x,?m,?m1,?m2) & 
+ succeeds postfix_prec(?y,?n,?n1) & succeeds ?m =< ?n1,
+ [succeeds ?m1 =< ?m & succeeds ?m2 =< ?m by lemma(infix_prec:leq),
+  succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2)
+   by lemma(infix_prec:integer),
+  succeeds ?n1 =< ?n by lemma(postfix_prec:leq),
+  succeeds integer(?n) & succeeds integer(?n1) 
+   by lemma(postfix_prec:integer),
+  ?m2 = ?m \/ succeeds ?m2 < ?m by axiom(leq:less),
+  ?n1 = ?n \/ succeeds ?n1 < ?n by axiom(leq:less),
+  cases(?m2 = ?m,
+   cases(?n1 = ?n,
+    [?m = ?n \/ ?m <> ?n,
+     cases(?m = ?n,
+      [succeeds infix_prec(?x,?m,?m1,?m),
+       succeeds current_op(?m,xfy,?x) by lemma(infix_prec:xfy),
+       succeeds postfix_prec(?y,?m,?m),
+       succeeds current_op(?m,yf,?y) by lemma(postfix_prec:yf),
+       succeeds inconsistent_op by sld,
+       fails consistent_op by completion,
+       ff],
+      ?m <> ?n,
+      [succeeds ?m =< ?n,
+       succeeds ?m < ?n by axiom(leq:different),
+       succeeds ?m2 < ?n],
+      succeeds ?m2 < ?n)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m2 =< ?n1,
+     succeeds ?m2 < ?n by axiom(leq:less:transitive)],
+    succeeds ?m2 < ?n),
+   succeeds ?m2 < ?m,
+   cases(?n1 = ?n,
+    [succeeds ?m =< ?n,
+     succeeds ?m2 < ?n by axiom(less:leq:transitive)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m2 < ?n1 by axiom(less:leq:transitive),
+     succeeds ?m2 < ?n by axiom(less:less:transitive)],
+    succeeds ?m2 < ?n),
+   succeeds ?m2 < ?n)],
+ succeeds ?m2 < ?n)
+).
+
+:- lemma(infix_prec:infix_prec,
+all [x,m,m1,m2,y,n,n1,n2]: succeeds consistent_op &
+ succeeds infix_prec(?x,?m,?m1,?m2) & succeeds infix_prec(?y,?n,?n1,?n2) &
+ succeeds ?m =< ?n1 => succeeds ?m2 < ?n,
+assume(succeeds consistent_op & succeeds infix_prec(?x,?m,?m1,?m2) & 
+ succeeds infix_prec(?y,?n,?n1,?n2) & succeeds ?m =< ?n1,
+ [succeeds ?m1 =< ?m & succeeds ?m2 =< ?m by lemma(infix_prec:leq),
+  succeeds integer(?m) & succeeds integer(?m1) & succeeds integer(?m2)
+   by lemma(infix_prec:integer),
+  succeeds ?n1 =< ?n & succeeds ?n2 =< ?n by lemma(infix_prec:leq),
+  succeeds integer(?n) & succeeds integer(?n1) & succeeds integer(?n2)
+   by lemma(infix_prec:integer),
+  ?m2 = ?m \/ succeeds ?m2 < ?m by axiom(leq:less),
+  ?n1 = ?n \/ succeeds ?n1 < ?n by axiom(leq:less),
+  cases(?m2 = ?m,
+   cases(?n1 = ?n,
+    [?m = ?n \/ ?m <> ?n,
+     cases(?m = ?n,
+      [succeeds infix_prec(?x,?m,?m1,?m),
+       succeeds current_op(?m,xfy,?x) by lemma(infix_prec:xfy),
+       succeeds infix_prec(?y,?m,?m,?n2),
+       succeeds current_op(?m,yfx,?y) by lemma(infix_prec:yfx),
+       succeeds inconsistent_op by sld,
+       fails consistent_op by completion,
+       ff],
+      ?m <> ?n,
+      [succeeds ?m =< ?n,
+       succeeds ?m < ?n by axiom(leq:different),
+       succeeds ?m2 < ?n],
+      succeeds ?m2 < ?n)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m2 =< ?n1,
+     succeeds ?m2 < ?n by axiom(leq:less:transitive)],
+    succeeds ?m2 < ?n),
+   succeeds ?m2 < ?m,
+   cases(?n1 = ?n,
+    [succeeds ?m =< ?n,
+     succeeds ?m2 < ?n by axiom(less:leq:transitive)],
+    succeeds ?n1 < ?n,
+    [succeeds ?m2 < ?n1 by axiom(less:leq:transitive),
+     succeeds ?m2 < ?n by axiom(less:less:transitive)],
+    succeeds ?m2 < ?n),
+   succeeds ?m2 < ?n)],
+ succeeds ?m2 < ?n)
+).
+
+:- lemma(consistent_op:infix:postfix,
+all [x,m,m1,m2,n,n1]: succeeds consistent_op &
+ succeeds infix_prec(?x,?m,?m1,?m2) & succeeds postfix_prec(?x,?n,?n1)
+  => ff,
+assume(succeeds consistent_op & succeeds infix_prec(?x,?m,?m1,?m2) & 
+ succeeds postfix_prec(?x,?n,?n1),
+ [succeeds infix_op(?x) by lemma(infix_prec:infix_op),
+  succeeds postfix_op(?x) by lemma(postfix_prec:postfix_op),
+  succeeds inconsistent_op by sld,
+  fails consistent_op by completion,
+  ff],
+ ff)
+).
+
+:- lemma(consistent_op:postfix_op:infix_op,
+all x: succeeds consistent_op & succeeds postfix_op(?x) =>
+ fails infix_op(?x),
+assume(succeeds consistent_op & succeeds postfix_op(?x),
+ [succeeds atom(?x) by lemma(postfix_op:atom),
+  terminates infix_op(?x) by lemma(infix_op:termination),
+  succeeds infix_op(?x) \/ fails infix_op(?x),
+  cases(succeeds infix_op(?x),
+   [ex [n,n1,n2]: succeeds infix_prec(?x,?n,?n1,?n2) by 
+     lemma(infix_op:infix_prec),
+    exist([n,n1,n2],succeeds infix_prec(?x,?n,?n1,?n2),
+     [ex [m,m1]: succeeds postfix_prec(?x,?m,?m1) by 
+       lemma(postfix_op:postfix_prec),
+      exist([m,m1],succeeds postfix_prec(?x,?m,?m1),
+       ff by lemma(consistent_op:infix:postfix),
+       ff)],
+     ff)],
+   fails infix_op(?x),
+   [],
+   fails infix_op(?x))],
+ fails infix_op(?x))
+).
+
+:- bye(precedence).

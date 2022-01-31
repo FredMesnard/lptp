@@ -1,0 +1,33 @@
+:- initialize.
+:- tex_file($(tmp)/proof6).
+:- thm_file($(tmp)/proof6).
+
+:- definition_pred(sub,2,
+ all [l1,l2]: sub(?l1,?l2) <=> 
+  (all x: succeeds member(?x,?l1) => succeeds member(?x,?l2))
+).
+
+:- lemma(sub:reflexivity,
+all l: sub(?l,?l),
+[succeeds member(?x,?l) => succeeds member(?x,?l),
+ all x: succeeds member(?x,?l) => succeeds member(?x,?l),
+ sub(?l,?l) by introduction(sub,2)]
+).
+
+:- lemma(sub:transitivity,
+all [l1,l2,l3]: sub(?l1,?l2) & sub(?l2,?l3) => sub(?l1,?l3),
+assume(sub(?l1,?l2) & sub(?l2,?l3),
+ [all x: succeeds member(?x,?l1) => succeeds member(?x,?l2) by 
+   elimination(sub,2),
+  all x: succeeds member(?x,?l2) => succeeds member(?x,?l3) by 
+   elimination(sub,2),
+  assume(succeeds member(?x,?l1),
+   [succeeds member(?x,?l1) => succeeds member(?x,?l2),
+    succeeds member(?x,?l2) => succeeds member(?x,?l3)],
+   succeeds member(?x,?l3)),
+  all x: succeeds member(?x,?l1) => succeeds member(?x,?l3),
+  sub(?l1,?l3) by introduction(sub,2)],
+ sub(?l1,?l3))
+).
+
+:- bye(proof6).

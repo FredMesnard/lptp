@@ -1,0 +1,149 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/26/95, 8:10 PM */
+/* Filename: ackermann.pr */
+
+:- initialize.
+
+:- tex_file($(tmp)/ackermann).
+:- thm_file($(tmp)/ackermann).
+
+:- needs_gr($(lib)/nat/ackermann).
+:- needs_gr($(lib)/nat/nat).
+
+:- lemma(ackermann:types:1,
+all [m,n,k]: succeeds ackermann(?m,?n,?k) & succeeds nat(?n) => 
+ succeeds nat(?k),
+[induction(
+  [all [m,n,k]: succeeds ackermann(?m,?n,?k) => succeeds nat(?n) => 
+    succeeds nat(?k)],
+  [step([n],
+    [],
+    assume(succeeds nat(?n),
+     [],
+     succeeds nat(s(?n))),
+    succeeds nat(?n) => succeeds nat(s(?n))),
+   step([m,n],
+    [succeeds nat(s(0)) => succeeds nat(?n),
+     succeeds ackermann(?m,s(0),?n)],
+    assume(succeeds nat(0),
+     [],
+     succeeds nat(?n)),
+    succeeds nat(0) => succeeds nat(?n)),
+   step([m,n,k2,k1],
+    [succeeds nat(?n) => succeeds nat(?k1),
+     succeeds nat(?k1) => succeeds nat(?k2),
+     succeeds ackermann(s(?m),?n,?k1),
+     succeeds ackermann(?m,?k1,?k2)],
+    assume(succeeds nat(s(?n)),
+     [def succeeds nat(s(?n)) by completion,
+      succeeds nat(?n),
+      succeeds nat(?k2)],
+     succeeds nat(?k2)),
+    succeeds nat(s(?n)) => succeeds nat(?k2))]),
+ assume(succeeds ackermann(?m,?n,?k) & succeeds nat(?n),
+  [succeeds nat(?n) => succeeds nat(?k),
+   succeeds nat(?k)],
+  succeeds nat(?k))]
+).
+
+:- lemma(ack:existence,
+all [m,n]: succeeds nat(?m) & succeeds nat(?n) => 
+ (ex k: succeeds ackermann(?m,?n,?k)),
+[induction(
+  [all m: succeeds nat(?m) => 
+    (all n: succeeds nat(?n) => (ex k: succeeds ackermann(?m,?n,?k)))],
+  [step([],
+    [],
+    assume(succeeds nat(?n),
+     [succeeds ackermann(0,?n,s(?n)),
+      ex k: succeeds ackermann(0,?n,?k)],
+     ex k: succeeds ackermann(0,?n,?k)),
+    all n: succeeds nat(?n) => (ex k: succeeds ackermann(0,?n,?k))),
+   step([m],
+    [all n: succeeds nat(?n) => (ex k: succeeds ackermann(?m,?n,?k)),
+     succeeds nat(?m)],
+    induction(
+     [all n: succeeds nat(?n) => (ex k: succeeds ackermann(s(?m),?n,?k))],
+     [step([],
+       [],
+       [succeeds nat(0),
+        succeeds nat(s(0)),
+        ex k: succeeds ackermann(?m,s(0),?k),
+        exist(k,
+         succeeds ackermann(?m,s(0),?k),
+         [succeeds ackermann(s(?m),0,?k),
+          ex k: succeeds ackermann(s(?m),0,?k)],
+         ex k: succeeds ackermann(s(?m),0,?k))],
+       ex k: succeeds ackermann(s(?m),0,?k)),
+      step([n],
+       [ex k: succeeds ackermann(s(?m),?n,?k),
+        succeeds nat(?n)],
+       exist(k1,
+        succeeds ackermann(s(?m),?n,?k1),
+        [succeeds ackermann(s(?m),?n,?k1) & succeeds nat(?n),
+         succeeds nat(?k1) by lemma(ackermann:types:1),
+         ex k2: succeeds ackermann(?m,?k1,?k2),
+         exist(k2,
+          succeeds ackermann(?m,?k1,?k2),
+          [succeeds ackermann(s(?m),s(?n),?k2),
+           ex k: succeeds ackermann(s(?m),s(?n),?k)],
+          ex k: succeeds ackermann(s(?m),s(?n),?k))],
+        ex k: succeeds ackermann(s(?m),s(?n),?k)),
+       ex k: succeeds ackermann(s(?m),s(?n),?k))]),
+    all n: succeeds nat(?n) => (ex k: succeeds ackermann(s(?m),?n,?k)))]),
+ assume(succeeds nat(?m) & succeeds nat(?n),
+  [all n: succeeds nat(?n) => (ex k: succeeds ackermann(?m,?n,?k)),
+   succeeds nat(?n) => (ex k: succeeds ackermann(?m,?n,?k)),
+   ex k: succeeds ackermann(?m,?n,?k)],
+  ex k: succeeds ackermann(?m,?n,?k))]
+).
+
+:- lemma(ack:termination,
+all [m,n,k]: succeeds nat(?m) & succeeds nat(?n) => 
+  terminates ackermann(?m,?n,?k),
+[induction(
+  [all m: succeeds nat(?m) => 
+     (all [n,k]: succeeds nat(?n) => terminates ackermann(?m,?n,?k))],
+  [step([],
+    [],
+    succeeds nat(?n) => terminates ackermann(0,?n,?k),
+    all [n,k]: succeeds nat(?n) => terminates ackermann(0,?n,?k)),
+   step([m],
+    [all [n,k]: succeeds nat(?n) => terminates ackermann(?m,?n,?k),
+     succeeds nat(?m)],
+    assume(succeeds nat(?n),
+     [induction(
+       [all n: succeeds nat(?n) => 
+	  (all k: terminates ackermann(s(?m),?n,?k))],
+       [step([],
+	 [],
+	 terminates ackermann(s(?m),0,?k),
+	 all k: terminates ackermann(s(?m),0,?k)),
+	step([n1],
+	 [all k: terminates ackermann(s(?m),?n1,?k),
+	  succeeds nat(?n1)],
+	 [terminates ackermann(s(?m),?n1,?k),
+	  assume(succeeds ackermann(s(?m),?n1,?k1),
+	   [succeeds nat(?k1) by lemma(ackermann:types:1),
+	    terminates ackermann(?m,?k1,?k)],
+	   terminates ackermann(?m,?k1,?k)),
+	  terminates (ackermann(s(?m),?n1,?k1) & ackermann(?m,?k1,?k)),
+          all k1: 
+           terminates (ackermann(s(?m),?n1,?k1) & ackermann(?m,?k1,?k)),
+          terminates ackermann(s(?m),s(?n1),?k) by completion],
+	 all k: terminates ackermann(s(?m),s(?n1),?k))]),
+      assume(succeeds nat(?n),
+       [all k: terminates ackermann(s(?m),?n,?k),
+	terminates ackermann(s(?m),?n,?k)],
+       terminates ackermann(s(?m),?n,?k)),
+      terminates ackermann(s(?m),?n,?k)],
+     terminates ackermann(s(?m),?n,?k)),
+    all [n,k]: succeeds nat(?n) => terminates ackermann(s(?m),?n,?k))]),
+ assume(succeeds nat(?m) & succeeds nat(?n),
+  [all [n,k]: succeeds nat(?n) => terminates ackermann(?m,?n,?k),
+   succeeds nat(?n) => terminates ackermann(?m,?n,?k),
+   terminates ackermann(?m,?n,?k)],
+  terminates ackermann(?m,?n,?k))]
+).
+
+:- bye(ackermann).

@@ -1,0 +1,3092 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Tue Feb 27 12:32:25 1996 */
+/* Filename: uniqueness.pr */
+/* Abstract: Uniqueness proof for term/4 and more/6*/
+
+:- initialize.
+
+:- tex_file($(tmp)/uniqueness).
+:- thm_file($(tmp)/uniqueness).
+
+:- needs_gr($(examples)/parser/src/read).
+
+:- needs_thm($(tmp)/axioms).
+:- needs_thm($(tmp)/precedence).
+
+:- lemma(term:success:variable,
+all [x,l1,n,l2,t]: succeeds term([variable(?x)|?l1],?n,?l2,?t) => 
+ succeeds more(?l1,0,?n,variable(?x),?l2,?t),
+assume(succeeds term([variable(?x)|?l1],?n,?l2,?t),
+ [def succeeds term([variable(?x)|?l1],?n,?l2,?t) by completion,
+  cases(succeeds more(?l1,0,?n,variable(?x),?l2,?t),
+   [],
+   ?l2 = error(term_begin / [variable(?x)|?l1]) & ?t = error &
+   fails term_begin([variable(?x)|?l1]),
+   [succeeds term_begin([variable(?x)|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,variable(?x),?l2,?t))],
+ succeeds more(?l1,0,?n,variable(?x),?l2,?t))
+).
+
+:- lemma(term:success:integer,
+all [x,l1,n,l2,t]: succeeds term([integer(?x)|?l1],?n,?l2,?t) => 
+ succeeds more(?l1,0,?n,integer(?x),?l2,?t),
+assume(succeeds term([integer(?x)|?l1],?n,?l2,?t),
+ [def succeeds term([integer(?x)|?l1],?n,?l2,?t) by completion,
+  cases(succeeds more(?l1,0,?n,integer(?x),?l2,?t),
+   [],
+   ?l2 = error(term_begin / [integer(?x)|?l1]) & ?t = error &
+   fails term_begin([integer(?x)|?l1]),
+   [succeeds term_begin([integer(?x)|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,integer(?x),?l2,?t))],
+ succeeds more(?l1,0,?n,integer(?x),?l2,?t))
+).
+
+:- lemma(term:success:float_number,
+all [x,l1,n,l2,t]: succeeds term([float_number(?x)|?l1],?n,?l2,?t) => 
+ succeeds more(?l1,0,?n,float_number(?x),?l2,?t),
+assume(succeeds term([float_number(?x)|?l1],?n,?l2,?t),
+ [def succeeds term([float_number(?x)|?l1],?n,?l2,?t) by completion,
+  cases(succeeds more(?l1,0,?n,float_number(?x),?l2,?t),
+   [],
+   ?l2 = error(term_begin / [float_number(?x)|?l1]) & ?t = error &
+   fails term_begin([float_number(?x)|?l1]),
+   [succeeds term_begin([float_number(?x)|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,float_number(?x),?l2,?t))],
+ succeeds more(?l1,0,?n,float_number(?x),?l2,?t))
+).
+
+:- lemma(term:success:char_code_list,
+all [x,l1,n,l2,t]: succeeds term([char_code_list(?x)|?l1],?n,?l2,?t) => 
+ succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t),
+assume(succeeds term([char_code_list(?x)|?l1],?n,?l2,?t),
+ [def succeeds term([char_code_list(?x)|?l1],?n,?l2,?t) by completion,
+  cases(succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t),
+   [],
+   ?l2 = error(term_begin / [char_code_list(?x)|?l1]) & ?t = error &
+   fails term_begin([char_code_list(?x)|?l1]),
+   [succeeds term_begin([char_code_list(?x)|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t))],
+ succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t))
+).
+
+:- lemma(term:success:name:nolayout,
+all [x,l1,n1,l4,t2]: 
+ succeeds term([name(?x),open(nolayout)|?l1],?n1,?l4,?t2) => 
+ (ex [l2,l3,t1,ts]: succeeds one_arg(?l1,?l2,?t1) &
+   succeeds arg_seq(?l2,?l3,?ts) &
+   succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2)),
+assume(succeeds term([name(?x),open(nolayout)|?l1],?n1,?l4,?t2),
+ [def succeeds term([name(?x),open(nolayout)|?l1],?n1,?l4,?t2) by 
+   completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: open(nolayout) = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    open(nolayout) <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(open(nolayout)) &
+      succeeds minus_number_tree(open(nolayout),?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(open(nolayout))) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & 
+       succeeds term([open(nolayout)|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 &
+       ?l4 = error(prefix_prec / [name(?x),open(nolayout)|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) &
+      ?l4 = error(operator / [name(?x),open(nolayout)|?l1]) & ?t2 = error \/
+      fails symbol_op(?x) &
+      succeeds more([open(nolayout)|?l1],0,?n1,con(?x),?l4,?t2))),
+   exist([l2,t1,l3,ts,n2,n3],
+    open(nolayout) = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    open(nolayout) <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(open(nolayout)) &
+      succeeds minus_number_tree(open(nolayout),?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(open(nolayout))) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & 
+       succeeds term([open(nolayout)|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 &
+       ?l4 = error(prefix_prec / [name(?x),open(nolayout)|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) &
+      ?l4 = error(operator / [name(?x),open(nolayout)|?l1]) & ?t2 = error \/
+      fails symbol_op(?x) &
+      succeeds more([open(nolayout)|?l1],0,?n1,con(?x),?l4,?t2))),
+    cases(open(nolayout) = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+     [],
+     open(nolayout) <> open(nolayout) &
+     (succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(open(nolayout)) &
+       succeeds minus_number_tree(open(nolayout),?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(open(nolayout))) &
+       succeeds prefix_prec(?x,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 &
+        succeeds term([open(nolayout)|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 &
+        ?l4 = error(prefix_prec / [name(?x),open(nolayout)|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) &
+       ?l4 = error(operator / [name(?x),open(nolayout)|?l1]) & ?t2 = error \/
+       fails symbol_op(?x) &
+       succeeds more([open(nolayout)|?l1],0,?n1,con(?x),?l4,?t2))),
+     [],
+     ex [l2,l3,t1,ts]: succeeds one_arg(?l1,?l2,?t1) &
+      succeeds arg_seq(?l2,?l3,?ts) &
+      succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2)),
+    ex [l2,l3,t1,ts]: succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2)),
+   ?l4 = error(term_begin / [name(?x),open(nolayout)|?l1]) & ?t2 = error &
+   fails term_begin([name(?x),open(nolayout)|?l1]),
+   [succeeds term_begin([name(?x),open(nolayout)|?l1]) by sld,
+    ff],
+   ex [l2,l3,t1,ts]: succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2))],
+ ex [l2,l3,t1,ts]: succeeds one_arg(?l1,?l2,?t1) &
+  succeeds arg_seq(?l2,?l3,?ts) &
+  succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2))
+).
+
+:- lemma(minus_number_tree:uniqueness,
+all [n,t1,t2]: succeeds minus_number_tree(?n,?t1) &
+ succeeds minus_number_tree(?n,?t2) => ?t1 = ?t2,
+assume(succeeds minus_number_tree(?n,?t1) &
+ succeeds minus_number_tree(?n,?t2),
+ [def succeeds minus_number_tree(?n,?t1) by completion,
+  cases(
+   ex [x,y]: ?n = integer(?x) & ?t1 = integer(?y) & succeeds ?y is - ?x,
+   exist([x,y],
+    ?n = integer(?x) & ?t1 = integer(?y) & succeeds ?y is - ?x,
+    [def succeeds minus_number_tree(?n,?t2) by completion,
+     cases(
+      ex [x,y]: ?n = integer(?x) & ?t2 = integer(?y) & succeeds ?y is - ?x,
+      exist([0,1],
+       ?n = integer(?0) & ?t2 = integer(?1) & succeeds ?1 is - ?0,
+       [?x = ?0,
+        succeeds ?1 is - ?x,
+        ?y = ?1 by axiom((is): function),
+        ?t1 = ?t2],
+       ?t1 = ?t2),
+      ex [x,y]: ?n = float_number(?x) & ?t2 = float_number(?y) &
+       succeeds ?y is - ?x,
+      exist([0,1],
+       ?n = float_number(?0) & ?t2 = float_number(?1) & succeeds ?1 is - ?0,
+       [ff],
+       ?t1 = ?t2),
+      ?t1 = ?t2)],
+    ?t1 = ?t2),
+   ex [x,y]: ?n = float_number(?x) & ?t1 = float_number(?y) &
+    succeeds ?y is - ?x,
+   exist([x,y],
+    ?n = float_number(?x) & ?t1 = float_number(?y) & succeeds ?y is - ?x,
+    [def succeeds minus_number_tree(?n,?t2) by completion,
+     cases(
+      ex [x,y]: ?n = integer(?x) & ?t2 = integer(?y) & succeeds ?y is - ?x,
+      exist([0,1],
+       ?n = integer(?0) & ?t2 = integer(?1) & succeeds ?1 is - ?0,
+       [ff],
+       ?t1 = ?t2),
+      ex [x,y]: ?n = float_number(?x) & ?t2 = float_number(?y) &
+       succeeds ?y is - ?x,
+      exist([0,1],
+       ?n = float_number(?0) & ?t2 = float_number(?1) & succeeds ?1 is - ?0,
+       [?x = ?0,
+        succeeds ?1 is - ?x,
+        ?y = ?1 by axiom((is): function),
+        ?t1 = ?t2],
+       ?t1 = ?t2),
+      ?t1 = ?t2)],
+    ?t1 = ?t2),
+   ?t1 = ?t2)],
+ ?t1 = ?t2)
+).
+
+:- lemma(term:success:name:minus,
+all [y,l1,n1,l4,t2]: succeeds term([name(-),?y|?l1],?n1,?l4,?t2) &
+ succeeds prefix_op(-) & succeeds number_token(?y) & ?y <> open(nolayout) =>
+ (ex t1: succeeds minus_number_tree(?y,?t1) &
+   succeeds more(?l1,0,?n1,?t1,?l4,?t2)),
+assume(succeeds term([name(-),?y|?l1],?n1,?l4,?t2) & succeeds prefix_op(-) &
+ succeeds number_token(?y) & ?y <> open(nolayout),
+ [def succeeds term([name(-),?y|?l1],?n1,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: ?y = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(-,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(-) &
+     ((-) = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      ((-) <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(-,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(-,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(-),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(-) &
+     (succeeds symbol_op(-) & ?l4 = error(operator / [name(-),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(-) & succeeds more([?y|?l1],0,?n1,con(-),?l4,?t2))),
+   exist([l2,t1,l3,ts,n2,n3],
+    ?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(-,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(-) &
+     ((-) = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      ((-) <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(-,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(-,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(-),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(-) &
+     (succeeds symbol_op(-) & ?l4 = error(operator / [name(-),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(-) & succeeds more([?y|?l1],0,?n1,con(-),?l4,?t2))),
+    cases(?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(-,[?t1|?ts]),?l4,?t2),
+     [],
+     ?y <> open(nolayout) &
+     (succeeds prefix_op(-) &
+      ((-) = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       ((-) <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(-,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(-,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(-),?y|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(-) &
+      (succeeds symbol_op(-) & ?l4 = error(operator / [name(-),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(-) & succeeds more([?y|?l1],0,?n1,con(-),?l4,?t2))),
+     cases(succeeds prefix_op(-) &
+      ((-) = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       ((-) <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(-,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(-,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(-),?y|?l1]) &
+        ?t2 = error)),
+      cases((-) = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2),
+       [],
+       ((-) <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(-,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(-,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(-),?y|?l1]) &
+        ?t2 = error),
+       cases((-) <> (-),
+        [],
+        fails number_token(?y),
+        [],
+        ff),
+       ex t1: succeeds minus_number_tree(?y,?t1) &
+        succeeds more(?l1,0,?n1,?t1,?l4,?t2)),
+      fails prefix_op(-) &
+      (succeeds symbol_op(-) & ?l4 = error(operator / [name(-),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(-) & succeeds more([?y|?l1],0,?n1,con(-),?l4,?t2)),
+      [],
+      ex t1: succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2)),
+     ex t1: succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2)),
+    ex t1: succeeds minus_number_tree(?y,?t1) &
+     succeeds more(?l1,0,?n1,?t1,?l4,?t2)),
+   ?l4 = error(term_begin / [name(-),?y|?l1]) & ?t2 = error &
+   fails term_begin([name(-),?y|?l1]),
+   [succeeds term_begin([name(-),?y|?l1]) by sld,
+    ff],
+   ex t1: succeeds minus_number_tree(?y,?t1) &
+    succeeds more(?l1,0,?n1,?t1,?l4,?t2))],
+ ex t1: succeeds minus_number_tree(?y,?t1) &
+  succeeds more(?l1,0,?n1,?t1,?l4,?t2))
+).
+
+:- lemma(term:success:prefix,
+all [x,y,l1,n1,n2,n3,l4,t2]: succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) &
+ ?y <> open(nolayout) & succeeds prefix_op(?x) &
+ (?x <> (-) \/ fails number_token(?y)) & succeeds prefix_prec(?x,?n2,?n3) &
+ succeeds ?n2 =< ?n1 & succeeds consistent_op => 
+ (ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+   succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)),
+assume(succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) & ?y <> open(nolayout) &
+ succeeds prefix_op(?x) & (?x <> (-) \/ fails number_token(?y)) &
+ succeeds prefix_prec(?x,?n2,?n3) & succeeds ?n2 =< ?n1 &
+ succeeds consistent_op,
+ [def succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: ?y = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+   exist([l2,t1,l3,ts,0,1],
+    ?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) & 
+      succeeds prefix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+       succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+    cases(?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+     [],
+     ?y <> open(nolayout) &
+     (succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+     cases(succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)),
+      cases(?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2),
+       cases(?x <> (-),
+        [],
+        fails number_token(?y),
+        [],
+        ff),
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error),
+       [?n2 = ?0 & ?n3 = ?1 by lemma(prefix_prec:function),
+        succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error,
+        cases(succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+         succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2),
+         [],
+         fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+         ?t2 = error,
+         [],
+         ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+          succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2))],
+       ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)),
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+      [],
+      ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)),
+     ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+      succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)),
+    ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+     succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)),
+   ?l4 = error(term_begin / [name(?x),?y|?l1]) & ?t2 = error &
+   fails term_begin([name(?x),?y|?l1]),
+   [succeeds term_begin([name(?x),?y|?l1]) by sld,
+    ff],
+   ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+    succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2))],
+ ex [t1,l2]: succeeds term([?y|?l1],?n3,?l2,?t1) &
+  succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2))
+).
+
+:- lemma(term:success:prefix:error,
+all [x,y,l1,n1,n2,n3,l4,t2]: succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) &
+ ?y <> open(nolayout) & succeeds prefix_op(?x) &
+ (?x <> (-) \/ fails number_token(?y)) & succeeds prefix_prec(?x,?n2,?n3) &
+ fails ?n2 =< ?n1 & succeeds consistent_op => 
+ ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error,
+assume(succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) & ?y <> open(nolayout) &
+ succeeds prefix_op(?x) & (?x <> (-) \/ fails number_token(?y)) &
+ succeeds prefix_prec(?x,?n2,?n3) & fails ?n2 =< ?n1 &
+ succeeds consistent_op,
+ [def succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: ?y = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+   exist([l2,t1,l3,ts,0,1],
+    ?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) & 
+      succeeds prefix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+       succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+    cases(?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+     [],
+     ?y <> open(nolayout) &
+     (succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+     cases(succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)),
+      cases(?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2),
+       cases(?x <> (-),
+        [],
+        fails number_token(?y),
+        [],
+        ff),
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?0,?1) &
+       (succeeds ?0 =< ?n1 & succeeds term([?y|?l1],?1,?l2,?t1) &
+        succeeds more(?l2,?0,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error),
+       [?n2 = ?0 & ?n3 = ?1 by lemma(prefix_prec:function),
+        succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error,
+        cases(succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+         succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2),
+         [],
+         fails ?0 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+         ?t2 = error,
+         [],
+         ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error)],
+       ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error),
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+      [],
+      ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error),
+     ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error),
+    ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error),
+   ?l4 = error(term_begin / [name(?x),?y|?l1]) & ?t2 = error &
+   fails term_begin([name(?x),?y|?l1]),
+   [succeeds term_begin([name(?x),?y|?l1]) by sld,
+    ff],
+   ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error)],
+ ?l4 = error(prefix_prec / [name(?x),?y|?l1]) & ?t2 = error)
+).
+
+:- lemma(term:success:symbol_op,
+all [x,y,l1,n1,n2,n3,l4,t2]: succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) &
+ ?y <> open(nolayout) & fails prefix_op(?x) & succeeds symbol_op(?x) => 
+ ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error,
+assume(succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) & ?y <> open(nolayout) &
+ fails prefix_op(?x) & succeeds symbol_op(?x),
+ [def succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: ?y = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+   exist([l2,t1,l3,ts,n2,n3],
+    ?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+    cases(?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+     [],
+     ?y <> open(nolayout) &
+     (succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+     cases(succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)),
+      [],
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+      cases(succeeds symbol_op(?x) &
+       ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error,
+       [],
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2),
+       [],
+       ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error),
+      ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error),
+     ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error),
+    ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error),
+   ?l4 = error(term_begin / [name(?x),?y|?l1]) & ?t2 = error &
+   fails term_begin([name(?x),?y|?l1]),
+   [succeeds term_begin([name(?x),?y|?l1]) by sld,
+    ff],
+   ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error)],
+ ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error)
+).
+
+:- lemma(term:success:more,
+all [x,y,l1,n1,n2,n3,l4,t2]: succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) &
+ ?y <> open(nolayout) & fails prefix_op(?x) & fails symbol_op(?x) => 
+ succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2),
+assume(succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) & ?y <> open(nolayout) &
+ fails prefix_op(?x) & fails symbol_op(?x),
+ [def succeeds term([name(?x),?y|?l1],?n1,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3,ts,n2,n3]: ?y = open(nolayout) &
+    succeeds one_arg(?l1,?l2,?t1) & succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+   exist([l2,t1,l3,ts,n2,n3],
+    ?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds arg_seq(?l2,?l3,?ts) &
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/
+    ?y <> open(nolayout) &
+    (succeeds prefix_op(?x) &
+     (?x = (-) & succeeds number_token(?y) &
+      succeeds minus_number_tree(?y,?t1) &
+      succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+      (?x <> (-) \/ fails number_token(?y)) &
+      succeeds prefix_prec(?x,?n2,?n3) &
+      (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+       succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+       fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+       ?t2 = error)) \/
+     fails prefix_op(?x) &
+     (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+      ?t2 = error \/
+      fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+    cases(?y = open(nolayout) & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds arg_seq(?l2,?l3,?ts) &
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+     [],
+     ?y <> open(nolayout) &
+     (succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)) \/
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))),
+     cases(succeeds prefix_op(?x) &
+      (?x = (-) & succeeds number_token(?y) &
+       succeeds minus_number_tree(?y,?t1) &
+       succeeds more(?l1,0,?n1,?t1,?l4,?t2) \/
+       (?x <> (-) \/ fails number_token(?y)) &
+       succeeds prefix_prec(?x,?n2,?n3) &
+       (succeeds ?n2 =< ?n1 & succeeds term([?y|?l1],?n3,?l2,?t1) &
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/
+        fails ?n2 =< ?n1 & ?l4 = error(prefix_prec / [name(?x),?y|?l1]) &
+        ?t2 = error)),
+      [],
+      fails prefix_op(?x) &
+      (succeeds symbol_op(?x) & ?l4 = error(operator / [name(?x),?y|?l1]) &
+       ?t2 = error \/
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+      cases(succeeds symbol_op(?x) &
+       ?l4 = error(operator / [name(?x),?y|?l1]) & ?t2 = error,
+       [],
+       fails symbol_op(?x) & succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2),
+       [],
+       succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+      succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+     succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+    succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)),
+   ?l4 = error(term_begin / [name(?x),?y|?l1]) & ?t2 = error &
+   fails term_begin([name(?x),?y|?l1]),
+   [succeeds term_begin([name(?x),?y|?l1]) by sld,
+    ff],
+   succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))],
+ succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2))
+).
+
+:- lemma(term:success:open_list:close_list,
+all [l1,n,l4,t3]: succeeds term([open_list,close_list|?l1],?n,?l4,?t3) => 
+ succeeds more(?l1,0,?n,con([]),?l4,?t3),
+assume(succeeds term([open_list,close_list|?l1],?n,?l4,?t3),
+ [def succeeds term([open_list,close_list|?l1],?n,?l4,?t3) by completion,
+  cases(
+   ex [l2,t1,l3,t2]: close_list = close_list &
+    succeeds more(?l1,0,?n,con([]),?l4,?t3) \/
+    close_list <> close_list & succeeds one_arg([close_list|?l1],?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) &
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+   exist([l2,t1,l3,t2],
+    close_list = close_list & succeeds more(?l1,0,?n,con([]),?l4,?t3) \/
+    close_list <> close_list & succeeds one_arg([close_list|?l1],?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) &
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+    cases(close_list = close_list & succeeds more(?l1,0,?n,con([]),?l4,?t3),
+     [],
+     close_list <> close_list & succeeds one_arg([close_list|?l1],?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) &
+     succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+     [],
+     succeeds more(?l1,0,?n,con([]),?l4,?t3)),
+    succeeds more(?l1,0,?n,con([]),?l4,?t3)),
+   ?l4 = error(term_begin / [open_list,close_list|?l1]) & ?t3 = error &
+   fails term_begin([open_list,close_list|?l1]),
+   [succeeds term_begin([open_list,close_list|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,con([]),?l4,?t3))],
+ succeeds more(?l1,0,?n,con([]),?l4,?t3))
+).
+
+:- lemma(term:success:open_list:list_tail,
+all [y,l1,n,l4,t3]: succeeds term([open_list,?y|?l1],?n,?l4,?t3) &
+ ?y <> close_list => 
+ (ex [l2,l3,t1,t2]: succeeds one_arg([?y|?l1],?l2,?t1) &
+   succeeds list_tail(?l2,?l3,?t2) &
+   succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3)),
+assume(succeeds term([open_list,?y|?l1],?n,?l4,?t3) & ?y <> close_list,
+ [def succeeds term([open_list,?y|?l1],?n,?l4,?t3) by completion,
+  cases(
+   ex [l2,t1,l3,t2]: ?y = close_list &
+    succeeds more(?l1,0,?n,con([]),?l4,?t3) \/
+    ?y <> close_list & succeeds one_arg([?y|?l1],?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) &
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+   exist([l2,t1,l3,t2],
+    ?y = close_list & succeeds more(?l1,0,?n,con([]),?l4,?t3) \/
+    ?y <> close_list & succeeds one_arg([?y|?l1],?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) &
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+    cases(?y = close_list & succeeds more(?l1,0,?n,con([]),?l4,?t3),
+     [],
+     ?y <> close_list & succeeds one_arg([?y|?l1],?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) &
+     succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+     [],
+     ex [l2,l3,t1,t2]: succeeds one_arg([?y|?l1],?l2,?t1) &
+      succeeds list_tail(?l2,?l3,?t2) &
+      succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3)),
+    ex [l2,l3,t1,t2]: succeeds one_arg([?y|?l1],?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) &
+     succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3)),
+   ?l4 = error(term_begin / [open_list,?y|?l1]) & ?t3 = error &
+   fails term_begin([open_list,?y|?l1]),
+   [succeeds term_begin([open_list,?y|?l1]) by sld,
+    ff],
+   ex [l2,l3,t1,t2]: succeeds one_arg([?y|?l1],?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) &
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3))],
+ ex [l2,l3,t1,t2]: succeeds one_arg([?y|?l1],?l2,?t1) &
+  succeeds list_tail(?l2,?l3,?t2) &
+  succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3))
+).
+
+:- lemma(expect:uniqueness,
+all [e,e1,e2,z]: succeeds expect(?e,?z,?e1) & succeeds expect(?e,?z,?e2) =>
+ ?e1 = ?e2,
+assume(succeeds expect(?e,?z,?e1) & succeeds expect(?e,?z,?e2),
+ [def succeeds expect(?e,?z,?e1) by completion,
+  cases(
+   [case(
+     ex [y,l1]: ?e = [?y|?l1] &
+      (?z = ?y & ?e1 = ?l1 \/ ?z <> ?y & ?e1 = error(expect(?z) / [?y|?l1])),
+     exist([y,l1],
+      ?e = [?y|?l1] &
+      (?z = ?y & ?e1 = ?l1 \/ ?z <> ?y & ?e1 = error(expect(?z) / [?y|?l1])),
+      [def succeeds expect(?e,?z,?e2) by completion,
+       cases(
+        [case(
+          ex [y,l1]: ?e = [?y|?l1] &
+           (?z = ?y & ?e2 = ?l1 \/
+            ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1])),
+          exist([0,1],
+           ?e = [?0|?1] &
+           (?z = ?0 & ?e2 = ?1 \/
+            ?z <> ?0 & ?e2 = error(expect(?z) / [?0|?1])),
+           [?0 = ?y,
+            ?1 = ?l1,
+            ?z = ?y & ?e2 = ?l1 \/
+            ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1]),
+            cases(?z = ?y & ?e2 = ?l1,
+             cases(?z = ?y & ?e1 = ?l1,
+              [],
+              ?z <> ?y & ?e1 = error(expect(?z) / [?y|?l1]),
+              [],
+              ?e1 = ?e2),
+             ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1]),
+             cases(?z = ?y & ?e1 = ?l1,
+              [],
+              ?z <> ?y & ?e1 = error(expect(?z) / [?y|?l1]),
+              [],
+              ?e1 = ?e2),
+             ?e1 = ?e2)],
+           ?e1 = ?e2)),
+         case(?e = [] & ?e2 = error(expect(?z) / []),
+          []),
+         case(ex x: ?e = error(?x) & ?e2 = error(?x),
+          exist(x,
+           ?e = error(?x) & ?e2 = error(?x),
+           [],
+           ?e1 = ?e2))],
+        ?e1 = ?e2)],
+      ?e1 = ?e2)),
+    case(?e = [] & ?e1 = error(expect(?z) / []),
+     [def succeeds expect(?e,?z,?e2) by completion,
+      cases(
+       [case(
+         ex [y,l1]: ?e = [?y|?l1] &
+          (?z = ?y & ?e2 = ?l1 \/
+           ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1])),
+         exist([y,l1],
+          ?e = [?y|?l1] &
+          (?z = ?y & ?e2 = ?l1 \/
+           ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1])),
+          [],
+          ?e1 = ?e2)),
+        case(?e = [] & ?e2 = error(expect(?z) / []),
+         []),
+        case(ex x: ?e = error(?x) & ?e2 = error(?x),
+         exist(x,
+          ?e = error(?x) & ?e2 = error(?x),
+          [],
+          ?e1 = ?e2))],
+       ?e1 = ?e2)]),
+    case(ex x: ?e = error(?x) & ?e1 = error(?x),
+     exist(x,
+      ?e = error(?x) & ?e1 = error(?x),
+      [def succeeds expect(?e,?z,?e2) by completion,
+       cases(
+        [case(
+          ex [y,l1]: ?e = [?y|?l1] &
+           (?z = ?y & ?e2 = ?l1 \/
+            ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1])),
+          exist([y,l1],
+           ?e = [?y|?l1] &
+           (?z = ?y & ?e2 = ?l1 \/
+            ?z <> ?y & ?e2 = error(expect(?z) / [?y|?l1])),
+           [],
+           ?e1 = ?e2)),
+         case(?e = [] & ?e2 = error(expect(?z) / []),
+          []),
+         case(ex x: ?e = error(?x) & ?e2 = error(?x),
+          exist(0,
+           ?e = error(?0) & ?e2 = error(?0),
+           [],
+           ?e1 = ?e2))],
+        ?e1 = ?e2)],
+      ?e1 = ?e2))],
+   ?e1 = ?e2)],
+ ?e1 = ?e2)
+).
+
+:- lemma(term:success:open:close,
+all [z,l1,n,l4,t2,u]: 
+ succeeds term([open(?u),name(?z),close|?l1],?n,?l4,?t2) => 
+ succeeds more(?l1,0,?n,con(?z),?l4,?t2),
+assume(succeeds term([open(?u),name(?z),close|?l1],?n,?l4,?t2),
+ [def succeeds term([open(?u),name(?z),close|?l1],?n,?l4,?t2) by completion,
+  cases(
+   ex [5,l2,t1,l3]: succeeds name_token(name(?z)) & close = close &
+    name(?z) = name(?5) & succeeds more(?l1,0,?n,con(?5),?l4,?t2) \/
+    (fails name_token(name(?z)) \/ close <> close) &
+    succeeds term([name(?z),close|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+   exist([5,l2,t1,l3],
+    succeeds name_token(name(?z)) & close = close & name(?z) = name(?5) &
+    succeeds more(?l1,0,?n,con(?5),?l4,?t2) \/
+    (fails name_token(name(?z)) \/ close <> close) &
+    succeeds term([name(?z),close|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+    cases(succeeds name_token(name(?z)) & close = close &
+     name(?z) = name(?5) & succeeds more(?l1,0,?n,con(?5),?l4,?t2),
+     [],
+     (fails name_token(name(?z)) \/ close <> close) &
+     succeeds term([name(?z),close|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+     [succeeds name_token(name(?z)) by sld,
+      cases(fails name_token(name(?z)),
+       [],
+       close <> close,
+       [],
+       ff)],
+     succeeds more(?l1,0,?n,con(?z),?l4,?t2)),
+    succeeds more(?l1,0,?n,con(?z),?l4,?t2)),
+   ?l4 = error(term_begin / [open(?u),name(?z),close|?l1]) & ?t2 = error &
+   fails term_begin([open(?u),name(?z),close|?l1]),
+   [succeeds term_begin([open(?u),name(?z),close|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,con(?z),?l4,?t2))],
+ succeeds more(?l1,0,?n,con(?z),?l4,?t2))
+).
+
+:- lemma(term:success:open:more,
+all [x,y,l1,n,l4,t2,u]: succeeds term([open(?u),?x,?y|?l1],?n,?l4,?t2) &
+ (fails name_token(?x) \/ ?y <> close) => 
+ (ex [l2,l3,t1]: succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+   succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2)),
+assume(succeeds term([open(?u),?x,?y|?l1],?n,?l4,?t2) &
+ (fails name_token(?x) \/ ?y <> close),
+ [def succeeds term([open(?u),?x,?y|?l1],?n,?l4,?t2) by completion,
+  cases(
+   ex [z,l2,t1,l3]: succeeds name_token(?x) & ?y = close & ?x = name(?z) &
+    succeeds more(?l1,0,?n,con(?z),?l4,?t2) \/
+    (fails name_token(?x) \/ ?y <> close) &
+    succeeds term([?x,?y|?l1],1200,?l2,?t1) & 
+    succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+   exist([z,l2,t1,l3],
+    succeeds name_token(?x) & ?y = close & ?x = name(?z) &
+    succeeds more(?l1,0,?n,con(?z),?l4,?t2) \/
+    (fails name_token(?x) \/ ?y <> close) &
+    succeeds term([?x,?y|?l1],1200,?l2,?t1) & 
+    succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+    cases(succeeds name_token(?x) & ?y = close & ?x = name(?z) &
+     succeeds more(?l1,0,?n,con(?z),?l4,?t2),
+     cases(fails name_token(?x),
+      [],
+      ?y <> close,
+      [],
+      ff),
+     (fails name_token(?x) \/ ?y <> close) &
+     succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2),
+     [],
+     ex [l2,l3,t1]: succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+      succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2)),
+    ex [l2,l3,t1]: succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2)),
+   ?l4 = error(term_begin / [open(?u),?x,?y|?l1]) & ?t2 = error &
+   fails term_begin([open(?u),?x,?y|?l1]),
+   [succeeds term_begin([open(?u),?x,?y|?l1]) by sld,
+    ff],
+   ex [l2,l3,t1]: succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2))],
+ ex [l2,l3,t1]: succeeds term([?x,?y|?l1],1200,?l2,?t1) &
+  succeeds expect(?l2,close,?l3) & succeeds more(?l3,0,?n,?t1,?l4,?t2))
+).
+
+:- lemma(term:success:open_curly:close_curly,
+all [l1,n,l4,t2]: succeeds term([open_curly,close_curly|?l1],?n,?l4,?t2) =>
+ succeeds more(?l1,0,?n,con('{}'),?l4,?t2),
+assume(succeeds term([open_curly,close_curly|?l1],?n,?l4,?t2),
+ [def succeeds term([open_curly,close_curly|?l1],?n,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3]: close_curly = close_curly &
+    succeeds more(?l1,0,?n,con('{}'),?l4,?t2) \/
+    close_curly <> close_curly &
+    succeeds term([close_curly|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close_curly,?l3) &
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+   exist([l2,t1,l3],
+    close_curly = close_curly & succeeds more(?l1,0,?n,con('{}'),?l4,?t2) \/
+    close_curly <> close_curly &
+    succeeds term([close_curly|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close_curly,?l3) &
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+    cases(close_curly = close_curly &
+     succeeds more(?l1,0,?n,con('{}'),?l4,?t2),
+     [],
+     close_curly <> close_curly &
+     succeeds term([close_curly|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close_curly,?l3) &
+     succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+     [],
+     succeeds more(?l1,0,?n,con('{}'),?l4,?t2)),
+    succeeds more(?l1,0,?n,con('{}'),?l4,?t2)),
+   ?l4 = error(term_begin / [open_curly,close_curly|?l1]) & ?t2 = error &
+   fails term_begin([open_curly,close_curly|?l1]),
+   [succeeds term_begin([open_curly,close_curly|?l1]) by sld,
+    ff],
+   succeeds more(?l1,0,?n,con('{}'),?l4,?t2))],
+ succeeds more(?l1,0,?n,con('{}'),?l4,?t2))
+).
+
+:- lemma(term:success:open_curly:more,
+all [y,l1,n,l4,t2]: succeeds term([open_curly,?y|?l1],?n,?l4,?t2) &
+ ?y <> close_curly => 
+ (ex [l2,l3,t1]: succeeds term([?y|?l1],1200,?l2,?t1) &
+   succeeds expect(?l2,close_curly,?l3) &
+   succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2)),
+assume(succeeds term([open_curly,?y|?l1],?n,?l4,?t2) & ?y <> close_curly,
+ [def succeeds term([open_curly,?y|?l1],?n,?l4,?t2) by completion,
+  cases(
+   ex [l2,t1,l3]: ?y = close_curly & 
+    succeeds more(?l1,0,?n,con('{}'),?l4,?t2) \/
+    ?y <> close_curly & succeeds term([?y|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close_curly,?l3) &
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+   exist([l2,t1,l3],
+    ?y = close_curly & succeeds more(?l1,0,?n,con('{}'),?l4,?t2) \/
+    ?y <> close_curly & succeeds term([?y|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close_curly,?l3) &
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+    cases(?y = close_curly & succeeds more(?l1,0,?n,con('{}'),?l4,?t2),
+     [],
+     ?y <> close_curly & succeeds term([?y|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close_curly,?l3) &
+     succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+     [],
+     ex [l2,l3,t1]: succeeds term([?y|?l1],1200,?l2,?t1) &
+      succeeds expect(?l2,close_curly,?l3) &
+      succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2)),
+    ex [l2,l3,t1]: succeeds term([?y|?l1],1200,?l2,?t1) &
+     succeeds expect(?l2,close_curly,?l3) &
+     succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2)),
+   ?l4 = error(term_begin / [open_curly,?y|?l1]) & ?t2 = error &
+   fails term_begin([open_curly,?y|?l1]),
+   [succeeds term_begin([open_curly,?y|?l1]) by sld,
+    ff],
+   ex [l2,l3,t1]: succeeds term([?y|?l1],1200,?l2,?t1) &
+    succeeds expect(?l2,close_curly,?l3) &
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2))],
+ ex [l2,l3,t1]: succeeds term([?y|?l1],1200,?l2,?t1) &
+  succeeds expect(?l2,close_curly,?l3) &
+  succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2))
+).
+
+:- lemma(term:success:error,
+all [x,n,l,t]: succeeds term(error(?x),?n,?l,?t) => ?l = error(?x) &
+ ?t = error,
+assume(succeeds term(error(?x),?n,?l,?t),
+ [def succeeds term(error(?x),?n,?l,?t) by completion,
+  cases(?l = error(?x) & ?t = error,
+   [],
+   ?l = error(term_begin / error(?x)) & ?t = error &
+   fails term_begin(error(?x)),
+   [succeeds term_begin(error(?x)) by sld,
+    ff],
+   ?l = error(?x) & ?t = error)],
+ ?l = error(?x) & ?t = error)
+).
+
+:- lemma(term:success:term_begin,
+all [l1,n,l2,t]: succeeds term(?l1,?n,?l2,?t) & fails term_begin(?l1) => 
+ ?l2 = error(term_begin / ?l1) & ?t = error,
+assume(succeeds term(?l1,?n,?l2,?t) & fails term_begin(?l1),
+ [def succeeds term(?l1,?n,?l2,?t) by completion,
+  cases(
+   [case(
+     ex [x,0]: ?l1 = [variable(?x)|?0] &
+      succeeds more(?0,0,?n,variable(?x),?l2,?t),
+     exist([x,0],
+      ?l1 = [variable(?x)|?0] & succeeds more(?0,0,?n,variable(?x),?l2,?t),
+      [succeeds term_begin([variable(?x)|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [x,0]: ?l1 = [integer(?x)|?0] &
+      succeeds more(?0,0,?n,integer(?x),?l2,?t),
+     exist([x,0],
+      ?l1 = [integer(?x)|?0] & succeeds more(?0,0,?n,integer(?x),?l2,?t),
+      [succeeds term_begin([integer(?x)|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [x,0]: ?l1 = [float_number(?x)|?0] &
+      succeeds more(?0,0,?n,float_number(?x),?l2,?t),
+     exist([x,0],
+      ?l1 = [float_number(?x)|?0] &
+      succeeds more(?0,0,?n,float_number(?x),?l2,?t),
+      [succeeds term_begin([float_number(?x)|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [x,0]: ?l1 = [char_code_list(?x)|?0] &
+      succeeds more(?0,0,?n,char_code_list(?x),?l2,?t),
+     exist([x,0],
+      ?l1 = [char_code_list(?x)|?0] &
+      succeeds more(?0,0,?n,char_code_list(?x),?l2,?t),
+      [succeeds term_begin([char_code_list(?x)|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [x,y,0,1,t1,l3,ts,n2,n3]: ?l1 = [name(?x),?y|?0] &
+      (?y = open(nolayout) & succeeds one_arg(?0,?1,?t1) &
+       succeeds arg_seq(?1,?l3,?ts) &
+       succeeds more(?l3,0,?n,fun(?x,[?t1|?ts]),?l2,?t) \/
+       ?y <> open(nolayout) &
+       (succeeds prefix_op(?x) &
+        (?x = (-) & succeeds number_token(?y) &
+         succeeds minus_number_tree(?y,?t1) &
+         succeeds more(?0,0,?n,?t1,?l2,?t) \/
+         (?x <> (-) \/ fails number_token(?y)) &
+         succeeds prefix_prec(?x,?n2,?n3) &
+         (succeeds ?n2 =< ?n & succeeds term([?y|?0],?n3,?1,?t1) &
+          succeeds more(?1,?n2,?n,fun(?x,[?t1]),?l2,?t) \/
+          fails ?n2 =< ?n & ?l2 = error(prefix_prec / [name(?x),?y|?0]) &
+          ?t = error)) \/
+        fails prefix_op(?x) &
+        (succeeds symbol_op(?x) & ?l2 = error(operator / [name(?x),?y|?0]) &
+         ?t = error \/
+         fails symbol_op(?x) & succeeds more([?y|?0],0,?n,con(?x),?l2,?t)))),
+     exist([x,y,0,1,t1,l3,ts,n2,n3],
+      ?l1 = [name(?x),?y|?0] &
+      (?y = open(nolayout) & succeeds one_arg(?0,?1,?t1) &
+       succeeds arg_seq(?1,?l3,?ts) &
+       succeeds more(?l3,0,?n,fun(?x,[?t1|?ts]),?l2,?t) \/
+       ?y <> open(nolayout) &
+       (succeeds prefix_op(?x) &
+        (?x = (-) & succeeds number_token(?y) &
+         succeeds minus_number_tree(?y,?t1) &
+         succeeds more(?0,0,?n,?t1,?l2,?t) \/
+         (?x <> (-) \/ fails number_token(?y)) &
+         succeeds prefix_prec(?x,?n2,?n3) &
+         (succeeds ?n2 =< ?n & succeeds term([?y|?0],?n3,?1,?t1) &
+          succeeds more(?1,?n2,?n,fun(?x,[?t1]),?l2,?t) \/
+          fails ?n2 =< ?n & ?l2 = error(prefix_prec / [name(?x),?y|?0]) &
+          ?t = error)) \/
+        fails prefix_op(?x) &
+        (succeeds symbol_op(?x) & ?l2 = error(operator / [name(?x),?y|?0]) &
+         ?t = error \/
+         fails symbol_op(?x) & succeeds more([?y|?0],0,?n,con(?x),?l2,?t)))),
+      [succeeds term_begin([name(?x),?y|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [y,0,2,t1,l3,t2]: ?l1 = [open_list,?y|?0] &
+      (?y = close_list & succeeds more(?0,0,?n,con([]),?l2,?t) \/
+       ?y <> close_list & succeeds one_arg([?y|?0],?2,?t1) &
+       succeeds list_tail(?2,?l3,?t2) &
+       succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l2,?t)),
+     exist([y,0,2,t1,l3,t2],
+      ?l1 = [open_list,?y|?0] &
+      (?y = close_list & succeeds more(?0,0,?n,con([]),?l2,?t) \/
+       ?y <> close_list & succeeds one_arg([?y|?0],?2,?t1) &
+       succeeds list_tail(?2,?l3,?t2) &
+       succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l2,?t)),
+      [succeeds term_begin([open_list,?y|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [0,x,y,1,z,3,t1,l3]: ?l1 = [open(?0),?x,?y|?1] &
+      (succeeds name_token(?x) & ?y = close & ?x = name(?z) &
+       succeeds more(?1,0,?n,con(?z),?l2,?t) \/
+       (fails name_token(?x) \/ ?y <> close) &
+       succeeds term([?x,?y|?1],1200,?3,?t1) & 
+       succeeds expect(?3,close,?l3) & succeeds more(?l3,0,?n,?t1,?l2,?t)),
+     exist([0,x,y,1,z,3,t1,l3],
+      ?l1 = [open(?0),?x,?y|?1] &
+      (succeeds name_token(?x) & ?y = close & ?x = name(?z) &
+       succeeds more(?1,0,?n,con(?z),?l2,?t) \/
+       (fails name_token(?x) \/ ?y <> close) &
+       succeeds term([?x,?y|?1],1200,?3,?t1) & 
+       succeeds expect(?3,close,?l3) & succeeds more(?l3,0,?n,?t1,?l2,?t)),
+      [succeeds term_begin([open(?0),?x,?y|?1]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(
+     ex [y,0,2,t1,l3]: ?l1 = [open_curly,?y|?0] &
+      (?y = close_curly & succeeds more(?0,0,?n,con('{}'),?l2,?t) \/
+       ?y <> close_curly & succeeds term([?y|?0],1200,?2,?t1) &
+       succeeds expect(?2,close_curly,?l3) &
+       succeeds more(?l3,0,?n,fun('{}',[?t1]),?l2,?t)),
+     exist([y,0,2,t1,l3],
+      ?l1 = [open_curly,?y|?0] &
+      (?y = close_curly & succeeds more(?0,0,?n,con('{}'),?l2,?t) \/
+       ?y <> close_curly & succeeds term([?y|?0],1200,?2,?t1) &
+       succeeds expect(?2,close_curly,?l3) &
+       succeeds more(?l3,0,?n,fun('{}',[?t1]),?l2,?t)),
+      [succeeds term_begin([open_curly,?y|?0]) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(ex x: ?l1 = error(?x) & ?l2 = error(?x) & ?t = error,
+     exist(x,
+      ?l1 = error(?x) & ?l2 = error(?x) & ?t = error,
+      [succeeds term_begin(error(?x)) by sld,
+       succeeds term_begin(?l1),
+       ff],
+      ?l2 = error(term_begin / ?l1) & ?t = error)),
+    case(?l2 = error(term_begin / ?l1) & ?t = error & fails term_begin(?l1),
+     [])],
+   ?l2 = error(term_begin / ?l1) & ?t = error)],
+ ?l2 = error(term_begin / ?l1) & ?t = error)
+).
+
+:- lemma(one_arg:succees:name_token,
+all [y,l1,l2,t,z]: succeeds one_arg([name(?z),?y|?l1],?l2,?t) &
+ succeeds sep_token(?y) => ?l2 = [?y|?l1] & ?t = con(?z),
+assume(succeeds one_arg([name(?z),?y|?l1],?l2,?t) & succeeds sep_token(?y),
+ [succeeds name_token(name(?z)) by sld,
+  def succeeds one_arg([name(?z),?y|?l1],?l2,?t) by completion,
+  exist(4,
+   succeeds name_token(name(?z)) & succeeds sep_token(?y) &
+   name(?z) = name(?4) & ?l2 = [?y|?l1] & ?t = con(?4) \/
+   (fails name_token(name(?z)) \/ fails sep_token(?y)) &
+   succeeds term([name(?z),?y|?l1],999,?l2,?t),
+   cases(succeeds name_token(name(?z)) & succeeds sep_token(?y) &
+    name(?z) = name(?4) & ?l2 = [?y|?l1] & ?t = con(?4),
+    [],
+    (fails name_token(name(?z)) \/ fails sep_token(?y)) &
+    succeeds term([name(?z),?y|?l1],999,?l2,?t),
+    cases(fails name_token(name(?z)),
+     [],
+     fails sep_token(?y),
+     [],
+     ff),
+    ?l2 = [?y|?l1] & ?t = con(?z)),
+   ?l2 = [?y|?l1] & ?t = con(?z))],
+ ?l2 = [?y|?l1] & ?t = con(?z))
+).
+
+:- lemma(one_arg:success:term,
+all [x,y,l1,l2,t]: succeeds one_arg([?x,?y|?l1],?l2,?t) &
+ (fails name_token(?x) \/ fails sep_token(?y)) => 
+ succeeds term([?x,?y|?l1],999,?l2,?t),
+assume(succeeds one_arg([?x,?y|?l1],?l2,?t) &
+ (fails name_token(?x) \/ fails sep_token(?y)),
+ [def succeeds one_arg([?x,?y|?l1],?l2,?t) by completion,
+  exist(z,
+   succeeds name_token(?x) & succeeds sep_token(?y) & ?x = name(?z) &
+   ?l2 = [?y|?l1] & ?t = con(?z) \/
+   (fails name_token(?x) \/ fails sep_token(?y)) &
+   succeeds term([?x,?y|?l1],999,?l2,?t),
+   cases(succeeds name_token(?x) & succeeds sep_token(?y) & ?x = name(?z) &
+    ?l2 = [?y|?l1] & ?t = con(?z),
+    cases(fails name_token(?x),
+     [],
+     fails sep_token(?y),
+     [],
+     ff),
+    (fails name_token(?x) \/ fails sep_token(?y)) &
+    succeeds term([?x,?y|?l1],999,?l2,?t),
+    [],
+    succeeds term([?x,?y|?l1],999,?l2,?t)),
+   succeeds term([?x,?y|?l1],999,?l2,?t))],
+ succeeds term([?x,?y|?l1],999,?l2,?t))
+).
+
+:- lemma(arg_seq:success:close,
+all [x,l1,l3,ts2]: succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x = close => 
+ ?l3 = ?l1 & ?ts2 = [],
+assume(succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x = close,
+ [def succeeds arg_seq([?x|?l1],?l3,?ts2) by completion,
+  exist([l2,t,ts1],
+   ?x = close & ?l3 = ?l1 & ?ts2 = [] \/
+   ?x <> close &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+    succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+    ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+   cases(?x = close & ?l3 = ?l1 & ?ts2 = [],
+    [],
+    ?x <> close &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+     ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+    [],
+    ?l3 = ?l1 & ?ts2 = []),
+   ?l3 = ?l1 & ?ts2 = [])],
+ ?l3 = ?l1 & ?ts2 = [])
+).
+
+:- lemma(arg_seq:success:comma,
+all [x,l1,l3,ts2]: succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x <> close &
+ ?x = comma => 
+ (ex [l2,t,ts1]: succeeds one_arg(?l1,?l2,?t) &
+   succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1]),
+assume(succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x <> close & ?x = comma,
+ [def succeeds arg_seq([?x|?l1],?l3,?ts2) by completion,
+  exist([l2,t,ts1],
+   ?x = close & ?l3 = ?l1 & ?ts2 = [] \/
+   ?x <> close &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+    succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+    ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+   cases(?x = close & ?l3 = ?l1 & ?ts2 = [],
+    [],
+    ?x <> close &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+     ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+    cases(?x = comma & succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1],
+     [],
+     ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error,
+     [],
+     ex [l2,t,ts1]: succeeds one_arg(?l1,?l2,?t) &
+      succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1]),
+    ex [l2,t,ts1]: succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1]),
+   ex [l2,t,ts1]: succeeds one_arg(?l1,?l2,?t) &
+    succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1])],
+ ex [l2,t,ts1]: succeeds one_arg(?l1,?l2,?t) &
+  succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1])
+).
+
+:- lemma(arg_seq:success:error,
+all [x,l1,l3,ts2]: succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x <> close &
+ ?x <> comma => ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error,
+assume(succeeds arg_seq([?x|?l1],?l3,?ts2) & ?x <> close & ?x <> comma,
+ [def succeeds arg_seq([?x|?l1],?l3,?ts2) by completion,
+  exist([l2,t,ts1],
+   ?x = close & ?l3 = ?l1 & ?ts2 = [] \/
+   ?x <> close &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+    succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+    ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+   cases(?x = close & ?l3 = ?l1 & ?ts2 = [],
+    [],
+    ?x <> close &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1] \/
+     ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+    cases(?x = comma & succeeds one_arg(?l1,?l2,?t) &
+     succeeds arg_seq(?l2,?l3,?ts1) & ?ts2 = [?t|?ts1],
+     [],
+     ?x <> comma & ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error,
+     [],
+     ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+    ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error),
+   ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error)],
+ ?l3 = error(arg_seq / [?x|?l1]) & ?ts2 = error)
+).
+
+:- lemma(list_tail:success:close_list,
+all [x,l1,l3,t3]: succeeds list_tail([?x|?l1],?l3,?t3) & ?x = close_list =>
+ ?l3 = ?l1 & ?t3 = con([]),
+assume(succeeds list_tail([?x|?l1],?l3,?t3) & ?x = close_list,
+ [def succeeds list_tail([?x|?l1],?l3,?t3) by completion,
+  exist([l2,t1,t2],
+   ?x = close_list & ?l3 = ?l1 & ?t3 = con([]) \/
+   ?x <> close_list &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+    ?x <> comma &
+    (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+     succeeds expect(?l2,close_list,?l3) \/
+     ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)),
+   cases(?x = close_list & ?l3 = ?l1 & ?t3 = con([]),
+    [],
+    ?x <> close_list &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error)),
+    [],
+    ?l3 = ?l1 & ?t3 = con([])),
+   ?l3 = ?l1 & ?t3 = con([]))],
+ ?l3 = ?l1 & ?t3 = con([]))
+).
+
+:- lemma(list_tail:success:comma,
+all [x,l1,l3,t3]: succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list &
+ ?x = comma => 
+ (ex [l2,t1,t2]: succeeds one_arg(?l1,?l2,?t1) &
+   succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2])),
+assume(succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list & ?x = comma,
+ [def succeeds list_tail([?x|?l1],?l3,?t3) by completion,
+  exist([l2,t1,t2],
+   ?x = close_list & ?l3 = ?l1 & ?t3 = con([]) \/
+   ?x <> close_list &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+    ?x <> comma &
+    (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+     succeeds expect(?l2,close_list,?l3) \/
+     ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)),
+   cases(?x = close_list & ?l3 = ?l1 & ?t3 = con([]),
+    [],
+    ?x <> close_list &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error)),
+    cases(?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]),
+     [],
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error),
+     [],
+     ex [l2,t1,t2]: succeeds one_arg(?l1,?l2,?t1) &
+      succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2])),
+    ex [l2,t1,t2]: succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2])),
+   ex [l2,t1,t2]: succeeds one_arg(?l1,?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]))],
+ ex [l2,t1,t2]: succeeds one_arg(?l1,?l2,?t1) &
+  succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]))
+).
+
+:- lemma(list_tail:success:head_tail_sep,
+all [x,l1,l3,t3]: succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list &
+ ?x <> comma & ?x = head_tail_sep => 
+ (ex l2: succeeds one_arg(?l1,?l2,?t3) & 
+   succeeds expect(?l2,close_list,?l3)),
+assume(succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list & 
+ ?x <> comma & ?x = head_tail_sep,
+ [def succeeds list_tail([?x|?l1],?l3,?t3) by completion,
+  exist([l2,t1,t2],
+   ?x = close_list & ?l3 = ?l1 & ?t3 = con([]) \/
+   ?x <> close_list &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+    ?x <> comma &
+    (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+     succeeds expect(?l2,close_list,?l3) \/
+     ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)),
+   cases(?x = close_list & ?l3 = ?l1 & ?t3 = con([]),
+    [],
+    ?x <> close_list &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error)),
+    cases(?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]),
+     [],
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error),
+     cases(?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3),
+      [],
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error,
+      [],
+      ex l2: succeeds one_arg(?l1,?l2,?t3) &
+       succeeds expect(?l2,close_list,?l3)),
+     ex l2: succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3)),
+    ex l2: succeeds one_arg(?l1,?l2,?t3) &
+     succeeds expect(?l2,close_list,?l3)),
+   ex l2: succeeds one_arg(?l1,?l2,?t3) &
+    succeeds expect(?l2,close_list,?l3))],
+ ex l2: succeeds one_arg(?l1,?l2,?t3) & succeeds expect(?l2,close_list,?l3))
+).
+
+:- lemma(list_tail:success:error,
+all [x,l1,l3,t3]: succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list &
+ ?x <> comma & ?x <> head_tail_sep => ?l3 = error(tail_begin / [?x|?l1]) &
+ ?t3 = error,
+assume(succeeds list_tail([?x|?l1],?l3,?t3) & ?x <> close_list & 
+ ?x <> comma & ?x <> head_tail_sep,
+ [def succeeds list_tail([?x|?l1],?l3,?t3) by completion,
+  exist([l2,t1,t2],
+   ?x = close_list & ?l3 = ?l1 & ?t3 = con([]) \/
+   ?x <> close_list &
+   (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+    succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+    ?x <> comma &
+    (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+     succeeds expect(?l2,close_list,?l3) \/
+     ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)),
+   cases(?x = close_list & ?l3 = ?l1 & ?t3 = con([]),
+    [],
+    ?x <> close_list &
+    (?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]) \/
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error)),
+    cases(?x = comma & succeeds one_arg(?l1,?l2,?t1) &
+     succeeds list_tail(?l2,?l3,?t2) & ?t3 = fun('.',[?t1,?t2]),
+     [],
+     ?x <> comma &
+     (?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3) \/
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error),
+     cases(?x = head_tail_sep & succeeds one_arg(?l1,?l2,?t3) &
+      succeeds expect(?l2,close_list,?l3),
+      [],
+      ?x <> head_tail_sep & ?l3 = error(tail_begin / [?x|?l1]) & 
+      ?t3 = error,
+      [],
+      ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error),
+     ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error),
+    ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error),
+   ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)],
+ ?l3 = error(tail_begin / [?x|?l1]) & ?t3 = error)
+).
+
+:- lemma(more:success:infix_op:term,
+all [x,l1,l3,n1,n2,n3,n4,n5,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & succeeds infix_op(?x) &
+ succeeds infix_prec(?x,?n3,?n4,?n5) & succeeds ?n3 =< ?n2 &
+ succeeds ?n1 =< ?n4 & succeeds consistent_op => 
+ (ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+   succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)),
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+ succeeds ?n3 =< ?n2 & succeeds ?n1 =< ?n4 & succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,2,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [?0 = ?n3 & ?1 = ?n4 & ?2 = ?n5 by lemma(infix_prec:function),
+      succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      cases(succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+        ?t3 = error),
+       cases(succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3),
+        [],
+        fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+        ?t3 = error,
+        [],
+        ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+         succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)),
+       fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       [],
+       ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3))],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)),
+    ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+     succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [succeeds more_begin([name(?x)|?l1]) by sld,
+    ff],
+   ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+    succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3))],
+ ex [l2,t2]: succeeds term(?l1,?n5,?l2,?t2) &
+  succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3))
+).
+
+:- lemma(more:success:infix_op:error,
+all [x,l1,l3,n1,n2,n3,n4,n5,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & succeeds infix_op(?x) &
+ succeeds infix_prec(?x,?n3,?n4,?n5) & succeeds ?n3 =< ?n2 &
+ fails ?n1 =< ?n4 & succeeds consistent_op => 
+ ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error,
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+ succeeds ?n3 =< ?n2 & fails ?n1 =< ?n4 & succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,2,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [?0 = ?n3 & ?1 = ?n4 & ?2 = ?n5 by lemma(infix_prec:function),
+      succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      cases(succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+        ?t3 = error),
+       cases(succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3),
+        [],
+        fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+        ?t3 = error,
+        [],
+        ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error),
+       fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       [],
+       ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error)],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error),
+    ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [succeeds more_begin([name(?x)|?l1]) by sld,
+    ff],
+   ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error)],
+ ?l3 = error(more_infix_prec / [name(?x)|?l1]) & ?t3 = error)
+).
+
+:- lemma(more:success:infix_op:nothing,
+all [x,l1,l3,n1,n2,n3,n4,n5,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & succeeds infix_op(?x) &
+ succeeds infix_prec(?x,?n3,?n4,?n5) & fails ?n3 =< ?n2 &
+ succeeds consistent_op => ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+ fails ?n3 =< ?n2 & succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,2,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?2) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?2,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [?0 = ?n3 & ?1 = ?n4 & ?2 = ?n5 by lemma(infix_prec:function),
+      succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      cases(succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+        ?t3 = error),
+       [],
+       fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       [],
+       ?l3 = [name(?x)|?l1] & ?t3 = ?t1)],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [],
+   ?l3 = [name(?x)|?l1] & ?t3 = ?t1)],
+ ?l3 = [name(?x)|?l1] & ?t3 = ?t1)
+).
+
+:- lemma(more:success:postfix_op:term,
+all [x,l1,l3,n1,n2,n3,n4,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & fails infix_op(?x) &
+ succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+ succeeds ?n3 =< ?n2 & succeeds ?n1 =< ?n4 & succeeds consistent_op => 
+ succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3),
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ fails infix_op(?x) & succeeds postfix_op(?x) &
+ succeeds postfix_prec(?x,?n3,?n4) & succeeds ?n3 =< ?n2 &
+ succeeds ?n1 =< ?n4 & succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,n5,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     cases(succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+      [?0 = ?n3 & ?1 = ?n4 by lemma(postfix_prec:function),
+       succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 &
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       cases(succeeds ?n3 =< ?n2 &
+        (succeeds ?n1 =< ?n4 &
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+         fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+         ?t3 = error),
+        cases(succeeds ?n1 =< ?n4 &
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3),
+         [],
+         fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+         ?t3 = error,
+         [],
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)),
+        fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+        [],
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3))],
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      [],
+      succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)),
+     succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)),
+    succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [succeeds more_begin([name(?x)|?l1]) by sld,
+    ff],
+   succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3))],
+ succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3))
+).
+
+:- lemma(more:success:postfix_op:error,
+all [x,l1,l3,n1,n2,n3,n4,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & fails infix_op(?x) &
+ succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+ succeeds ?n3 =< ?n2 & fails ?n1 =< ?n4 & succeeds consistent_op => 
+ ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error,
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ fails infix_op(?x) & succeeds postfix_op(?x) &
+ succeeds postfix_prec(?x,?n3,?n4) & succeeds ?n3 =< ?n2 & fails ?n1 =< ?n4 &
+ succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,n5,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     cases(succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+      [?0 = ?n3 & ?1 = ?n4 by lemma(postfix_prec:function),
+       succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 &
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       cases(succeeds ?n3 =< ?n2 &
+        (succeeds ?n1 =< ?n4 &
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+         fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+         ?t3 = error),
+        cases(succeeds ?n1 =< ?n4 &
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3),
+         [],
+         fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+         ?t3 = error,
+         [],
+         ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error),
+        fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+        [],
+        ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error)],
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      [],
+      ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error),
+     ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error),
+    ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [succeeds more_begin([name(?x)|?l1]) by sld,
+    ff],
+   ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error)],
+ ?l3 = error(more_postfix_prec / [name(?x)|?l1]) & ?t3 = error)
+).
+
+:- lemma(more:success:postfix_op:nothing,
+all [x,l1,l3,n1,n2,n3,n4,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & fails infix_op(?x) &
+ succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+ fails ?n3 =< ?n2 & succeeds consistent_op => ?l3 = [name(?x)|?l1] &
+ ?t3 = ?t1,
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ fails infix_op(?x) & succeeds postfix_op(?x) &
+ succeeds postfix_prec(?x,?n3,?n4) & fails ?n3 =< ?n2 &
+ succeeds consistent_op,
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([0,1,n5,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+    (succeeds ?0 =< ?n2 &
+     (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?0,?1,?n5) &
+     (succeeds ?0 =< ?n2 &
+      (succeeds ?n1 =< ?1 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?0,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?1 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     cases(succeeds postfix_op(?x) & succeeds postfix_prec(?x,?0,?1) &
+      (succeeds ?0 =< ?n2 &
+       (succeeds ?n1 =< ?1 & 
+        succeeds more(?l1,?0,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?1 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?0 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+      [?0 = ?n3 & ?1 = ?n4 by lemma(postfix_prec:function),
+       succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 &
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+       cases(succeeds ?n3 =< ?n2 &
+        (succeeds ?n1 =< ?n4 &
+         succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+         fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+         ?t3 = error),
+        [],
+        fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+        [],
+        ?l3 = [name(?x)|?l1] & ?t3 = ?t1)],
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      [],
+      ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [],
+   ?l3 = [name(?x)|?l1] & ?t3 = ?t1)],
+ ?l3 = [name(?x)|?l1] & ?t3 = ?t1)
+).
+
+:- lemma(more:success:nothing,
+all [x,l1,l3,n1,n2,n3,n4,t1,t3]: 
+ succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) & fails infix_op(?x) &
+ fails postfix_op(?x) => ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) &
+ fails infix_op(?x) & fails postfix_op(?x),
+ [def succeeds more([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [n3,n4,n5,l2,t2]: succeeds infix_op(?x) &
+    succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   exist([n3,n4,n5,l2,t2],
+    succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+    (succeeds ?n3 =< ?n2 &
+     (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+      succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+      ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+    fails infix_op(?x) &
+    (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 &
+       succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+     fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    cases(succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+     (succeeds ?n3 =< ?n2 &
+      (succeeds ?n1 =< ?n4 & succeeds term(?l1,?n5,?l2,?t2) &
+       succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/
+       fails ?n1 =< ?n4 & ?l3 = error(more_infix_prec / [name(?x)|?l1]) &
+       ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     [],
+     fails infix_op(?x) &
+     (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+      (succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 &
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1) \/
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     cases(succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+      (succeeds ?n3 =< ?n2 &
+       (succeeds ?n1 =< ?n4 &
+        succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/
+        fails ?n1 =< ?n4 & ?l3 = error(more_postfix_prec / [name(?x)|?l1]) &
+        ?t3 = error) \/ fails ?n3 =< ?n2 & ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+      [],
+      fails postfix_op(?x) & ?l3 = [name(?x)|?l1] & ?t3 = ?t1,
+      [],
+      ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+     ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+    ?l3 = [name(?x)|?l1] & ?t3 = ?t1),
+   ?l3 = [name(?x)|?l1] & ?t1 = ?t3 & fails more_begin([name(?x)|?l1]),
+   [succeeds more_begin([name(?x)|?l1]) by sld,
+    ff],
+   ?l3 = [name(?x)|?l1] & ?t3 = ?t1)],
+ ?l3 = [name(?x)|?l1] & ?t3 = ?t1)
+).
+
+:- lemma(more:success:comma:term,
+all [l1,n1,n2,t1,l3,t3]: succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) &
+ succeeds 1000 =< ?n2 & succeeds ?n1 =< 999 => 
+ (ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+   succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)),
+assume(succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) & 
+ succeeds 1000 =< ?n2 & succeeds ?n1 =< 999,
+ [def succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [l2,t2]: succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+   exist([l2,t2],
+    succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+    cases(succeeds 1000 =< ?n2 &
+     (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+      ?t3 = error),
+     cases(succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3),
+      [],
+      fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+      ?t3 = error,
+      [],
+      ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+       succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)),
+     fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+     [],
+     ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)),
+    ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)),
+   ?l3 = [comma|?l1] & ?t1 = ?t3 & fails more_begin([comma|?l1]),
+   [succeeds more_begin([comma|?l1]) by sld,
+    ff],
+   ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+    succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3))],
+ ex [l2,t2]: succeeds term(?l1,1000,?l2,?t2) &
+  succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3))
+).
+
+:- lemma(more:success:comma:error,
+all [l1,n1,n2,t1,l3,t3]: succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) &
+ succeeds 1000 =< ?n2 & fails ?n1 =< 999 => 
+ ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error,
+assume(succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) & 
+ succeeds 1000 =< ?n2 & fails ?n1 =< 999,
+ [def succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [l2,t2]: succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+   exist([l2,t2],
+    succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+    cases(succeeds 1000 =< ?n2 &
+     (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+      ?t3 = error),
+     cases(succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3),
+      [],
+      fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+      ?t3 = error,
+      [],
+      ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error),
+     fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+     [],
+     ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error),
+    ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error),
+   ?l3 = [comma|?l1] & ?t1 = ?t3 & fails more_begin([comma|?l1]),
+   [succeeds more_begin([comma|?l1]) by sld,
+    ff],
+   ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error)],
+ ?l3 = error(more_comma_as_infix / [comma|?l1]) & ?t3 = error)
+).
+
+:- lemma(more:success:comma:nothing,
+all [l1,n1,n2,t1,l3,t3]: succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) &
+ fails 1000 =< ?n2 => ?l3 = [comma|?l1] & ?t3 = ?t1,
+assume(succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) & fails 1000 =< ?n2,
+ [def succeeds more([comma|?l1],?n1,?n2,?t1,?l3,?t3) by completion,
+  cases(
+   ex [l2,t2]: succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+   exist([l2,t2],
+    succeeds 1000 =< ?n2 &
+    (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+     fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+     ?t3 = error) \/ fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+    cases(succeeds 1000 =< ?n2 &
+     (succeeds ?n1 =< 999 & succeeds term(?l1,1000,?l2,?t2) &
+      succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/
+      fails ?n1 =< 999 & ?l3 = error(more_comma_as_infix / [comma|?l1]) &
+      ?t3 = error),
+     [],
+     fails 1000 =< ?n2 & ?l3 = [comma|?l1] & ?t3 = ?t1,
+     [],
+     ?l3 = [comma|?l1] & ?t3 = ?t1),
+    ?l3 = [comma|?l1] & ?t3 = ?t1),
+   ?l3 = [comma|?l1] & ?t1 = ?t3 & fails more_begin([comma|?l1]),
+   [],
+   ?l3 = [comma|?l1] & ?t3 = ?t1)],
+ ?l3 = [comma|?l1] & ?t3 = ?t1)
+).
+
+:- lemma(more:success:more_begin,
+all [l1,l2,n1,n2,t1,t2]: succeeds more(?l1,?n1,?n2,?t1,?l2,?t2) &
+ fails more_begin(?l1) => ?l2 = ?l1 & ?t2 = ?t1,
+assume(succeeds more(?l1,?n1,?n2,?t1,?l2,?t2) & fails more_begin(?l1),
+ [def succeeds more(?l1,?n1,?n2,?t1,?l2,?t2) by completion,
+  cases(
+   [case(
+     ex [x,0,n3,n4,n5,4,5]: ?l1 = [name(?x)|?0] &
+      (succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+       (succeeds ?n3 =< ?n2 &
+        (succeeds ?n1 =< ?n4 & succeeds term(?0,?n5,?4,?5) &
+         succeeds more(?4,?n3,?n2,fun(?x,[?t1,?5]),?l2,?t2) \/
+         fails ?n1 =< ?n4 & ?l2 = error(more_infix_prec / [name(?x)|?0]) &
+         ?t2 = error) \/ fails ?n3 =< ?n2 & ?l2 = [name(?x)|?0] & ?t2 = ?t1) \/
+       fails infix_op(?x) &
+       (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+        (succeeds ?n3 =< ?n2 &
+         (succeeds ?n1 =< ?n4 &
+          succeeds more(?0,?n3,?n2,fun(?x,[?t1]),?l2,?t2) \/
+          fails ?n1 =< ?n4 & ?l2 = error(more_postfix_prec / [name(?x)|?0]) &
+          ?t2 = error) \/ fails ?n3 =< ?n2 & ?l2 = [name(?x)|?0] & 
+         ?t2 = ?t1) \/
+        fails postfix_op(?x) & ?l2 = [name(?x)|?0] & ?t2 = ?t1)),
+     exist([x,0,n3,n4,n5,4,5],
+      ?l1 = [name(?x)|?0] &
+      (succeeds infix_op(?x) & succeeds infix_prec(?x,?n3,?n4,?n5) &
+       (succeeds ?n3 =< ?n2 &
+        (succeeds ?n1 =< ?n4 & succeeds term(?0,?n5,?4,?5) &
+         succeeds more(?4,?n3,?n2,fun(?x,[?t1,?5]),?l2,?t2) \/
+         fails ?n1 =< ?n4 & ?l2 = error(more_infix_prec / [name(?x)|?0]) &
+         ?t2 = error) \/ fails ?n3 =< ?n2 & ?l2 = [name(?x)|?0] & ?t2 = ?t1) \/
+       fails infix_op(?x) &
+       (succeeds postfix_op(?x) & succeeds postfix_prec(?x,?n3,?n4) &
+        (succeeds ?n3 =< ?n2 &
+         (succeeds ?n1 =< ?n4 &
+          succeeds more(?0,?n3,?n2,fun(?x,[?t1]),?l2,?t2) \/
+          fails ?n1 =< ?n4 & ?l2 = error(more_postfix_prec / [name(?x)|?0]) &
+          ?t2 = error) \/ fails ?n3 =< ?n2 & ?l2 = [name(?x)|?0] & 
+         ?t2 = ?t1) \/
+        fails postfix_op(?x) & ?l2 = [name(?x)|?0] & ?t2 = ?t1)),
+      [succeeds more_begin([name(?x)|?0]) by sld,
+       succeeds more_begin(?l1),
+       ff],
+      ?l2 = ?l1 & ?t2 = ?t1)),
+    case(
+     ex [0,4,5]: ?l1 = [comma|?0] &
+      (succeeds 1000 =< ?n2 &
+       (succeeds ?n1 =< 999 & succeeds term(?0,1000,?4,?5) &
+        succeeds more(?4,1000,?n2,fun(',',[?t1,?5]),?l2,?t2) \/
+        fails ?n1 =< 999 & ?l2 = error(more_comma_as_infix / [comma|?0]) &
+        ?t2 = error) \/ fails 1000 =< ?n2 & ?l2 = [comma|?0] & ?t2 = ?t1),
+     exist([0,4,5],
+      ?l1 = [comma|?0] &
+      (succeeds 1000 =< ?n2 &
+       (succeeds ?n1 =< 999 & succeeds term(?0,1000,?4,?5) &
+        succeeds more(?4,1000,?n2,fun(',',[?t1,?5]),?l2,?t2) \/
+        fails ?n1 =< 999 & ?l2 = error(more_comma_as_infix / [comma|?0]) &
+        ?t2 = error) \/ fails 1000 =< ?n2 & ?l2 = [comma|?0] & ?t2 = ?t1),
+      [succeeds more_begin([comma|?0]) by sld,
+       succeeds more_begin(?l1),
+       ff],
+      ?l2 = ?l1 & ?t2 = ?t1)),
+    case(?l2 = ?l1 & ?t2 = ?t1 & fails more_begin(?l1),
+     [])],
+   ?l2 = ?l1 & ?t2 = ?t1)],
+ ?l2 = ?l1 & ?t2 = ?t1)
+).
+
+:- lemma(uniqueness,
+succeeds consistent_op => 
+(all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) => 
+  (all [f2,s]: succeeds term(?e1,?i,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+(all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => 
+  (all [f2,s]: succeeds one_arg(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+(all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+  (all [f2,ss]: succeeds arg_seq(?e1,?f2,?ss) => ?e2 = ?f2 & ?rs = ?ss)) &
+(all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+  (all [f2,s]: succeeds list_tail(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+(all [e1,i1,i2,r1,e2,r2]: succeeds more(?e1,?i1,?i2,?r1,?e2,?r2) => 
+  (all [f2,s2]: succeeds more(?e1,?i1,?i2,?r1,?f2,?s2) => ?e2 = ?f2 &
+    ?r2 = ?s2)),
+assume(succeeds consistent_op,
+ induction(
+  [all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) => 
+    (all [f2,s]: succeeds term(?e1,?i,?f2,?s) => ?e2 = ?f2 & ?r = ?s),
+   all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => 
+    (all [f2,s]: succeeds one_arg(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s),
+   all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+    (all [f2,ss]: succeeds arg_seq(?e1,?f2,?ss) => ?e2 = ?f2 & ?rs = ?ss),
+   all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+    (all [f2,s]: succeeds list_tail(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s),
+   all [e1,i1,i2,r1,e2,r2]: succeeds more(?e1,?i1,?i2,?r1,?e2,?r2) => 
+    (all [f2,s2]: succeeds more(?e1,?i1,?i2,?r1,?f2,?s2) => ?e2 = ?f2 &
+      ?r2 = ?s2)],
+  [step([x,l1,n,l2,t],
+    [all [f2,s2]: succeeds more(?l1,0,?n,variable(?x),?f2,?s2) => ?l2 = ?f2 &
+      ?t = ?s2,
+     succeeds more(?l1,0,?n,variable(?x),?l2,?t)],
+    assume(succeeds term([variable(?x)|?l1],?n,?f2,?s),
+     [succeeds more(?l1,0,?n,variable(?x),?f2,?s) by 
+       lemma(term:success:variable),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds term([variable(?x)|?l1],?n,?f2,?s) => ?l2 = ?f2 &
+     ?t = ?s),
+   step([x,l1,n,l2,t],
+    [all [f2,s2]: succeeds more(?l1,0,?n,integer(?x),?f2,?s2) => ?l2 = ?f2 &
+      ?t = ?s2,
+     succeeds more(?l1,0,?n,integer(?x),?l2,?t)],
+    assume(succeeds term([integer(?x)|?l1],?n,?f2,?s),
+     [succeeds more(?l1,0,?n,integer(?x),?f2,?s) by 
+       lemma(term:success:integer),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds term([integer(?x)|?l1],?n,?f2,?s) => ?l2 = ?f2 &
+     ?t = ?s),
+   step([x,l1,n,l2,t],
+    [all [f2,s2]: succeeds more(?l1,0,?n,float_number(?x),?f2,?s2) => 
+      ?l2 = ?f2 & ?t = ?s2,
+     succeeds more(?l1,0,?n,float_number(?x),?l2,?t)],
+    assume(succeeds term([float_number(?x)|?l1],?n,?f2,?s),
+     [succeeds more(?l1,0,?n,float_number(?x),?f2,?s) by 
+       lemma(term:success:float_number),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds term([float_number(?x)|?l1],?n,?f2,?s) => 
+     ?l2 = ?f2 & ?t = ?s),
+   step([x,l1,n,l2,t],
+    [all [f2,s2]: succeeds more(?l1,0,?n,char_code_list(?x),?f2,?s2) => 
+      ?l2 = ?f2 & ?t = ?s2,
+     succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t)],
+    assume(succeeds term([char_code_list(?x)|?l1],?n,?f2,?s),
+     [succeeds more(?l1,0,?n,char_code_list(?x),?f2,?s) by 
+       lemma(term:success:char_code_list),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds term([char_code_list(?x)|?l1],?n,?f2,?s) => 
+     ?l2 = ?f2 & ?t = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [all [f2,s]: succeeds one_arg(?l1,?f2,?s) => ?l2 = ?f2 & ?t1 = ?s,
+     all [f2,ss]: succeeds arg_seq(?l2,?f2,?ss) => ?l3 = ?f2 & ?ts = ?ss,
+     all [f2,s2]: succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?f2,?s2) => 
+      ?l4 = ?f2 & ?t2 = ?s2,
+     ?y = open(nolayout),
+     succeeds one_arg(?l1,?l2,?t1),
+     succeeds arg_seq(?l2,?l3,?ts),
+     succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2)],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [succeeds term([name(?x),open(nolayout)|?l1],?n1,?f2,?s),
+      ex [e2,e3,s1,ss]: succeeds one_arg(?l1,?e2,?s1) &
+       succeeds arg_seq(?e2,?e3,?ss) &
+       succeeds more(?e3,0,?n1,fun(?x,[?s1|?ss]),?f2,?s) by 
+       lemma(term:success:name:nolayout),
+      exist([e2,e3,s1,ss],
+       succeeds one_arg(?l1,?e2,?s1) & succeeds arg_seq(?e2,?e3,?ss) &
+       succeeds more(?e3,0,?n1,fun(?x,[?s1|?ss]),?f2,?s),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds arg_seq(?l2,?e3,?ss),
+        ?l3 = ?e3 & ?ts = ?ss,
+        succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?f2,?s),
+        ?l4 = ?f2 & ?t2 = ?s],
+       ?l4 = ?f2 & ?t2 = ?s)],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [all [f2,s2]: succeeds more(?l1,0,?n1,?t1,?f2,?s2) => ?l4 = ?f2 &
+      ?t2 = ?s2,
+     ?y <> open(nolayout),
+     succeeds prefix_op(?x),
+     ?x = (-),
+     succeeds number_token(?y),
+     succeeds minus_number_tree(?y,?t1),
+     succeeds more(?l1,0,?n1,?t1,?l4,?t2)],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [succeeds term([name(-),?y|?l1],?n1,?f2,?s),
+      ex r: succeeds minus_number_tree(?y,?r) &
+       succeeds more(?l1,0,?n1,?r,?f2,?s) by 
+       lemma(term:success:name:minus),
+      exist(r,
+       succeeds minus_number_tree(?y,?r) &
+       succeeds more(?l1,0,?n1,?r,?f2,?s),
+       [?t1 = ?r by lemma(minus_number_tree:uniqueness),
+        succeeds more(?l1,0,?n1,?t1,?f2,?s),
+        ?l4 = ?f2 & ?t2 = ?s],
+       ?l4 = ?f2 & ?t2 = ?s)],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [all [f2,s]: succeeds term([?y|?l1],?n3,?f2,?s) => ?l2 = ?f2 & ?t1 = ?s,
+     all [f2,s2]: succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?f2,?s2) => 
+      ?l4 = ?f2 & ?t2 = ?s2,
+     ?y <> open(nolayout),
+     succeeds prefix_op(?x),
+     ?x <> (-) \/ fails number_token(?y),
+     succeeds prefix_prec(?x,?n2,?n3),
+     succeeds ?n2 =< ?n1,
+     succeeds term([?y|?l1],?n3,?l2,?t1),
+     succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [ex [s1,e2]: succeeds term([?y|?l1],?n3,?e2,?s1) &
+       succeeds more(?e2,?n2,?n1,fun(?x,[?s1]),?f2,?s) by 
+       lemma(term:success:prefix),
+      exist([s1,e2],
+       succeeds term([?y|?l1],?n3,?e2,?s1) &
+       succeeds more(?e2,?n2,?n1,fun(?x,[?s1]),?f2,?s),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?f2,?s),
+        ?l4 = ?f2 & ?t2 = ?s],
+       ?l4 = ?f2 & ?t2 = ?s)],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [?y <> open(nolayout),
+     succeeds prefix_op(?x),
+     ?x <> (-) \/ fails number_token(?y),
+     succeeds prefix_prec(?x,?n2,?n3),
+     fails ?n2 =< ?n1,
+     ?l4 = error(prefix_prec / [name(?x),?y|?l1]),
+     ?t2 = error],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [?f2 = error(prefix_prec / [name(?x),?y|?l1]) & ?s = error by 
+       lemma(term:success:prefix:error),
+      ?l4 = ?f2 & ?t2 = ?s],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [?y <> open(nolayout),
+     fails prefix_op(?x),
+     succeeds symbol_op(?x),
+     ?l4 = error(operator / [name(?x),?y|?l1]),
+     ?t2 = error],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [?f2 = error(operator / [name(?x),?y|?l1]) & ?s = error by 
+       lemma(term:success:symbol_op),
+      ?l4 = ?f2 & ?t2 = ?s],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+    [all [f2,s2]: succeeds more([?y|?l1],0,?n1,con(?x),?f2,?s2) => 
+      ?l4 = ?f2 & ?t2 = ?s2,
+     ?y <> open(nolayout),
+     fails prefix_op(?x),
+     fails symbol_op(?x),
+     succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)],
+    assume(succeeds term([name(?x),?y|?l1],?n1,?f2,?s),
+     [succeeds more([?y|?l1],0,?n1,con(?x),?f2,?s) by 
+       lemma(term:success:more),
+      ?l4 = ?f2 & ?t2 = ?s],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([name(?x),?y|?l1],?n1,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([y,l1,n,l4,t3,l2,t1,l3,t2],
+    [all [f2,s2]: succeeds more(?l1,0,?n,con([]),?f2,?s2) => ?l4 = ?f2 &
+      ?t3 = ?s2,
+     ?y = close_list,
+     succeeds more(?l1,0,?n,con([]),?l4,?t3)],
+    assume(succeeds term([open_list,?y|?l1],?n,?f2,?s),
+     [succeeds term([open_list,close_list|?l1],?n,?f2,?s),
+      succeeds more(?l1,0,?n,con([]),?f2,?s) by 
+       lemma(term:success:open_list:close_list),
+      ?l4 = ?f2 & ?t3 = ?s],
+     ?l4 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds term([open_list,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t3 = ?s),
+   step([y,l1,n,l4,t3,l2,t1,l3,t2],
+    [all [f2,s]: succeeds one_arg([?y|?l1],?f2,?s) => ?l2 = ?f2 & ?t1 = ?s,
+     all [f2,s]: succeeds list_tail(?l2,?f2,?s) => ?l3 = ?f2 & ?t2 = ?s,
+     all [f2,s2]: succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?f2,?s2) => 
+      ?l4 = ?f2 & ?t3 = ?s2,
+     ?y <> close_list,
+     succeeds one_arg([?y|?l1],?l2,?t1),
+     succeeds list_tail(?l2,?l3,?t2),
+     succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3)],
+    assume(succeeds term([open_list,?y|?l1],?n,?f2,?s),
+     [ex [e2,e3,s1,s2]: succeeds one_arg([?y|?l1],?e2,?s1) &
+       succeeds list_tail(?e2,?e3,?s2) &
+       succeeds more(?e3,0,?n,fun('.',[?s1,?s2]),?f2,?s) by 
+       lemma(term:success:open_list:list_tail),
+      exist([e2,e3,s1,s2],
+       succeeds one_arg([?y|?l1],?e2,?s1) & succeeds list_tail(?e2,?e3,?s2) &
+       succeeds more(?e3,0,?n,fun('.',[?s1,?s2]),?f2,?s),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds list_tail(?l2,?e3,?s2),
+        ?l3 = ?e3 & ?t2 = ?s2,
+        succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?f2,?s),
+        ?l4 = ?f2 & ?t3 = ?s],
+       ?l4 = ?f2 & ?t3 = ?s)],
+     ?l4 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds term([open_list,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t3 = ?s),
+   step([0,x,y,l1,n,l4,t2,z,l2,t1,l3],
+    [all [f2,s2]: succeeds more(?l1,0,?n,con(?z),?f2,?s2) => ?l4 = ?f2 &
+      ?t2 = ?s2,
+     succeeds name_token(?x),
+     ?y = close,
+     ?x = name(?z),
+     succeeds more(?l1,0,?n,con(?z),?l4,?t2)],
+    assume(succeeds term([open(?0),?x,?y|?l1],?n,?f2,?s),
+     [succeeds term([open(?0),name(?z),close|?l1],?n,?f2,?s),
+      succeeds more(?l1,0,?n,con(?z),?f2,?s) by 
+       lemma(term:success:open:close),
+      ?l4 = ?f2 & ?t2 = ?s],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([open(?0),?x,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([0,x,y,l1,n,l4,t2,z,l2,t1,l3],
+    [all [f2,s]: succeeds term([?x,?y|?l1],1200,?f2,?s) => ?l2 = ?f2 &
+      ?t1 = ?s,
+     all [f2,s2]: succeeds more(?l3,0,?n,?t1,?f2,?s2) => ?l4 = ?f2 &
+      ?t2 = ?s2,
+     fails name_token(?x) \/ ?y <> close,
+     succeeds term([?x,?y|?l1],1200,?l2,?t1),
+     succeeds expect(?l2,close,?l3),
+     succeeds more(?l3,0,?n,?t1,?l4,?t2)],
+    assume(succeeds term([open(?0),?x,?y|?l1],?n,?f2,?s),
+     [ex [e2,e3,s1]: succeeds term([?x,?y|?l1],1200,?e2,?s1) &
+       succeeds expect(?e2,close,?e3) & succeeds more(?e3,0,?n,?s1,?f2,?s) by
+       lemma(term:success:open:more),
+      exist([e2,e3,s1],
+       succeeds term([?x,?y|?l1],1200,?e2,?s1) &
+       succeeds expect(?e2,close,?e3) & succeeds more(?e3,0,?n,?s1,?f2,?s),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds expect(?l2,close,?e3),
+        ?l3 = ?e3 by lemma(expect:uniqueness),
+        succeeds more(?l3,0,?n,?t1,?f2,?s),
+        ?l4 = ?f2 & ?t2 = ?s],
+       ?l4 = ?f2 & ?t2 = ?s)],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([open(?0),?x,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([y,l1,n,l4,t2,l2,t1,l3],
+    [all [f2,s2]: succeeds more(?l1,0,?n,con('{}'),?f2,?s2) => ?l4 = ?f2 &
+      ?t2 = ?s2,
+     ?y = close_curly,
+     succeeds more(?l1,0,?n,con('{}'),?l4,?t2)],
+    assume(succeeds term([open_curly,?y|?l1],?n,?f2,?s),
+     [succeeds more(?l1,0,?n,con('{}'),?f2,?s) by 
+       lemma(term:success:open_curly:close_curly),
+      ?l4 = ?f2 & ?t2 = ?s],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([open_curly,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([y,l1,n,l4,t2,l2,t1,l3],
+    [all [f2,s]: succeeds term([?y|?l1],1200,?f2,?s) => ?l2 = ?f2 & 
+      ?t1 = ?s,
+     all [f2,s2]: succeeds more(?l3,0,?n,fun('{}',[?t1]),?f2,?s2) => 
+      ?l4 = ?f2 & ?t2 = ?s2,
+     ?y <> close_curly,
+     succeeds term([?y|?l1],1200,?l2,?t1),
+     succeeds expect(?l2,close_curly,?l3),
+     succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2)],
+    assume(succeeds term([open_curly,?y|?l1],?n,?f2,?s),
+     [ex [e2,e3,s1]: succeeds term([?y|?l1],1200,?e2,?s1) &
+       succeeds expect(?e2,close_curly,?e3) &
+       succeeds more(?e3,0,?n,fun('{}',[?s1]),?f2,?s) by 
+       lemma(term:success:open_curly:more),
+      exist([e2,e3,s1],
+       succeeds term([?y|?l1],1200,?e2,?s1) &
+       succeeds expect(?e2,close_curly,?e3) &
+       succeeds more(?e3,0,?n,fun('{}',[?s1]),?f2,?s),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds expect(?l2,close_curly,?e3),
+        ?l3 = ?e3 by lemma(expect:uniqueness),
+        succeeds more(?l3,0,?n,fun('{}',[?t1]),?f2,?s),
+        ?l4 = ?f2 & ?t2 = ?s],
+       ?l4 = ?f2 & ?t2 = ?s)],
+     ?l4 = ?f2 & ?t2 = ?s),
+    all [f2,s]: succeeds term([open_curly,?y|?l1],?n,?f2,?s) => ?l4 = ?f2 &
+     ?t2 = ?s),
+   step([x,0],
+    [],
+    assume(succeeds term(error(?x),?0,?f2,?s),
+     [?f2 = error(?x) & ?s = error by lemma(term:success:error),
+      error(?x) = ?f2 & error = ?s],
+     error(?x) = ?f2 & error = ?s),
+    all [f2,s]: succeeds term(error(?x),?0,?f2,?s) => error(?x) = ?f2 &
+     error = ?s),
+   step([l,0],
+    [fails term_begin(?l)],
+    assume(succeeds term(?l,?0,?f2,?s),
+     [?f2 = error(term_begin / ?l) & ?s = error by 
+       lemma(term:success:term_begin),
+      error(term_begin / ?l) = ?f2 & error = ?s],
+     error(term_begin / ?l) = ?f2 & error = ?s),
+    all [f2,s]: succeeds term(?l,?0,?f2,?s) => error(term_begin / ?l) = ?f2 &
+     error = ?s),
+   step([x,y,l1,l2,t,z],
+    [succeeds name_token(?x),
+     succeeds sep_token(?y),
+     ?x = name(?z),
+     ?l2 = [?y|?l1],
+     ?t = con(?z)],
+    assume(succeeds one_arg([?x,?y|?l1],?f2,?s),
+     [?f2 = [?y|?l1] & ?s = con(?z) by 
+       lemma(one_arg:succees:name_token),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds one_arg([?x,?y|?l1],?f2,?s) => ?l2 = ?f2 & ?t = ?s),
+   step([x,y,l1,l2,t,z],
+    [all [f2,s]: succeeds term([?x,?y|?l1],999,?f2,?s) => ?l2 = ?f2 &
+      ?t = ?s,
+     fails name_token(?x) \/ fails sep_token(?y),
+     succeeds term([?x,?y|?l1],999,?l2,?t)],
+    assume(succeeds one_arg([?x,?y|?l1],?f2,?s),
+     [succeeds term([?x,?y|?l1],999,?f2,?s) by 
+       lemma(one_arg:success:term),
+      ?l2 = ?f2 & ?t = ?s],
+     ?l2 = ?f2 & ?t = ?s),
+    all [f2,s]: succeeds one_arg([?x,?y|?l1],?f2,?s) => ?l2 = ?f2 & ?t = ?s),
+   step([x],
+    [],
+    assume(succeeds one_arg([?x],?f2,?s),
+     [def succeeds one_arg([?x],?f2,?s) by completion,
+      error(arg / [?x]) = ?f2 & error = ?s],
+     error(arg / [?x]) = ?f2 & error = ?s),
+    all [f2,s]: succeeds one_arg([?x],?f2,?s) => error(arg / [?x]) = ?f2 &
+     error = ?s),
+   step([],
+    [],
+    assume(succeeds one_arg([],?f2,?s),
+     [def succeeds one_arg([],?f2,?s) by completion,
+      error(arg / []) = ?f2 & error = ?s],
+     error(arg / []) = ?f2 & error = ?s),
+    all [f2,s]: succeeds one_arg([],?f2,?s) => error(arg / []) = ?f2 &
+     error = ?s),
+   step([x],
+    [],
+    assume(succeeds one_arg(error(?x),?f2,?s),
+     [def succeeds one_arg(error(?x),?f2,?s) by completion,
+      error(?x) = ?f2 & error = ?s],
+     error(?x) = ?f2 & error = ?s),
+    all [f2,s]: succeeds one_arg(error(?x),?f2,?s) => error(?x) = ?f2 &
+     error = ?s),
+   step([x,l1,l3,ts2,l2,t,ts1],
+    [?x = close,
+     ?l3 = ?l1,
+     ?ts2 = []],
+    assume(succeeds arg_seq([?x|?l1],?f2,?ss),
+     [?f2 = ?l1 & ?ss = [] by lemma(arg_seq:success:close),
+      ?l3 = ?f2 & ?ts2 = ?ss],
+     ?l3 = ?f2 & ?ts2 = ?ss),
+    all [f2,ss]: succeeds arg_seq([?x|?l1],?f2,?ss) => ?l3 = ?f2 &
+     ?ts2 = ?ss),
+   step([x,l1,l3,ts2,l2,t,ts1],
+    [all [f2,s]: succeeds one_arg(?l1,?f2,?s) => ?l2 = ?f2 & ?t = ?s,
+     all [f2,ss]: succeeds arg_seq(?l2,?f2,?ss) => ?l3 = ?f2 & ?ts1 = ?ss,
+     ?x <> close,
+     ?x = comma,
+     succeeds one_arg(?l1,?l2,?t),
+     succeeds arg_seq(?l2,?l3,?ts1),
+     ?ts2 = [?t|?ts1]],
+    assume(succeeds arg_seq([?x|?l1],?f2,?ss),
+     [ex [e2,r,rs1]: succeeds one_arg(?l1,?e2,?r) &
+       succeeds arg_seq(?e2,?f2,?rs1) & ?ss = [?r|?rs1] by 
+       lemma(arg_seq:success:comma),
+      exist([e2,r,rs1],
+       succeeds one_arg(?l1,?e2,?r) & succeeds arg_seq(?e2,?f2,?rs1) &
+       ?ss = [?r|?rs1],
+       [?l2 = ?e2 & ?t = ?r,
+        succeeds arg_seq(?l2,?f2,?rs1),
+        ?l3 = ?f2 & ?ts1 = ?rs1,
+        ?l3 = ?f2 & ?ts2 = ?ss],
+       ?l3 = ?f2 & ?ts2 = ?ss)],
+     ?l3 = ?f2 & ?ts2 = ?ss),
+    all [f2,ss]: succeeds arg_seq([?x|?l1],?f2,?ss) => ?l3 = ?f2 &
+     ?ts2 = ?ss),
+   step([x,l1,l3,ts2,l2,t,ts1],
+    [?x <> close,
+     ?x <> comma,
+     ?l3 = error(arg_seq / [?x|?l1]),
+     ?ts2 = error],
+    assume(succeeds arg_seq([?x|?l1],?f2,?ss),
+     [?f2 = error(arg_seq / [?x|?l1]) & ?ss = error by 
+       lemma(arg_seq:success:error),
+      ?l3 = ?f2 & ?ts2 = ?ss],
+     ?l3 = ?f2 & ?ts2 = ?ss),
+    all [f2,ss]: succeeds arg_seq([?x|?l1],?f2,?ss) => ?l3 = ?f2 &
+     ?ts2 = ?ss),
+   step([],
+    [],
+    assume(succeeds arg_seq([],?f2,?ss),
+     [def succeeds arg_seq([],?f2,?ss) by completion,
+      error(arg_seq / []) = ?f2 & error = ?ss],
+     error(arg_seq / []) = ?f2 & error = ?ss),
+    all [f2,ss]: succeeds arg_seq([],?f2,?ss) => error(arg_seq / []) = ?f2 &
+     error = ?ss),
+   step([x],
+    [],
+    assume(succeeds arg_seq(error(?x),?f2,?ss),
+     [def succeeds arg_seq(error(?x),?f2,?ss) by completion,
+      error(?x) = ?f2 & error = ?ss],
+     error(?x) = ?f2 & error = ?ss),
+    all [f2,ss]: succeeds arg_seq(error(?x),?f2,?ss) => error(?x) = ?f2 &
+     error = ?ss),
+   step([x,l1,l3,t3,l2,t1,t2],
+    [?x = close_list,
+     ?l3 = ?l1,
+     ?t3 = con([])],
+    assume(succeeds list_tail([?x|?l1],?f2,?s),
+     [?f2 = ?l1 & ?s = con([]) by lemma(list_tail:success:close_list),
+      ?l3 = ?f2 & ?t3 = ?s],
+     ?l3 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds list_tail([?x|?l1],?f2,?s) => ?l3 = ?f2 & ?t3 = ?s),
+   step([x,l1,l3,t3,l2,t1,t2],
+    [all [f2,s]: succeeds one_arg(?l1,?f2,?s) => ?l2 = ?f2 & ?t1 = ?s,
+     all [f2,s]: succeeds list_tail(?l2,?f2,?s) => ?l3 = ?f2 & ?t2 = ?s,
+     ?x <> close_list,
+     ?x = comma,
+     succeeds one_arg(?l1,?l2,?t1),
+     succeeds list_tail(?l2,?l3,?t2),
+     ?t3 = fun('.',[?t1,?t2])],
+    assume(succeeds list_tail([?x|?l1],?f2,?s),
+     [ex [e2,s1,s2]: succeeds one_arg(?l1,?e2,?s1) &
+       succeeds list_tail(?e2,?f2,?s2) & ?s = fun('.',[?s1,?s2]) by 
+       lemma(list_tail:success:comma),
+      exist([e2,s1,s2],
+       succeeds one_arg(?l1,?e2,?s1) & succeeds list_tail(?e2,?f2,?s2) &
+       ?s = fun('.',[?s1,?s2]),
+       [?l2 = ?e2 & ?t1 = ?s1,
+        succeeds list_tail(?l2,?f2,?s2),
+        ?l3 = ?f2 & ?t2 = ?s2,
+        ?t3 = ?s],
+       ?l3 = ?f2 & ?t3 = ?s)],
+     ?l3 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds list_tail([?x|?l1],?f2,?s) => ?l3 = ?f2 & ?t3 = ?s),
+   step([x,l1,l3,t3,l2,t1,t2],
+    [all [f2,s]: succeeds one_arg(?l1,?f2,?s) => ?l2 = ?f2 & ?t3 = ?s,
+     ?x <> close_list,
+     ?x <> comma,
+     ?x = head_tail_sep,
+     succeeds one_arg(?l1,?l2,?t3),
+     succeeds expect(?l2,close_list,?l3)],
+    assume(succeeds list_tail([?x|?l1],?f2,?s),
+     [ex e2: succeeds one_arg(?l1,?e2,?s) &
+       succeeds expect(?e2,close_list,?f2) by 
+       lemma(list_tail:success:head_tail_sep),
+      exist(e2,
+       succeeds one_arg(?l1,?e2,?s) & succeeds expect(?e2,close_list,?f2),
+       [?l2 = ?e2 & ?t3 = ?s,
+        succeeds expect(?l2,close_list,?f2),
+        ?l3 = ?f2 by lemma(expect:uniqueness)],
+       ?l3 = ?f2 & ?t3 = ?s)],
+     ?l3 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds list_tail([?x|?l1],?f2,?s) => ?l3 = ?f2 & ?t3 = ?s),
+   step([x,l1,l3,t3,l2,t1,t2],
+    [?x <> close_list,
+     ?x <> comma,
+     ?x <> head_tail_sep,
+     ?l3 = error(tail_begin / [?x|?l1]),
+     ?t3 = error],
+    assume(succeeds list_tail([?x|?l1],?f2,?s),
+     [?f2 = error(tail_begin / [?x|?l1]) & ?s = error by 
+       lemma(list_tail:success:error),
+      ?l3 = ?f2 & ?t3 = ?s],
+     ?l3 = ?f2 & ?t3 = ?s),
+    all [f2,s]: succeeds list_tail([?x|?l1],?f2,?s) => ?l3 = ?f2 & ?t3 = ?s),
+   step([],
+    [],
+    assume(succeeds list_tail([],?f2,?s),
+     [def succeeds list_tail([],?f2,?s) by completion,
+      error(tail_begin / []) = ?f2 & error = ?s],
+     error(tail_begin / []) = ?f2 & error = ?s),
+    all [f2,s]: succeeds list_tail([],?f2,?s) => 
+     error(tail_begin / []) = ?f2 & error = ?s),
+   step([x],
+    [],
+    assume(succeeds list_tail(error(?x),?f2,?s),
+     [def succeeds list_tail(error(?x),?f2,?s) by completion,
+      error(?x) = ?f2 & error = ?s],
+     error(?x) = ?f2 & error = ?s),
+    all [f2,s]: succeeds list_tail(error(?x),?f2,?s) => error(?x) = ?f2 &
+     error = ?s),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [all [f2,s]: succeeds term(?l1,?n5,?f2,?s) => ?l2 = ?f2 & ?t2 = ?s,
+     all [f2,s2]: succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?f2,?s2) => 
+      ?l3 = ?f2 & ?t3 = ?s2,
+     succeeds infix_op(?x),
+     succeeds infix_prec(?x,?n3,?n4,?n5),
+     succeeds ?n3 =< ?n2,
+     succeeds ?n1 =< ?n4,
+     succeeds term(?l1,?n5,?l2,?t2),
+     succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [ex [e2,r2]: succeeds term(?l1,?n5,?e2,?r2) &
+       succeeds more(?e2,?n3,?n2,fun(?x,[?t1,?r2]),?f2,?s2) by 
+       lemma(more:success:infix_op:term),
+      exist([e2,r2],
+       succeeds term(?l1,?n5,?e2,?r2) &
+       succeeds more(?e2,?n3,?n2,fun(?x,[?t1,?r2]),?f2,?s2),
+       [?l2 = ?e2 & ?t2 = ?r2,
+        succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?f2,?s2),
+        ?l3 = ?f2 & ?t3 = ?s2],
+       ?l3 = ?f2 & ?t3 = ?s2)],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [succeeds infix_op(?x),
+     succeeds infix_prec(?x,?n3,?n4,?n5),
+     succeeds ?n3 =< ?n2,
+     fails ?n1 =< ?n4,
+     ?l3 = error(more_infix_prec / [name(?x)|?l1]),
+     ?t3 = error],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = error(more_infix_prec / [name(?x)|?l1]) & ?s2 = error by 
+       lemma(more:success:infix_op:error),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [succeeds infix_op(?x),
+     succeeds infix_prec(?x,?n3,?n4,?n5),
+     fails ?n3 =< ?n2,
+     ?l3 = [name(?x)|?l1],
+     ?t3 = ?t1],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = [name(?x)|?l1] & ?s2 = ?t1 by 
+       lemma(more:success:infix_op:nothing),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [all [f2,s2]: succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?f2,?s2) => 
+      ?l3 = ?f2 & ?t3 = ?s2,
+     fails infix_op(?x),
+     succeeds postfix_op(?x),
+     succeeds postfix_prec(?x,?n3,?n4),
+     succeeds ?n3 =< ?n2,
+     succeeds ?n1 =< ?n4,
+     succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?f2,?s2) by 
+       lemma(more:success:postfix_op:term),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [fails infix_op(?x),
+     succeeds postfix_op(?x),
+     succeeds postfix_prec(?x,?n3,?n4),
+     succeeds ?n3 =< ?n2,
+     fails ?n1 =< ?n4,
+     ?l3 = error(more_postfix_prec / [name(?x)|?l1]),
+     ?t3 = error],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = error(more_postfix_prec / [name(?x)|?l1]) & ?s2 = error by 
+       lemma(more:success:postfix_op:error),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [fails infix_op(?x),
+     succeeds postfix_op(?x),
+     succeeds postfix_prec(?x,?n3,?n4),
+     fails ?n3 =< ?n2,
+     ?l3 = [name(?x)|?l1],
+     ?t3 = ?t1],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = [name(?x)|?l1] & ?s2 = ?t1 by 
+       lemma(more:success:postfix_op:nothing),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+    [fails infix_op(?x),
+     fails postfix_op(?x),
+     ?l3 = [name(?x)|?l1],
+     ?t3 = ?t1],
+    assume(succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = [name(?x)|?l1] & ?s2 = ?t1 by lemma(more:success:nothing),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([name(?x)|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([l1,n1,n2,t1,l3,t3,l2,t2],
+    [all [f2,s]: succeeds term(?l1,1000,?f2,?s) => ?l2 = ?f2 & ?t2 = ?s,
+     all [f2,s2]: succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?f2,?s2) => 
+      ?l3 = ?f2 & ?t3 = ?s2,
+     succeeds 1000 =< ?n2,
+     succeeds ?n1 =< 999,
+     succeeds term(?l1,1000,?l2,?t2),
+     succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)],
+    assume(succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2),
+     [ex [e2,r2]: succeeds term(?l1,1000,?e2,?r2) &
+       succeeds more(?e2,1000,?n2,fun(',',[?t1,?r2]),?f2,?s2) by 
+       lemma(more:success:comma:term),
+      exist([e2,r2],
+       succeeds term(?l1,1000,?e2,?r2) &
+       succeeds more(?e2,1000,?n2,fun(',',[?t1,?r2]),?f2,?s2),
+       [?l2 = ?e2 & ?t2 = ?r2,
+        succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?f2,?s2),
+        ?l3 = ?f2 & ?t3 = ?s2],
+       ?l3 = ?f2 & ?t3 = ?s2)],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([l1,n1,n2,t1,l3,t3,l2,t2],
+    [succeeds 1000 =< ?n2,
+     fails ?n1 =< 999,
+     ?l3 = error(more_comma_as_infix / [comma|?l1]),
+     ?t3 = error],
+    assume(succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = error(more_comma_as_infix / [comma|?l1]) & ?s2 = error by 
+       lemma(more:success:comma:error),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([l1,n1,n2,t1,l3,t3,l2,t2],
+    [fails 1000 =< ?n2,
+     ?l3 = [comma|?l1],
+     ?t3 = ?t1],
+    assume(succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2),
+     [?f2 = [comma|?l1] & ?s2 = ?t1 by 
+       lemma(more:success:comma:nothing),
+      ?l3 = ?f2 & ?t3 = ?s2],
+     ?l3 = ?f2 & ?t3 = ?s2),
+    all [f2,s2]: succeeds more([comma|?l1],?n1,?n2,?t1,?f2,?s2) => 
+     ?l3 = ?f2 & ?t3 = ?s2),
+   step([l,0,1,t],
+    [fails more_begin(?l)],
+    assume(succeeds more(?l,?0,?1,?t,?f2,?s2),
+     [?f2 = ?l & ?s2 = ?t by lemma(more:success:more_begin),
+      ?l = ?f2 & ?t = ?s2],
+     ?l = ?f2 & ?t = ?s2),
+    all [f2,s2]: succeeds more(?l,?0,?1,?t,?f2,?s2) => ?l = ?f2 & ?t = ?s2)]),
+ (all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) => 
+   (all [f2,s]: succeeds term(?e1,?i,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+ (all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => 
+   (all [f2,s]: succeeds one_arg(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+ (all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+   (all [f2,ss]: succeeds arg_seq(?e1,?f2,?ss) => ?e2 = ?f2 & ?rs = ?ss)) &
+ (all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+   (all [f2,s]: succeeds list_tail(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+ (all [e1,i1,i2,r1,e2,r2]: succeeds more(?e1,?i1,?i2,?r1,?e2,?r2) => 
+   (all [f2,s2]: succeeds more(?e1,?i1,?i2,?r1,?f2,?s2) => ?e2 = ?f2 &
+     ?r2 = ?s2)))
+).
+
+:- theorem(term:uniqueness,
+all [l,n,l1,l2,t1,t2]: succeeds term(?l,?n,?l1,?t1) &
+ succeeds term(?l,?n,?l2,?t2) & succeeds consistent_op => ?l1 = ?l2 &
+ ?t1 = ?t2,
+assume(succeeds term(?l,?n,?l1,?t1) & succeeds term(?l,?n,?l2,?t2) &
+ succeeds consistent_op,
+ [(all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) => 
+    (all [f2,s]: succeeds term(?e1,?i,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+  (all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => 
+    (all [f2,s]: succeeds one_arg(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+  (all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+    (all [f2,ss]: succeeds arg_seq(?e1,?f2,?ss) => ?e2 = ?f2 & ?rs = ?ss)) &
+  (all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+    (all [f2,s]: succeeds list_tail(?e1,?f2,?s) => ?e2 = ?f2 & ?r = ?s)) &
+  (all [e1,i1,i2,r1,e2,r2]: succeeds more(?e1,?i1,?i2,?r1,?e2,?r2) => 
+    (all [f2,s2]: succeeds more(?e1,?i1,?i2,?r1,?f2,?s2) => ?e2 = ?f2 &
+     ?r2 = ?s2)) by lemma(uniqueness),
+  all [f2,s]: succeeds term(?l,?n,?f2,?s) => ?l1 = ?f2 & ?t1 = ?s,
+  ?l1 = ?l2 & ?t1 = ?t2],
+ ?l1 = ?l2 & ?t1 = ?t2)
+).
+
+:- bye(uniqueness).

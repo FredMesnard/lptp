@@ -1,0 +1,54 @@
+
+:- assert_clauses(n(@<,2),[
+ clause([n(@<,2),[n(0,0)],[n(s,1),$(y)]],
+  [&],
+  [y]/0),
+ clause([n(@<,2),[n(s,1),$(x)],[n(s,1),$(y)]],
+  [n(@<,2),$(x),$(y)],
+  [x,y]/0)
+]).
+
+:- assert_clauses(n(@=<,2),[
+ clause([n(@=<,2),[n(0,0)],$(y)],
+  [&],
+  [y]/0),
+ clause([n(@=<,2),[n(s,1),$(x)],[n(s,1),$(y)]],
+  [n(@=<,2),$(x),$(y)],
+  [x,y]/0)
+]).
+
+:- assert_clauses(n(nat,1),[
+ clause([n(nat,1),[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(nat,1),[n(s,1),$(x)]],
+  [n(nat,1),$(x)],
+  [x]/0)
+]).
+
+:- assert_clauses(n(nat_list,1),[
+ clause([n(nat_list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(nat_list,1),[n('.',2),$(x),$(l)]],
+  [&,[n(nat,1),$(x)],[n(nat_list,1),$(l)]],
+  [x,l]/0)
+]).
+
+:- assert_clauses(n(plus,3),[
+ clause([n(plus,3),[n(0,0)],$(y),$(y)],
+  [&],
+  [y]/0),
+ clause([n(plus,3),[n(s,1),$(x)],$(y),[n(s,1),$(z)]],
+  [n(plus,3),$(x),$(y),$(z)],
+  [x,y,z]/0)
+]).
+
+:- assert_clauses(n(times,3),[
+ clause([n(times,3),[n(0,0)],$(y),[n(0,0)]],
+  [&],
+  [y]/0),
+ clause([n(times,3),[n(s,1),$(x)],$(y),$(z)],
+  [&,[n(times,3),$(x),$(y),$(a)],[n(plus,3),$(y),$(a),$(z)]],
+  [x,y,z,a]/0)
+]).

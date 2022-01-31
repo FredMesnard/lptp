@@ -1,0 +1,726 @@
+%   Author: Rene Lehmann  <rene.lehmann@unifr.ch> & 
+%           Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+%  Created: Tue Mar 11 09:09:56 1997 
+% Filename: set.pr 
+
+:-initialize.
+:-needs_gr($(examples)/avl/avl).
+:-thm_file($(tmp)/set).
+:-tex_file($(tmp)/set).
+
+% Zuerst einige Hilfslemmata
+/** Here we prove some set-theoretic properties about <tt>insert</tt>,
+needed to prove theorem(addavl:in:1), theorem(addavl:in:2) and theorem(addavl:in:3) 
+To do this, we need some lemmas about <tt>left_combine</tt> and <tt>right_combine</tt>. */
+
+:- lemma(left_combine:in:1,
+all [b,t1,v,t2,t,g,x]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t1) => succeeds in(?x,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t1) => succeeds in(?x,?t))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?v,0,?t1,?t2))),
+    all x: succeeds in(?x,?t1) => succeeds in(?x,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?v,-1,?t1,?t2))),
+    all x: succeeds in(?x,?t1) => succeeds in(?x,t(?v,-1,?t1,?t2))),
+   step([u,s1,s2,v,t2],
+    [],
+    assume(succeeds in(?x,t(?u,-1,?s1,?s2)),
+     [def succeeds in(?x,t(?u,-1,?s1,?s2)) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,?s1),
+         []),
+        case(succeeds in(?x,?s2),
+         [])],
+       succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2))))],
+     succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2)))),
+    all x: succeeds in(?x,t(?u,-1,?s1,?s2)) => 
+      succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2)))),
+   step([u,s1,w,b,s2,s3,v,t2,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))),
+     [def succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,?s1),
+         []),
+        case(succeeds in(?x,t(?w,?b,?s2,?s3)),
+         [def succeeds in(?x,t(?w,?b,?s2,?s3)) by completion,
+          cases(
+           [case(?x = ?w,[]),
+            case(succeeds in(?x,?s2),
+             []),
+            case(succeeds in(?x,?s3),
+             [])],
+           succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))))])],
+       succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))))],
+     succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)))),
+    all x: succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) => 
+      succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))))]),
+ assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t1),
+  [all x: succeeds in(?x,?t1) => succeeds in(?x,?t),
+   succeeds in(?x,?t1) => succeeds in(?x,?t),
+   succeeds in(?x,?t)],
+  succeeds in(?x,?t))]
+).
+
+:- lemma(left_combine:in:2,
+all [b,t1,v,t2,t,g,x]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t2) => succeeds in(?x,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t2) => succeeds in(?x,?t))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?v,0,?t1,?t2))),
+    all x: succeeds in(?x,?t2) => succeeds in(?x,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?v,-1,?t1,?t2))),
+    all x: succeeds in(?x,?t2) => succeeds in(?x,t(?v,-1,?t1,?t2))),
+   step([u,s1,s2,v,t2],
+    [],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2)))),
+    all x: succeeds in(?x,?t2) => 
+      succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2)))),
+   step([u,s1,w,b,s2,s3,v,t2,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)))),
+    all x: succeeds in(?x,?t2) => 
+      succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))))]),
+ assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t2),
+  [all x: succeeds in(?x,?t2) => succeeds in(?x,?t),
+   succeeds in(?x,?t2) => succeeds in(?x,?t),
+   succeeds in(?x,?t)],
+  succeeds in(?x,?t))]
+).
+
+:- lemma(left_combine:in:3,
+all [b,t1,v,t2,t,g,x]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) =>
+  succeeds in(?v,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?v,?t))],
+  [step([t1,v,t2],
+    [],
+    succeeds in(?v,t(?v,0,?t1,?t2)),
+    all x: succeeds in(?v,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    succeeds in(?v,t(?v,-1,?t1,?t2)),
+    all x: succeeds in(?v,t(?v,-1,?t1,?t2))),
+   step([u,s1,s2,v,t2],
+    [],
+    succeeds in(?v,t(?u,0,?s1,t(?v,0,?s2,?t2))),
+    all x: succeeds in(?v,t(?u,0,?s1,t(?v,0,?s2,?t2)))),
+   step([u,s1,w,b,s2,s3,v,t2,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    succeeds in(?v,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))),
+    all x: succeeds in(?v,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))))]),
+ assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g),
+  [all x: succeeds in(?v,?t),
+   succeeds in(?v,?t)],
+  succeeds in(?v,?t))]
+).
+
+:- lemma(left_combine:in:4,
+all [b,t1,v,t2,t,g,x]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t) =>
+  succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+        succeeds in(?x,?t2))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,t(?v,0,?t1,?t2)),
+     [def succeeds in(?x,t(?v,0,?t1,?t2)) by completion,
+      cases(
+       [case(?x = ?v,[]),
+        case(succeeds in(?x,?t1),
+         []),
+        case(succeeds in(?x,?t2),
+         [])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?v,0,?t1,?t2)) => succeeds in(?x,?t1) \/ 
+      ?x = ?v \/ succeeds in(?x,?t2)),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,t(?v,-1,?t1,?t2)),
+     [def succeeds in(?x,t(?v,-1,?t1,?t2)) by completion,
+      cases(
+       [case(?x = ?v,[]),
+        case(succeeds in(?x,?t1),
+         []),
+        case(succeeds in(?x,?t2),
+         [])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?v,-1,?t1,?t2)) => succeeds in(?x,?t1) \/
+      ?x = ?v \/ succeeds in(?x,?t2)),
+   step([u,s1,s2,v,t2],
+    [],
+    assume(succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2))),
+     [def succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2))) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,?s1),
+         []),
+        case(succeeds in(?x,t(?v,0,?s2,?t2)),
+         [def succeeds in(?x,t(?v,0,?s2,?t2)) by completion,
+          cases(
+           [case(?x = ?v,[]),
+            case(succeeds in(?x,?s2),
+             []),
+            case(succeeds in(?x,?t2),
+             [])],
+           succeeds in(?x,t(?u,-1,?s1,?s2)) \/ ?x = ?v \/
+           succeeds in(?x,?t2))])],
+       succeeds in(?x,t(?u,-1,?s1,?s2)) \/ ?x = ?v \/ succeeds in(?x,?t2))],
+     succeeds in(?x,t(?u,-1,?s1,?s2)) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?u,0,?s1,t(?v,0,?s2,?t2))) => 
+      succeeds in(?x,t(?u,-1,?s1,?s2)) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+   step([u,s1,w,b,s2,s3,v,t2,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))),
+     [def succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))) by 
+       completion,
+      cases(
+       [case(?x = ?w,[]),
+        case(succeeds in(?x,t(?u,?b1,?s1,?s2)),
+         [def succeeds in(?x,t(?u,?b1,?s1,?s2)) by completion,
+          cases(
+           [case(?x = ?u,[]),
+            case(succeeds in(?x,?s1),
+             []),
+            case(succeeds in(?x,?s2),
+             [])],
+           succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) \/ ?x = ?v \/
+           succeeds in(?x,?t2))]),
+        case(succeeds in(?x,t(?v,?b2,?s3,?t2)),
+         [def succeeds in(?x,t(?v,?b2,?s3,?t2)) by completion,
+          cases(
+           [case(?x = ?v,[]),
+            case(succeeds in(?x,?s3),
+             []),
+            case(succeeds in(?x,?t2),
+             [])],
+           succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) \/ ?x = ?v \/
+           succeeds in(?x,?t2))])],
+       succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) \/ ?x = ?v \/
+       succeeds in(?x,?t2))],
+     succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) \/ ?x = ?v \/
+     succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))) => 
+      succeeds in(?x,t(?u,1,?s1,t(?w,?b,?s2,?s3))) \/ ?x = ?v \/
+      succeeds in(?x,?t2))]),
+ assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t),
+  [all x: succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+     succeeds in(?x,?t2),
+   succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+    succeeds in(?x,?t2),
+   succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)],
+  succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))]
+).
+
+% Dieselben vier Lemmata braucht man auch fuer right_combine/6.
+
+:- lemma(right_combine:in:1,
+all [b,t1,v,t2,t,g,x]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t1) => succeeds in(?x,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t1) => succeeds in(?x,?t))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?v,0,?t1,?t2))),
+    all x: succeeds in(?x,?t1) => succeeds in(?x,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?v,1,?t1,?t2))),
+    all x: succeeds in(?x,?t1) => succeeds in(?x,t(?v,1,?t1,?t2))),
+   step([t1,v,u,s1,s2],
+    [],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2))),
+    all x: succeeds in(?x,?t1) => 
+      succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2))),
+   step([t1,v,u,w,b,s1,s2,s3,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,?t1),
+     [],
+     succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)))),
+    all x: succeeds in(?x,?t1) => 
+      succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))))]),
+ assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t1),
+  [all x: succeeds in(?x,?t1) => succeeds in(?x,?t),
+   succeeds in(?x,?t1) => succeeds in(?x,?t),
+   succeeds in(?x,?t)],
+  succeeds in(?x,?t))]
+).
+
+:- lemma(right_combine:in:2,
+all [b,t1,v,t2,t,g,x]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t2) => succeeds in(?x,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t2) => succeeds in(?x,?t))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?v,0,?t1,?t2))),
+    all x: succeeds in(?x,?t2) => succeeds in(?x,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,?t2),
+     [],
+     succeeds in(?x,t(?v,1,?t1,?t2))),
+    all x: succeeds in(?x,?t2) => succeeds in(?x,t(?v,1,?t1,?t2))),
+   step([t1,v,u,s1,s2],
+    [],
+    assume(succeeds in(?x,t(?u,1,?s1,?s2)),
+     [def succeeds in(?x,t(?u,1,?s1,?s2)) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,?s1),
+         []),
+        case(succeeds in(?x,?s2),
+         [])],
+       succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2)))],
+     succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2))),
+    all x: succeeds in(?x,t(?u,1,?s1,?s2)) => 
+      succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2))),
+   step([t1,v,u,w,b,s1,s2,s3,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)),
+     [def succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,t(?w,?b,?s1,?s2)),
+         [def succeeds in(?x,t(?w,?b,?s1,?s2)) by completion,
+          cases(
+           [case(?x = ?w,[]),
+            case(succeeds in(?x,?s1),
+             []),
+            case(succeeds in(?x,?s2),
+             [])],
+           succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))))]),
+        case(succeeds in(?x,?s3),
+         [])],
+       succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))))],
+     succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)))),
+    all x: succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)) => 
+      succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))))]),
+ assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t2),
+  [all x: succeeds in(?x,?t2) => succeeds in(?x,?t),
+   succeeds in(?x,?t2) => succeeds in(?x,?t),
+   succeeds in(?x,?t)],
+  succeeds in(?x,?t))]
+).
+
+:- lemma(right_combine:in:3,
+all [b,t1,v,t2,t,g,x]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) =>
+  succeeds in(?v,?t),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?v,?t))],
+  [step([t1,v,t2],
+    [],
+    succeeds in(?v,t(?v,0,?t1,?t2)),
+    all x: succeeds in(?v,t(?v,0,?t1,?t2))),
+   step([t1,v,t2],
+    [],
+    succeeds in(?v,t(?v,1,?t1,?t2)),
+    all x: succeeds in(?v,t(?v,1,?t1,?t2))),
+   step([t1,v,u,s1,s2],
+    [],
+    succeeds in(?v,t(?u,0,t(?v,0,?t1,?s1),?s2)),
+    all x: succeeds in(?v,t(?u,0,t(?v,0,?t1,?s1),?s2))),
+   step([t1,v,u,w,b,s1,s2,s3,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    succeeds in(?v,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))),
+    all x: succeeds in(?v,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))))]),
+ assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g),
+  [all x: succeeds in(?v,?t),
+   succeeds in(?v,?t)],
+  succeeds in(?v,?t))]
+).
+
+:- lemma(right_combine:in:4,
+all [b,t1,v,t2,t,g,x]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds in(?x,?t) =>
+  succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2),
+[induction(
+  [all [b,t1,v,t2,t,g]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) => 
+     (all x: succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+        succeeds in(?x,?t2))],
+  [step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,t(?v,0,?t1,?t2)),
+     [def succeeds in(?x,t(?v,0,?t1,?t2)) by completion,
+      cases(
+       [case(?x = ?v,[]),
+        case(succeeds in(?x,?t1),
+         []),
+        case(succeeds in(?x,?t2),
+         [])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?v,0,?t1,?t2)) => succeeds in(?x,?t1) \/ 
+      ?x = ?v \/ succeeds in(?x,?t2)),
+   step([t1,v,t2],
+    [],
+    assume(succeeds in(?x,t(?v,1,?t1,?t2)),
+     [def succeeds in(?x,t(?v,1,?t1,?t2)) by completion,
+      cases(
+       [case(?x = ?v,[]),
+        case(succeeds in(?x,?t1),
+         []),
+        case(succeeds in(?x,?t2),
+         [])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)),
+    all x: succeeds in(?x,t(?v,1,?t1,?t2)) => succeeds in(?x,?t1) \/ 
+      ?x = ?v \/ succeeds in(?x,?t2)),
+   step([t1,v,u,s1,s2],
+    [],
+    assume(succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2)),
+     [def succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2)) by completion,
+      cases(
+       [case(?x = ?u,[]),
+        case(succeeds in(?x,t(?v,0,?t1,?s1)),
+         [def succeeds in(?x,t(?v,0,?t1,?s1)) by completion,
+          cases(
+           [case(?x = ?v,[]),
+            case(succeeds in(?x,?t1),
+             []),
+            case(succeeds in(?x,?s1),
+             [])],
+           succeeds in(?x,?t1) \/ ?x = ?v \/ 
+           succeeds in(?x,t(?u,1,?s1,?s2)))]),
+        case(succeeds in(?x,?s2),
+         [])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,t(?u,1,?s1,?s2)))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,t(?u,1,?s1,?s2))),
+    all x: succeeds in(?x,t(?u,0,t(?v,0,?t1,?s1),?s2)) => 
+      succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,t(?u,1,?s1,?s2))),
+   step([t1,v,u,w,b,s1,s2,s3,b1,b2],
+    [succeeds flip(?b,?b1,?b2)],
+    assume(succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))),
+     [def succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))) by 
+       completion,
+      cases(
+       [case(?x = ?w,[]),
+        case(succeeds in(?x,t(?v,?b1,?t1,?s1)),
+         [def succeeds in(?x,t(?v,?b1,?t1,?s1)) by completion,
+          cases(
+           [case(?x = ?v,[]),
+            case(succeeds in(?x,?t1),
+             []),
+            case(succeeds in(?x,?s1),
+             [])],
+           succeeds in(?x,?t1) \/ ?x = ?v \/
+           succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)))]),
+        case(succeeds in(?x,t(?u,?b2,?s2,?s3)),
+         [def succeeds in(?x,t(?u,?b2,?s2,?s3)) by completion,
+          cases(
+           [case(?x = ?u,[]),
+            case(succeeds in(?x,?s2),
+             []),
+            case(succeeds in(?x,?s3),
+             [])],
+           succeeds in(?x,?t1) \/ ?x = ?v \/
+           succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)))])],
+       succeeds in(?x,?t1) \/ ?x = ?v \/
+       succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)))],
+     succeeds in(?x,?t1) \/ ?x = ?v \/
+     succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3))),
+    all x: succeeds in(?x,t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))) => 
+      succeeds in(?x,?t1) \/ ?x = ?v \/
+      succeeds in(?x,t(?u,-1,t(?w,?b,?s1,?s2),?s3)))]),
+ assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) & succeeds in(?x,?t),
+  [all x: succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+     succeeds in(?x,?t2),
+   succeeds in(?x,?t) => succeeds in(?x,?t1) \/ ?x = ?v \/
+    succeeds in(?x,?t2),
+   succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2)],
+  succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t2))]
+).
+
+% Dann kann man folgende Theoreme beweisen:
+
+:- theorem(insert:in:1,
+all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => succeeds in(?v,?t2),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => succeeds in(?v,?t2)],
+  [step([u],[],[],succeeds in(?u,t(?u,0,t,t))),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [succeeds in(?u,?t3),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+     [],
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+     succeeds in(?u,?t) by lemma(left_combine:in:1),
+     succeeds in(?u,?t)),
+    succeeds in(?u,?t)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [succeeds in(?u,?t3),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+     [],
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+     succeeds in(?u,?t) by lemma(right_combine:in:2),
+     succeeds in(?u,?t)),
+    succeeds in(?u,?t))]),
+ assume(succeeds insert(?v,?t1,?t2,?g),
+  [succeeds in(?v,?t2),
+   succeeds in(?v,?t2)],
+  succeeds in(?v,?t2))]
+).
+
+
+% Benutze Taktik ind1
+
+:- theorem(insert:in:2,
+all [v,t1,t2,g,x]: succeeds insert(?v,?t1,?t2,?g) &
+ succeeds in(?x,?t1) => succeeds in(?x,?t2),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => 
+     (all x: succeeds in(?x,?t1) => succeeds in(?x,?t2))],
+  [step([u],
+    [],
+    assume(succeeds in(?x,t),
+     [],
+     succeeds in(?x,t(?u,0,t,t))),
+    all x: succeeds in(?x,t) => succeeds in(?x,t(?u,0,t,t))),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all x: succeeds in(?x,?t1) => succeeds in(?x,?t3),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds in(?x,t(?v,?b,?t1,?t2)),
+     cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+      [def succeeds in(?x,t(?v,?b,?t1,?t2)) by completion,
+       cases(
+        [case(?x = ?v,[]),
+         case(succeeds in(?x,?t1),
+          [succeeds in(?x,?t3)]),
+         case(succeeds in(?x,?t2),
+          [])],
+        succeeds in(?x,t(?v,?b,?t3,?t2))),
+       succeeds in(?x,?t)],
+      ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+      [def succeeds in(?x,t(?v,?b,?t1,?t2)) by completion,
+       cases(
+        [case(?x = ?v,
+	  [succeeds in(?v,?t) by lemma(left_combine:in:3),
+	   succeeds in(?x,?t)]),
+         case(succeeds in(?x,?t1),
+          [succeeds in(?x,?t3),
+	   succeeds in(?x,?t) by lemma(left_combine:in:1)]),
+         case(succeeds in(?x,?t2),
+          succeeds in(?x,?t) by lemma(left_combine:in:2))],
+        succeeds in(?x,?t))],
+      succeeds in(?x,?t)),
+     succeeds in(?x,?t)),
+    all x: succeeds in(?x,t(?v,?b,?t1,?t2)) => succeeds in(?x,?t)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all x: succeeds in(?x,?t2) => succeeds in(?x,?t3),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds in(?x,t(?v,?b,?t1,?t2)),
+     cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+      [def succeeds in(?x,t(?v,?b,?t1,?t2)) by completion,
+       cases(
+        [case(?x = ?v,[]),
+         case(succeeds in(?x,?t1),
+          []),
+         case(succeeds in(?x,?t2),
+          [succeeds in(?x,?t3)])],
+        succeeds in(?x,t(?v,?b,?t1,?t3))),
+       succeeds in(?x,?t)],
+      ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+      [def succeeds in(?x,t(?v,?b,?t1,?t2)) by completion,
+       cases(
+        [case(?x = ?v,
+	  [succeeds in(?v,?t) by lemma(right_combine:in:3),
+	   succeeds in(?x,?t)]),
+         case(succeeds in(?x,?t1),
+          succeeds in(?x,?t) by lemma(right_combine:in:1)),
+         case(succeeds in(?x,?t2),
+          [succeeds in(?x,?t3),
+	   succeeds in(?x,?t) by lemma(right_combine:in:2)])],
+        succeeds in(?x,?t))],
+      succeeds in(?x,?t)),
+     succeeds in(?x,?t)),
+    all x: succeeds in(?x,t(?v,?b,?t1,?t2)) => succeeds in(?x,?t))]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds in(?x,?t1),
+  [all x: succeeds in(?x,?t1) => succeeds in(?x,?t2),
+   succeeds in(?x,?t1) => succeeds in(?x,?t2),
+   succeeds in(?x,?t2)],
+  succeeds in(?x,?t2))]
+).
+
+
+
+
+:- theorem(insert:in:3,
+all [v,t1,t2,g,x]: succeeds insert(?v,?t1,?t2,?g) &
+ succeeds in(?x,?t2) => succeeds in(?x,?t1) \/ ?x = ?v,
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => 
+     (all x: succeeds in(?x,?t2) => succeeds in(?x,?t1) \/ ?x = ?v)],
+  [step([u],
+    [],
+    assume(succeeds in(?x,t(?u,0,t,t)),
+     def succeeds in(?x,t(?u,0,t,t)) by completion,
+     succeeds in(?x,t) \/ ?x = ?u),
+    all x: succeeds in(?x,t(?u,0,t,t)) => succeeds in(?x,t) \/ ?x = ?u),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all x: succeeds in(?x,?t3) => succeeds in(?x,?t1) \/ ?x = ?u,
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds in(?x,?t),
+     cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+      [def succeeds in(?x,?t) by completion,
+       cases(
+        [case(ex [0,1,2]: ?t = t(?x,?0,?1,?2),
+          exist([0,1,2],
+           ?t = t(?x,?0,?1,?2),
+           [],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)),
+         case(ex [0,1,3,2]: ?t = t(?0,?1,?3,?2) & succeeds in(?x,?3),
+          exist([0,1,3,2],
+           ?t = t(?0,?1,?3,?2) & succeeds in(?x,?3),
+           [succeeds in(?x,?t1) \/ ?x = ?u,
+	    cases(succeeds in(?x,?t1),
+             [],
+             ?x = ?u,
+             [],
+             succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)),
+         case(ex [0,1,2,3]: ?t = t(?0,?1,?2,?3) & succeeds in(?x,?3),
+          exist([0,1,2,3],
+           ?t = t(?0,?1,?2,?3) & succeeds in(?x,?3),
+           [],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u))],
+        succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+       ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+      [succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+       succeeds in(?x,?t),
+       succeeds in(?x,?t3) \/ ?x = ?v \/ succeeds in(?x,?t2) by 
+        lemma(left_combine:in:4),
+       cases(
+        [case(succeeds in(?x,?t3),
+          [succeeds in(?x,?t1) \/ ?x = ?u,
+	   cases(succeeds in(?x,?t1),
+            [],
+            ?x = ?u,
+            [],
+            succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)]),
+         case(?x = ?v,
+          []),
+         case(succeeds in(?x,?t2),
+          [])],
+        succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+      succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u),
+     succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u),
+    all x: succeeds in(?x,?t) => succeeds in(?x,t(?v,?b,?t1,?t2)) \/ 
+      ?x = ?u),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all x: succeeds in(?x,?t3) => succeeds in(?x,?t2) \/ ?x = ?u,
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds in(?x,?t),
+     cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+      [def succeeds in(?x,?t) by completion,
+       cases(
+        [case(ex [0,1,2]: ?t = t(?x,?0,?1,?2),
+          exist([0,1,2],
+           ?t = t(?x,?0,?1,?2),
+           [],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)),
+         case(ex [0,1,3,2]: ?t = t(?0,?1,?3,?2) & succeeds in(?x,?3),
+          exist([0,1,3,2],
+           ?t = t(?0,?1,?3,?2) & succeeds in(?x,?3),
+           [],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)),
+         case(ex [0,1,2,3]: ?t = t(?0,?1,?2,?3) & succeeds in(?x,?3),
+          exist([0,1,2,3],
+	   ?t = t(?0,?1,?2,?3) & succeeds in(?x,?3),
+           [succeeds in(?x,?t2) \/ ?x = ?u,
+	    cases(succeeds in(?x,?t2),
+             [],
+             ?x = ?u,
+             [],
+             succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+           succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u))],
+        succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+      ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+      [succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+       succeeds in(?x,?t),
+       succeeds in(?x,?t1) \/ ?x = ?v \/ succeeds in(?x,?t3) by 
+        lemma(right_combine:in:4),
+       cases(
+        [case(succeeds in(?x,?t1),[]),
+         case(?x = ?v,
+          []),
+         case(succeeds in(?x,?t3),
+          [succeeds in(?x,?t2) \/ ?x = ?u,
+	   cases(succeeds in(?x,?t2),
+            [],
+            ?x = ?u,
+            [],
+            succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)])],
+        succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u)],
+      succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u),
+     succeeds in(?x,t(?v,?b,?t1,?t2)) \/ ?x = ?u),
+    all x: succeeds in(?x,?t) => succeeds in(?x,t(?v,?b,?t1,?t2)) \/ 
+      ?x = ?u)]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds in(?x,?t2),
+  [all x: succeeds in(?x,?t2) => succeeds in(?x,?t1) \/ ?x = ?v,
+   succeeds in(?x,?t2) => succeeds in(?x,?t1) \/ ?x = ?v,
+   succeeds in(?x,?t1) \/ ?x = ?v],
+  succeeds in(?x,?t1) \/ ?x = ?v)]
+).
+
+
+:-bye(set).
+

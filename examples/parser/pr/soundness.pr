@@ -1,0 +1,1938 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Wed Feb 28 17:11:41 1996 */
+/* Filename: soundness.pr */
+/* Abstract: Soundness of read.pl with respect to grammar.pl. */
+
+:- initialize.
+:- tex_file($(tmp)/soundness).
+:- thm_file($(tmp)/soundness).
+
+:- needs_gr($(examples)/parser/src/grammar).
+:- needs_gr($(examples)/parser/src/read).
+:- needs_gr($(lib)/list/list).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(tmp)/precedence).
+:- needs_thm($(tmp)/grammar).
+
+:- definition_pred(err_msg,2,
+all [l,x]: err_msg(?l,?x) <=>
+ (ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) &
+   ?x = error(?y / ?l2))
+).
+
+:- definition_pred(term_ok,4,
+all [e1,i,e2,r]: term_ok(?e1,?i,?e2,?r) <=>
+ (succeeds 0 =< ?i =>
+  (ex [e3,k]: succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 &
+   succeeds  wf_term(?e3,?k,?r)))
+).
+
+:- definition_pred(one_arg_ok,3,
+all [e1,e2,r]: one_arg_ok(?e1,?e2,?r) <=>
+ (ex e3: ?e3 ** ?e2 = ?e1 & succeeds wf_one_arg(?e3,?r))
+).
+
+:- definition_pred(arg_seq_ok,3,
+all [e1,e2,rs]: arg_seq_ok(?e1,?e2,?rs) <=>
+ (ex e3: ?e3 ** ?e2 = ?e1 & succeeds wf_arg_seq(?e3,?rs))
+).
+
+:- definition_pred(list_tail_ok,3,
+all [e1,e2,r]: list_tail_ok(?e1,?e2,?r) <=>
+ (ex e3: ?e3 ** ?e2 = ?e1 & succeeds wf_list_tail(?e3,?r))
+).
+
+:- definition_pred(more_ok,6,
+all [e1,i,j,r1,e2,r2]: more_ok(?e1,?i,?j,?r1,?e2,?r2) <=>
+ (succeeds ?i =< ?j =>
+  (ex [e3,k]: succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 &
+   (all e0: succeeds wf_term(?e0,?i,?r1) => 
+   succeeds wf_term(?e0 ** ?e3,?k,?r2))))
+).
+
+:- lemma(token_list:list,
+all l: succeeds token_list(?l) => succeeds list(?l),
+induction([all l: succeeds token_list(?l) => succeeds list(?l)],
+ [step([],[],[],succeeds list([])),
+  step([x,l],
+   [succeeds list(?l),
+    succeeds token(?x),
+    succeeds token_list(?l)],
+   [],
+   succeeds list([?x|?l]))])
+).
+
+:- lemma(token_list:append,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds token_list(?l1) &
+ succeeds token_list(?l2) => succeeds token_list(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => 
+    succeeds token_list(?l1) & succeeds token_list(?l2) => 
+    succeeds token_list(?l3)],
+  [step([l],
+    [],
+    assume(succeeds token_list([]) & succeeds token_list(?l),
+     [],
+     succeeds token_list(?l)),
+    succeeds token_list([]) & succeeds token_list(?l) => 
+    succeeds token_list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds token_list(?l1) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds token_list([?x|?l1]) & succeeds token_list(?l2),
+     [def succeeds token_list([?x|?l1]) by completion,
+      succeeds token_list(?l3),
+      succeeds token_list([?x|?l3]) by sld],
+     succeeds token_list([?x|?l3])),
+    succeeds token_list([?x|?l1]) & succeeds token_list(?l2) => 
+    succeeds token_list([?x|?l3]))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds token_list(?l1) & 
+  succeeds token_list(?l2),
+  [succeeds token_list(?l1) & succeeds token_list(?l2) => 
+   succeeds token_list(?l3),
+   succeeds token_list(?l3)],
+  succeeds token_list(?l3))]
+).
+
+:- corollary(token_list:app,
+all [l1,l2]: succeeds token_list(?l1) & succeeds token_list(?l2) =>
+ succeeds token_list(?l1 ** ?l2),
+assume(succeeds token_list(?l1) & succeeds token_list(?l2),
+ [succeeds list(?l1) by lemma(token_list:list),
+  succeeds list(?l2) by lemma(token_list:list),
+  succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds token_list(?l1 ** ?l2) by lemma(token_list:append)],
+ succeeds token_list(?l1 ** ?l2))
+).
+
+:- lemma(token_list:prefix,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3) =>
+ succeeds token_list(?l1) & succeeds token_list(?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => 
+    succeeds token_list(?l3) => succeeds token_list(?l1) & 
+    succeeds token_list(?l2)],
+  [step([l],
+    [],
+    assume(succeeds token_list(?l),
+     [],
+     succeeds token_list([]) & succeeds token_list(?l)),
+    succeeds token_list(?l) => succeeds token_list([]) & 
+    succeeds token_list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds token_list(?l3) => succeeds token_list(?l1) & 
+     succeeds token_list(?l2),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds token_list([?x|?l3]),
+     [def succeeds token_list([?x|?l3]) by completion,
+      succeeds token_list(?l1) & succeeds token_list(?l2),
+      succeeds token_list([?x|?l1]) by sld,
+      succeeds token_list(?l2)],
+     succeeds token_list([?x|?l1]) & succeeds token_list(?l2)),
+    succeeds token_list([?x|?l3]) => succeeds token_list([?x|?l1]) & 
+    succeeds token_list(?l2))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3),
+  [succeeds token_list(?l3) => succeeds token_list(?l1) & 
+   succeeds token_list(?l2),
+   succeeds token_list(?l3) => succeeds token_list(?l1) & 
+   succeeds token_list(?l2),
+   succeeds token_list(?l1) & succeeds token_list(?l2)],
+  succeeds token_list(?l1) & succeeds token_list(?l2))]
+).
+
+:- corollary(token_list:app:1,
+all [l1,l2]: succeeds list(?l1) & succeeds token_list(?l1 ** ?l2) =>
+ succeeds token_list(?l1),
+assume(succeeds list(?l1) & succeeds token_list(?l1 ** ?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds token_list(?l1) & succeeds token_list(?l2) by 
+   lemma(token_list:prefix)],
+ succeeds token_list(?l1))
+).
+
+:- corollary(token_list:app:2,
+all [l1,l2]: succeeds list(?l1) & succeeds token_list(?l1 ** ?l2) =>
+ succeeds token_list(?l2),
+assume(succeeds list(?l1) & succeeds token_list(?l1 ** ?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds token_list(?l1) & succeeds token_list(?l2) by 
+   lemma(token_list:prefix)],
+ succeeds token_list(?l2))
+).
+
+:- lemma(err_msg:append,
+all [x,l3,l4]: succeeds list(?l3) & err_msg(?l4,?x) => 
+ err_msg(?l3 ** ?l4,?x),
+assume(succeeds list(?l3) & err_msg(?l4,?x),
+ [ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l4 & gr(?y) &
+   ?x = error(?y / ?l2) by elimination(err_msg,2),
+  exist([l1,l2,y],
+   succeeds list(?l1) & ?l1 ** ?l2 = ?l4 & gr(?y) & ?x = error(?y / ?l2),
+   [(?l3 ** ?l1) ** ?l2 = ?l3 ** (?l1 ** ?l2)
+      by concatenation,
+    (?l3 ** ?l1) ** ?l2 = ?l3 ** ?l4,
+    succeeds list(?l3 ** ?l1) by corollary(app:types:1),
+    succeeds list(?l3 ** ?l1) & (?l3 ** ?l1) ** ?l2 = ?l3 ** ?l4 &
+     ?x = error(?y / ?l2),
+    ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l3 ** ?l4 & gr(?y) &
+     ?x = error(?y / ?l2),
+    err_msg(?l3 ** ?l4,?x) by introduction(err_msg,2)],
+   err_msg(?l3 ** ?l4,?x))],
+ err_msg(?l3 ** ?l4,?x))
+).
+
+:- corollary(err_msg:cons,
+all [x,l1,l2]: err_msg(?l1,?l2) => err_msg([?x|?l1],?l2),
+assume(err_msg(?l1,?l2),
+ [succeeds list([?x]) by lemma(list:1),
+  err_msg([?x] ** ?l1,?l2) by lemma(err_msg:append),
+  [?x] ** ?l1 = [?x|?l1] by concatenation,
+  err_msg([?x|?l1],?l2)],
+ err_msg([?x|?l1],?l2))
+).
+
+:- corollary(err_msg:cons:2,
+all [x1,x2,l1,l2]: err_msg(?l1,?l2) => err_msg([?x1,?x2|?l1],?l2),
+assume(err_msg(?l1,?l2),
+ [err_msg([x2|?l1],?l2) by corollary(err_msg:cons),
+  err_msg([?x1,?x2|?l1],?l2) by corollary(err_msg:cons)],
+ err_msg([?x1,?x2|?l1],?l2))
+).
+
+:- lemma(err_msg:more,
+all [l0,l1,l2,m,n,t1,t2]: err_msg(?l0,?l1) &
+ succeeds more(?l1,?m,?n,?t1,?l2,?t2) => ?l1 = ?l2,
+assume(err_msg(?l0,?l1) & succeeds more(?l1,?m,?n,?t1,?l2,?t2),
+ [ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l0 & gr(?y) &
+   ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+  exist([0,1,y],
+   succeeds list(?0) & ?0 ** ?1 = ?l0 & gr(?y) & ?l1 = error(?y / ?1),
+   [def(succeeds more(error(?y / ?1),?m,?n,?t1,?l2,?t2)) by completion,
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(err_msg:expect,
+all [l,l1,l2,x]: err_msg(?l,?l1) & succeeds expect(?l1,?x,?l2) => ?l1 = ?l2,
+assume(err_msg(?l,?l1) & succeeds expect(?l1,?x,?l2),
+ [ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) &
+   ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+  exist([0,1,y],
+   succeeds list(?0) & ?0 ** ?1 = ?l & gr(?y) & ?l1 = error(?y / ?1),
+   [def(succeeds expect(error(?y / ?1),?x,?l2)) by completion,
+    ?l2 = error(?y / ?1),
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(err_msg:one_arg,
+all [l,l1,l2,t]: err_msg(?l,?l1) & succeeds one_arg(?l1,?l2,?t) => ?l1 = ?l2,
+assume(err_msg(?l,?l1) & succeeds one_arg(?l1,?l2,?t),
+ [ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) & 
+   ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+  exist([0,1,y],
+   succeeds list(?0) & ?0 ** ?1 = ?l & gr(?y) & ?l1 = error(?y / ?1),
+   [def(succeeds one_arg(error(?y / ?1),?l2,?t)) by completion,
+    ?l2 = error(?y / ?1),
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(err_msg:arg_seq,
+all [l,l1,l2,ts]: err_msg(?l,?l1) & succeeds arg_seq(?l1,?l2,?ts) =>
+ ?l1 = ?l2,
+assume(err_msg(?l,?l1) & succeeds arg_seq(?l1,?l2,?ts),
+ [ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) & 
+   ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+  exist([0,1,y],
+   succeeds list(?0) & ?0 ** ?1 = ?l & gr(?y) & ?l1 = error(?y / ?1),
+   [def(succeeds arg_seq(error(?y / ?1),?l2,?ts)) by completion,
+    ?l2 = error(?y / ?1),
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(err_msg:list_tail,
+all [l,l1,l2,t]: err_msg(?l,?l1) & succeeds list_tail(?l1,?l2,?t) =>
+ ?l1 = ?l2,
+assume(err_msg(?l,?l1) & succeeds list_tail(?l1,?l2,?t),
+ [ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) & 
+   ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+  exist([0,1,y],
+   succeeds list(?0) & ?0 ** ?1 = ?l & gr(?y) & ?l1 = error(?y / ?1),
+   [def(succeeds list_tail(error(?y / ?1),?l2,?t)) by completion,
+    ?l2 = error(?y / ?1),
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(err_msg:trivial,
+all [x,l]: gr(?x) => err_msg(?l,error(?x / ?l)),
+assume(gr(?x),
+ [succeeds list([]) by sld,
+  [] ** ?l = ?l by corollary(app:nil),
+  error(?x / ?l) = error(?x / ?l),
+  ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) &
+   error(?x / ?l) = error(?y / ?l2),
+  err_msg(?l,error(?x / ?l)) by introduction(err_msg,2)],
+ err_msg(?l,error(?x / ?l)))
+).
+
+:- lemma(expect:err_msg,
+all [x,l1,l2]: succeeds expect(?l1,?x,?l2) & succeeds token_list(?l1) &
+ gr(?x) => ?l1 = [?x|?l2] \/ err_msg(?l1,?l2),
+assume(succeeds expect(?l1,?x,?l2) & succeeds token_list(?l1) & gr(?x),
+ [def succeeds expect(?l1,?x,?l2) by completion,
+  cases(
+   [case(
+     ex [y,0]: ?l1 = [?y|?0] & 
+      (?x = ?y & ?l2 = ?0 \/ ?x <> ?y & ?l2 = error(expect(?x) / [?y|?0])),
+     exist([y,0],
+      ?l1 = [?y|?0] & 
+      (?x = ?y & ?l2 = ?0 \/ ?x <> ?y & ?l2 = error(expect(?x) / [?y|?0])),
+      cases(?x = ?y & ?l2 = ?0,
+       [],
+       ?x <> ?y & ?l2 = error(expect(?x) / [?y|?0]),
+       [err_msg([?y|?0],error(expect(?x) / [?y|?0])) by 
+        lemma(err_msg:trivial),
+	err_msg(?l1,?l2)],
+       ?l1 = [?x|?l2] \/ err_msg(?l1,?l2)),
+      ?l1 = [?x|?l2] \/ err_msg(?l1,?l2))),
+    case(?l1 = [] & ?l2 = error(expect(?x) / []),
+     [err_msg([],error(expect(?x) / [])) by lemma(err_msg:trivial),
+      err_msg(?l1,?l2)]),
+    case(ex 1: ?l1 = error(?1) & ?l2 = error(?1),
+     exist(1,
+      ?l1 = error(?1) & ?l2 = error(?1),
+      [def succeeds token_list(error(?1)) by completion,
+       ff],
+      ?l1 = [?x|?l2] \/ err_msg(?l1,?l2)))],
+   ?l1 = [?x|?l2] \/ err_msg(?l1,?l2))],
+ ?l1 = [?x|?l2] \/ err_msg(?l1,?l2))
+).
+
+:- lemma(number_token:wf_term,
+all [y,t]: succeeds number_token(?y) & succeeds minus_number_tree(?y,?t) =>
+ succeeds wf_term([name(-),?y],0,?t),
+assume(succeeds number_token(?y) & succeeds minus_number_tree(?y,?t),
+ [def(succeeds number_token(?y)) by completion,
+  cases(ex 0: ?y = integer(?0),
+   exist(0,?y = integer(?0),
+    [def(succeeds minus_number_tree(integer(?0),?t)) by completion,
+     exist(1,?t = integer(?1) & succeeds ?1 is - ?0,
+      [succeeds wf_term([name(-),integer(?0)],0,integer(?1)) by sld,
+       succeeds wf_term([name(-),?y],0,?t)],
+      succeeds wf_term([name(-),?y],0,?t))],
+    succeeds wf_term([name(-),?y],0,?t)),
+   ex 0: ?y = float_number(?0),
+   exist(0,?y = float_number(?0),
+    [def(succeeds minus_number_tree(float_number(?0),?t)) by completion,
+     exist(1,?t = float_number(?1) & succeeds ?1 is - ?0,
+      [succeeds wf_term([name(-),float_number(?0)],0,float_number(?1))
+        by sld,
+       succeeds wf_term([name(-),?y],0,?t)],
+      succeeds wf_term([name(-),?y],0,?t))],
+    succeeds wf_term([name(-),?y],0,?t)),
+   succeeds wf_term([name(-),?y],0,?t))],
+ succeeds wf_term([name(-),?y],0,?t))
+).
+
+:- lemma(wf_term:constant,
+all [x,y]: succeeds atom(?y) =>
+ succeeds wf_term([open(?x),name(?y),close],0,con(?y)),
+assume(succeeds atom(?y),
+ [terminates symbol_op(?y) by lemma(symbol_op:termination),
+  succeeds symbol_op(?y) \/ fails symbol_op(?y),
+  cases(succeeds symbol_op(?y),
+   succeeds wf_term([open(?x),name(?y),close],0,con(?y)) by sld,
+   fails symbol_op(?y),
+   [succeeds wf_term([name(?y)],0,con(?y)) by sld,
+    [open(?x),name(?y)] ** [close] = [open(?x),name(?y),close]
+     by concatenation,
+    succeeds list([open(?x),name(?y)]) by lemma(list:2),
+    succeeds append([open(?x),name(?y)],[close],[open(?x),name(?y)] ** [close])
+     by existence(**,2),
+    succeeds append([open(?x),name(?y)],[close],[open(?x),name(?y),close]),
+    succeeds 0 =< 1200 by builtin,
+    succeeds wf_term([open(?x),name(?y),close],0,con(?y)) by sld],
+   succeeds wf_term([open(?x),name(?y),close],0,con(?y)))],
+ succeeds wf_term([open(?x),name(?y),close],0,con(?y)))
+).
+
+:- lemma(wf_one_arg:constant,
+all x: succeeds atom(?x) => succeeds wf_one_arg([name(?x)],con(?x)),
+assume(succeeds atom(?x),
+ [terminates symbol_op(?x) by lemma(symbol_op:termination),
+  succeeds symbol_op(?x) \/ fails symbol_op(?x),
+  cases(succeeds symbol_op(?x),
+  succeeds wf_one_arg([name(?x)],con(?x)) by sld,
+  fails symbol_op(?x),
+  [succeeds wf_term([name(?x)],0,con(?x)) by sld,
+   succeeds 0 =< 999 by builtin,
+   succeeds wf_one_arg([name(?x)],con(?x)) by sld],
+  succeeds wf_one_arg([name(?x)],con(?x)))],
+ succeeds wf_one_arg([name(?x)],con(?x)))
+).
+
+:- lemma(more_ok:term_ok:zero,
+all [e0,e1,e2,j,r1,r2]: succeeds wf_term(?e0,0,?r1) &
+ more_ok(?e1,0,?j,?r1,?e2,?r2) => term_ok(?e0 ** ?e1,?j,?e2,?r2),
+assume(succeeds wf_term(?e0,0,?r1) & more_ok(?e1,0,?j,?r1,?e2,?r2),
+ [assume(succeeds 0 =< ?j,
+   [succeeds 0 =< ?j => 
+    (ex [e3,k]: succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 & 
+      (all e0: succeeds wf_term(?e0,0,?r1) => 
+        succeeds wf_term(?e0 ** ?e3,?k,?r2))) by elimination(more_ok,6),
+    ex [e3,k]: succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 &
+     (all e0: succeeds wf_term(?e0,0,?r1) => 
+       succeeds wf_term(?e0 ** ?e3,?k,?r2)),
+    exist([e3,k],
+     succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 & 
+     (all e0: succeeds wf_term(?e0,0,?r1) => 
+       succeeds wf_term(?e0 ** ?e3,?k,?r2)),
+     [succeeds wf_term(?e0 ** ?e3,?k,?r2),
+      ?e0 ** (?e3 ** ?e2) = ?e0 ** ?e1,
+      succeeds list(?e0) by corollary(wf_term:list),
+      ?e0 ** ?e3 ** ?e2 = ?e0 ** (?e3 ** ?e2) by concatenation,
+      ?e0 ** ?e3 ** ?e2 = ?e0 ** ?e1,
+      ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+       succeeds wf_term(?e3,?k,?r2)],
+     ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+      succeeds wf_term(?e3,?k,?r2))],
+   ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+    succeeds wf_term(?e3,?k,?r2)),
+  term_ok(?e0 ** ?e1,?j,?e2,?r2) by introduction(term_ok,4)],
+ term_ok(?e0 ** ?e1,?j,?e2,?r2))
+).
+
+:- lemma(more_ok:term_ok,
+all [e0,e1,e2,i,j,r1,r2]: succeeds wf_term(?e0,?i,?r1) &
+ succeeds ?i =< ?j & more_ok(?e1,?i,?j,?r1,?e2,?r2) =>
+  term_ok(?e0 ** ?e1,?j,?e2,?r2),
+assume(succeeds wf_term(?e0,?i,?r1) & succeeds ?i =< ?j & 
+ more_ok(?e1,?i,?j,?r1,?e2,?r2),
+ [assume(succeeds 0 =< ?j,
+   [succeeds ?i =< ?j => 
+    (ex [e3,k]: succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 
+      & 
+      (all e0: succeeds wf_term(?e0,?i,?r1) => 
+        succeeds wf_term(?e0 ** ?e3,?k,?r2))) by elimination(more_ok,6),
+    ex [e3,k]: succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 &
+     (all e0: succeeds wf_term(?e0,?i,?r1) => 
+       succeeds wf_term(?e0 ** ?e3,?k,?r2)),
+    exist([e3,k],
+     succeeds ?k =< ?j & succeeds list(?e3) & ?e3 ** ?e2 = ?e1 & 
+     (all e0: succeeds wf_term(?e0,?i,?r1) => 
+       succeeds wf_term(?e0 ** ?e3,?k,?r2)),
+     [succeeds wf_term(?e0 ** ?e3,?k,?r2),
+      ?e0 ** (?e3 ** ?e2) = ?e0 ** ?e1,
+      succeeds list(?e0) by corollary(wf_term:list),
+      ?e0 ** ?e3 ** ?e2 = ?e0 ** (?e3 ** ?e2) by concatenation,
+      ?e0 ** ?e3 ** ?e2 = ?e0 ** ?e1,
+      ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+       succeeds wf_term(?e3,?k,?r2)],
+     ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+      succeeds wf_term(?e3,?k,?r2))],
+   ex [e3,k]: succeeds ?k =< ?j & ?e3 ** ?e2 = ?e0 ** ?e1 & 
+    succeeds wf_term(?e3,?k,?r2)),
+  term_ok(?e0 ** ?e1,?j,?e2,?r2) by introduction(term_ok,4)],
+ term_ok(?e0 ** ?e1,?j,?e2,?r2))
+).
+
+:- lemma(more_ok:more,
+all [l,i,j,t]: more_ok(?l,?i,?j,?t,?l,?t),
+[assume(succeeds ?i =< ?j,
+ [succeeds list([]) by sld,
+  [] ** ?l = ?l by corollary(app:nil),
+  assume(succeeds wf_term(?e0,?i,?t),
+   [succeeds list(?e0) by corollary(wf_term:list),
+    ?e0 ** [] = ?e0 by lemma(app:nil),
+    succeeds wf_term(?e0 ** [],?i,?t)],
+   succeeds wf_term(?e0 ** [],?i,?t)),
+  all e0: succeeds wf_term(?e0,?i,?t) => 
+   succeeds wf_term(?e0 ** [],?i,?t),
+  ex [e3,k]: succeeds ?k =< ?j & 
+  succeeds list(?e3) & ?e3 ** ?l = ?l & 
+   (all e0: succeeds wf_term(?e0,?i,?t) => 
+     succeeds wf_term(?e0 ** ?e3,?k,?t))],
+ ex [e3,k]: succeeds ?k =< ?j & 
+  succeeds list(?e3) & ?e3 ** ?l = ?l & 
+  (all e0: succeeds wf_term(?e0,?i,?t) => 
+    succeeds wf_term(?e0 ** ?e3,?k,?t))),
+ more_ok(?l,?i,?j,?t,?l,?t) by introduction(more_ok,6)]
+).
+
+:- lemma(term:wf_term,
+(all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) =>
+ succeeds token_list(?e1) => term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2)) &
+(all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => 
+ succeeds token_list(?e1) => one_arg_ok(?e1,?e2,?r) \/ err_msg(?e1,?e2)) &
+(all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+ succeeds token_list(?e1) => arg_seq_ok(?e1,?e2,?rs) \/ err_msg(?e1,?e2)) &
+(all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+ succeeds token_list(?e1) => list_tail_ok(?e1,?e2,?r) \/ err_msg(?e1,?e2)) &
+(all [e1,i,j,r1,e2,r2]: succeeds more(?e1,?i,?j,?r1,?e2,?r2) =>
+ succeeds token_list(?e1) =>
+  more_ok(?e1,?i,?j,?r1,?e2,?r2) \/ err_msg(?e1,?e2)),
+induction(
+ [all [e1,i,e2,r]: succeeds term(?e1,?i,?e2,?r) => 
+   succeeds token_list(?e1) => term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2),
+  all [e1,e2,r]: succeeds one_arg(?e1,?e2,?r) => succeeds token_list(?e1) 
+   => one_arg_ok(?e1,?e2,?r) \/ err_msg(?e1,?e2),
+  all [e1,e2,rs]: succeeds arg_seq(?e1,?e2,?rs) => 
+   succeeds token_list(?e1) => arg_seq_ok(?e1,?e2,?rs) \/ err_msg(?e1,?e2),
+  all [e1,e2,r]: succeeds list_tail(?e1,?e2,?r) => 
+   succeeds token_list(?e1) => list_tail_ok(?e1,?e2,?r) \/ err_msg(?e1,?e2),
+  all [e1,i,j,r1,e2,r2]: succeeds more(?e1,?i,?j,?r1,?e2,?r2) => 
+   succeeds token_list(?e1) => more_ok(?e1,?i,?j,?r1,?e2,?r2) \/ 
+   err_msg(?e1,?e2)],
+ [step([x,l1,n,l2,t],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,variable(?x),?l2,?t) \/ 
+    err_msg(?l1,?l2),
+    succeeds more(?l1,0,?n,variable(?x),?l2,?t)],
+   assume(succeeds token_list([variable(?x)|?l1]),
+    [def succeeds token_list([variable(?x)|?l1]) by completion,
+     more_ok(?l1,0,?n,variable(?x),?l2,?t) \/ 
+      err_msg(?l1,?l2),
+     cases(more_ok(?l1,0,?n,variable(?x),?l2,?t),
+      [succeeds wf_term([variable(?x)],0,variable(?x)) by sld,
+       term_ok([variable(?x)] ** ?l1,?n,?l2,?t) by 
+        lemma(more_ok:term_ok:zero),
+       [variable(?x)] ** ?l1 = [variable(?x)|?l1] by concatenation,
+       term_ok([variable(?x)|?l1],?n,?l2,?t)],
+      err_msg(?l1,?l2),
+      err_msg([variable(?x)|?l1],?l2) by corollary(err_msg:cons),
+      term_ok([variable(?x)|?l1],?n,?l2,?t) \/ 
+      err_msg([variable(?x)|?l1],?l2))],
+    term_ok([variable(?x)|?l1],?n,?l2,?t) \/ 
+    err_msg([variable(?x)|?l1],?l2)),
+   succeeds token_list([variable(?x)|?l1]) => 
+   term_ok([variable(?x)|?l1],?n,?l2,?t) \/ err_msg([variable(?x)|?l1],?l2)),
+  step([x,l1,n,l2,t],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,integer(?x),?l2,?t) \/ 
+    err_msg(?l1,?l2),
+    succeeds more(?l1,0,?n,integer(?x),?l2,?t)],
+   assume(succeeds token_list([integer(?x)|?l1]),
+    [def succeeds token_list([integer(?x)|?l1]) by completion,
+     more_ok(?l1,0,?n,integer(?x),?l2,?t) \/ 
+      err_msg(?l1,?l2),
+     cases(more_ok(?l1,0,?n,integer(?x),?l2,?t),
+      [succeeds wf_term([integer(?x)],0,integer(?x)) by sld,
+       term_ok([integer(?x)] ** ?l1,?n,?l2,?t) by 
+        lemma(more_ok:term_ok:zero),
+       [integer(?x)] ** ?l1 = [integer(?x)|?l1] by concatenation,
+       term_ok([integer(?x)|?l1],?n,?l2,?t)],
+      err_msg(?l1,?l2),
+      err_msg([integer(?x)|?l1],?l2) by corollary(err_msg:cons),
+      term_ok([integer(?x)|?l1],?n,?l2,?t) \/ 
+      err_msg([integer(?x)|?l1],?l2))],
+    term_ok([integer(?x)|?l1],?n,?l2,?t) \/ err_msg([integer(?x)|?l1],?l2)),
+   succeeds token_list([integer(?x)|?l1]) => 
+   term_ok([integer(?x)|?l1],?n,?l2,?t) \/ err_msg([integer(?x)|?l1],?l2)),
+  step([x,l1,n,l2,t],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,float_number(?x),?l2,?t) 
+    \/ err_msg(?l1,?l2),
+    succeeds more(?l1,0,?n,float_number(?x),?l2,?t)],
+   assume(succeeds token_list([float_number(?x)|?l1]),
+    [def succeeds token_list([float_number(?x)|?l1]) by completion,
+     more_ok(?l1,0,?n,float_number(?x),?l2,?t) \/ 
+      err_msg(?l1,?l2),
+     cases(more_ok(?l1,0,?n,float_number(?x),?l2,?t),
+      [succeeds wf_term([float_number(?x)],0,float_number(?x)) by sld,
+       term_ok([float_number(?x)] ** ?l1,?n,?l2,?t) by 
+        lemma(more_ok:term_ok:zero),
+       [float_number(?x)] ** ?l1 = [float_number(?x)|?l1] by concatenation,
+       term_ok([float_number(?x)|?l1],?n,?l2,?t)],
+      err_msg(?l1,?l2),
+      err_msg([float_number(?x)|?l1],?l2) by corollary(err_msg:cons),
+      term_ok([float_number(?x)|?l1],?n,?l2,?t) \/ 
+      err_msg([float_number(?x)|?l1],?l2))],
+    term_ok([float_number(?x)|?l1],?n,?l2,?t) \/ 
+    err_msg([float_number(?x)|?l1],?l2)),
+   succeeds token_list([float_number(?x)|?l1]) => 
+   term_ok([float_number(?x)|?l1],?n,?l2,?t) \/ 
+   err_msg([float_number(?x)|?l1],?l2)),
+  step([x,l1,n,l2,t],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,char_code_list(?x),?l2,?t)
+    \/ err_msg(?l1,?l2),
+    succeeds more(?l1,0,?n,char_code_list(?x),?l2,?t)],
+   assume(succeeds token_list([char_code_list(?x)|?l1]),
+    [def succeeds token_list([char_code_list(?x)|?l1]) by completion,
+     more_ok(?l1,0,?n,char_code_list(?x),?l2,?t) \/ 
+      err_msg(?l1,?l2),
+     cases(more_ok(?l1,0,?n,char_code_list(?x),?l2,?t),
+      [succeeds wf_term([char_code_list(?x)],0,char_code_list(?x)) by sld,
+       term_ok([char_code_list(?x)] ** ?l1,?n,?l2,?t) by 
+        lemma(more_ok:term_ok:zero),
+       [char_code_list(?x)] ** ?l1 = [char_code_list(?x)|?l1] by concatenation,
+       term_ok([char_code_list(?x)|?l1],?n,?l2,?t)],
+      err_msg(?l1,?l2),
+      err_msg([char_code_list(?x)|?l1],?l2) by corollary(err_msg:cons),
+      term_ok([char_code_list(?x)|?l1],?n,?l2,?t) \/ 
+      err_msg([char_code_list(?x)|?l1],?l2))],
+    term_ok([char_code_list(?x)|?l1],?n,?l2,?t) \/ 
+    err_msg([char_code_list(?x)|?l1],?l2)),
+   succeeds token_list([char_code_list(?x)|?l1]) => 
+   term_ok([char_code_list(?x)|?l1],?n,?l2,?t) \/ 
+   err_msg([char_code_list(?x)|?l1],?l2)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [succeeds token_list(?l1) => one_arg_ok(?l1,?l2,?t1) \/ err_msg(?l1,?l2),
+    succeeds token_list(?l2) => arg_seq_ok(?l2,?l3,?ts) \/ err_msg(?l2,?l3),
+    succeeds token_list(?l3) => 
+    more_ok(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/ err_msg(?l3,?l4),
+    ?y = open(nolayout),
+    succeeds one_arg(?l1,?l2,?t1),
+    succeeds arg_seq(?l2,?l3,?ts),
+    succeeds more(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2)],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [def succeeds token_list([name(?x),?y|?l1]) by completion,
+     def succeeds token_list([?y|?l1]) by completion,
+     one_arg_ok(?l1,?l2,?t1) \/ err_msg(?l1,?l2),
+     cases(one_arg_ok(?l1,?l2,?t1),
+      [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t1) by 
+        elimination(one_arg_ok,3),
+       exist(e3,
+        ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t1),
+        [succeeds list(?e3) by lemma(wf_term:types),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 arg_seq_ok(?l2,?l3,?ts) \/ err_msg(?l2,?l3),
+	 cases(arg_seq_ok(?l2,?l3,?ts),
+          [ex e3: ?e3 ** ?l3 = ?l2 & succeeds wf_arg_seq(?e3,?ts) by 
+            elimination(arg_seq_ok,3),
+           exist(e4,
+            ?e4 ** ?l3 = ?l2 & succeeds wf_arg_seq(?e4,?ts),
+            [succeeds list(?e4) by lemma(wf_term:types),
+	     succeeds token_list(?e4 ** ?l3),
+	     succeeds token_list(?l3) by corollary(token_list:app:2),
+	     more_ok(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2) \/ err_msg(?l3,?l4),
+	     cases(more_ok(?l3,0,?n1,fun(?x,[?t1|?ts]),?l4,?t2),
+              [succeeds list([open(nolayout)|?e3]) by sld,
+	       succeeds list([name(?x),open(nolayout)|?e3]) by sld,
+	       succeeds append([name(?x),open(nolayout)|?e3],?e4,
+		[name(?x),open(nolayout)|?e3] ** ?e4) by existence(**,2),
+	       succeeds wf_term([name(?x),open(nolayout)|?e3] ** ?e4,0,
+		fun(?x,[?t1|?ts])) by sld,
+	       term_ok([name(?x),open(nolayout)|?e3] ** ?e4 ** ?l3,?n1,?l4,?t2)
+		by lemma(more_ok:term_ok:zero),
+	       term_ok([name(?x),?y|?e3] ** ?e4 ** ?l3,?n1,?l4,?t2),
+	       [name(?x),?y|?e3] ** ?e4 ** ?l3 =
+		[name(?x),?y|?e3 ** (?e4 ** ?l3)] by concatenation,
+	       ?e3 ** (?e4 ** ?l3) = ?e3 ** ?l2 = ?l1,
+	       [name(?x),?y|?e3] ** ?e4 ** ?l3 = [name(?x),?y|?l1],
+	       term_ok([name(?x),?y|?l1],?n1,?l4,?t2)],
+              err_msg(?l3,?l4),
+              [err_msg(?e4 ** ?l3,?l4) by lemma(err_msg:append),
+	       err_msg(?l2,?l4),
+	       err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	       err_msg(?l1,?l4),
+	       err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons:2)],
+              term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+              err_msg([name(?x),?y|?l1],?l4))],
+            term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+            err_msg([name(?x),?y|?l1],?l4))],
+          err_msg(?l2,?l3),
+          [?l3 = ?l4 by lemma(err_msg:more),
+	   err_msg(?l2,?l4),
+	   err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	   err_msg(?l1,?l4),
+	   err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons:2)],
+          term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+          err_msg([name(?x),?y|?l1],?l4))],
+        term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+        err_msg([name(?x),?y|?l1],?l4))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:arg_seq),
+       err_msg(?l1,?l3),
+       ?l3 = ?l4 by lemma(err_msg:more),
+       err_msg(?l1,?l4),
+       err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons)],
+      term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+      err_msg([name(?x),?y|?l1],?l4))],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n1,?t1,?l4,?t2) \/ 
+    err_msg(?l1,?l4),
+    ?y <> open(nolayout),
+    succeeds prefix_op(?x),
+    ?x = (-),
+    succeeds number_token(?y),
+    succeeds minus_number_tree(?y,?t1),
+    succeeds more(?l1,0,?n1,?t1,?l4,?t2)],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [def succeeds token_list([name(?x),?y|?l1]) by completion,
+     def succeeds token_list([?y|?l1]) by completion,
+     more_ok(?l1,0,?n1,?t1,?l4,?t2) \/ err_msg(?l1,?l4),
+     cases(more_ok(?l1,0,?n1,?t1,?l4,?t2),
+      [succeeds wf_term([name(-),?y],0,?t1) by lemma(number_token:wf_term),
+       term_ok([name(-),?y] ** ?l1,?n1,?l4,?t2) by 
+        lemma(more_ok:term_ok:zero),
+       [name(-),?y] ** ?l1 = [name(-),?y|?l1] by concatenation,
+       term_ok([name(-),?y|?l1],?n1,?l4,?t2),
+       term_ok([name(?x),?y|?l1],?n1,?l4,?t2)],
+      err_msg(?l1,?l4),
+      err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons:2),
+      term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+      err_msg([name(?x),?y|?l1],?l4))],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [succeeds token_list([?y|?l1]) => term_ok([?y|?l1],?n3,?l2,?t1) \/ 
+    err_msg([?y|?l1],?l2),
+    succeeds token_list(?l2) => more_ok(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) 
+    \/ err_msg(?l2,?l4),
+    ?y <> open(nolayout),
+    succeeds prefix_op(?x),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds prefix_prec(?x,?n2,?n3),
+    succeeds ?n2 =< ?n1,
+    succeeds term([?y|?l1],?n3,?l2,?t1),
+    succeeds more(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2)],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [def succeeds token_list([name(?x),?y|?l1]) by completion,
+     term_ok([?y|?l1],?n3,?l2,?t1) \/ err_msg([?y|?l1],?l2),
+     cases(term_ok([?y|?l1],?n3,?l2,?t1),
+      [succeeds 0 =< ?n3 by corollary(prefix_prec:zero),
+       succeeds 0 =< ?n3 => 
+       (ex [e3,k]: succeeds ?k =< ?n3 & ?e3 ** ?l2 = [?y|?l1] & 
+	 succeeds wf_term(?e3,?k,?t1)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< ?n3 & ?e3 ** ?l2 = [?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+       exist([e3,k],
+	succeeds ?k =< ?n3 & ?e3 ** ?l2 = [?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+	[succeeds list(?e3) by corollary(wf_term:list),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 more_ok(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2) \/ err_msg(?l2,?l4),
+	 cases(more_ok(?l2,?n2,?n1,fun(?x,[?t1]),?l4,?t2),
+          [ex [x0,l0]: ?e3 = [?x0|?l0] & succeeds start_token(?x0)
+            by lemma(wf_term:term_start),
+	   exist([x0,l0],
+            ?e3 = [?x0|?l0] & succeeds start_token(?x0),
+            [succeeds append(?e3,?l2,?e3 ** ?l2) by existence(**,2),
+             def(succeeds append([?x0|?l0],?l2,[?y|?l1])) by completion,
+             ?x0 = ?y,
+             def(succeeds list([?x0|?l0])) by completion,
+             ?l0 ** ?l2 = ?l1 by uniqueness(**,2),
+             succeeds wf_term([?y|?l0],?k,?t1),
+	     succeeds wf_term([name(?x),?y|?l0],?n2,fun(?x,[?t1])),
+	     term_ok([name(?x),?y|?l0] ** ?l2,?n1,?l4,?t2)
+              by lemma(more_ok:term_ok),
+             [name(?x),?y|?l0] ** ?l2 = [name(?x),?y|?l0 ** ?l2]
+              by concatenation,
+             [name(?x),?y|?l0] ** ?l2 = [name(?x),?y|?l1],
+             term_ok([name(?x),?y|?l1],?n1,?l4,?t2)],
+            term_ok([name(?x),?y|?l1],?n1,?l4,?t2))],
+          err_msg(?l2,?l4),
+          [err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	   err_msg([?y|?l1],?l4),
+	   err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons)],
+          term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+          err_msg([name(?x),?y|?l1],?l4))],
+	term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+	err_msg([name(?x),?y|?l1],?l4))],
+      err_msg([?y|?l1],?l2),
+      [?l2 = ?l4 by lemma(err_msg:more),
+       err_msg([?y|?l1],?l4),
+       err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons)],
+      term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+      err_msg([name(?x),?y|?l1],?l4))],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [?y <> open(nolayout),
+    succeeds prefix_op(?x),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds prefix_prec(?x,?n2,?n3),
+    fails ?n2 =< ?n1,
+    ?l4 = error(prefix_prec / [name(?x),?y|?l1]),
+    ?t2 = error],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [err_msg([name(?x),?y|?l1],error(prefix_prec / [name(?x),?y|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([name(?x),?y|?l1],?l4)],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [?y <> open(nolayout),
+    fails prefix_op(?x),
+    succeeds symbol_op(?x),
+    ?l4 = error(operator / [name(?x),?y|?l1]),
+    ?t2 = error],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [err_msg([name(?x),?y|?l1],error(operator / [name(?x),?y|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([name(?x),?y|?l1],?l4)],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([x,y,l1,n1,l4,t2,l2,t1,l3,ts,n2,n3],
+   [succeeds token_list([?y|?l1]) => 
+    more_ok([?y|?l1],0,?n1,con(?x),?l4,?t2) \/ err_msg([?y|?l1],?l4),
+    ?y <> open(nolayout),
+    fails prefix_op(?x),
+    fails symbol_op(?x),
+    succeeds more([?y|?l1],0,?n1,con(?x),?l4,?t2)],
+   assume(succeeds token_list([name(?x),?y|?l1]),
+    [def succeeds token_list([name(?x),?y|?l1]) by completion,
+     more_ok([?y|?l1],0,?n1,con(?x),?l4,?t2) \/ err_msg([?y|?l1],?l4),
+     cases(more_ok([?y|?l1],0,?n1,con(?x),?l4,?t2),
+      [succeeds wf_term([name(?x)],0,con(?x)) by sld,
+       term_ok([name(?x)] ** [?y|?l1],?n1,?l4,?t2) by 
+        lemma(more_ok:term_ok:zero),
+       [name(?x)] ** [?y|?l1] = [name(?x),?y|?l1] by concatenation,
+       term_ok([name(?x),?y|?l1],?n1,?l4,?t2)],
+      err_msg([?y|?l1],?l4),
+      err_msg([name(?x),?y|?l1],?l4) by corollary(err_msg:cons),
+      term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+      err_msg([name(?x),?y|?l1],?l4))],
+    term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ 
+    err_msg([name(?x),?y|?l1],?l4)),
+   succeeds token_list([name(?x),?y|?l1]) => 
+   term_ok([name(?x),?y|?l1],?n1,?l4,?t2) \/ err_msg([name(?x),?y|?l1],?l4)),
+  step([y,l1,n,l4,t3,l2,t1,l3,t2],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,con([]),?l4,?t3) \/ 
+    err_msg(?l1,?l4),
+    ?y = close_list,
+    succeeds more(?l1,0,?n,con([]),?l4,?t3)],
+   assume(succeeds token_list([open_list,?y|?l1]),
+    [def succeeds token_list([open_list,?y|?l1]) by completion,
+     def succeeds token_list([?y|?l1]) by completion,
+     more_ok(?l1,0,?n,con([]),?l4,?t3) \/ err_msg(?l1,?l4),
+     cases(more_ok(?l1,0,?n,con([]),?l4,?t3),
+      [succeeds wf_term([open_list,close_list],0,con([])) by sld,
+       succeeds wf_term([open_list,?y],0,con([])),
+       term_ok([open_list,?y] ** ?l1,?n,?l4,?t3) by 
+        lemma(more_ok:term_ok:zero),
+       [open_list,?y|?l1] = [open_list,?y] ** ?l1 by concatenation,
+       term_ok([open_list,?y|?l1],?n,?l4,?t3)],
+      err_msg(?l1,?l4),
+      err_msg([open_list,?y|?l1],?l4) by corollary(err_msg:cons:2),
+      term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+      err_msg([open_list,?y|?l1],?l4))],
+    term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+    err_msg([open_list,?y|?l1],?l4)),
+   succeeds token_list([open_list,?y|?l1]) => 
+   term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+   err_msg([open_list,?y|?l1],?l4)),
+  step([y,l1,n,l4,t3,l2,t1,l3,t2],
+   [succeeds token_list([?y|?l1]) => one_arg_ok([?y|?l1],?l2,?t1) \/ 
+    err_msg([?y|?l1],?l2),
+    succeeds token_list(?l2) => list_tail_ok(?l2,?l3,?t2) \/ 
+    err_msg(?l2,?l3),
+    succeeds token_list(?l3) => more_ok(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3) 
+    \/ err_msg(?l3,?l4),
+    ?y <> close_list,
+    succeeds one_arg([?y|?l1],?l2,?t1),
+    succeeds list_tail(?l2,?l3,?t2),
+    succeeds more(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3)],
+   assume(succeeds token_list([open_list,?y|?l1]),
+    [def succeeds token_list([open_list,?y|?l1]) by completion,
+     one_arg_ok([?y|?l1],?l2,?t1) \/ err_msg([?y|?l1],?l2),
+     cases(one_arg_ok([?y|?l1],?l2,?t1),
+      [ex e3: ?e3 ** ?l2 = [?y|?l1] & succeeds wf_one_arg(?e3,?t1) by 
+        elimination(one_arg_ok,3),
+       exist(e3,
+        ?e3 ** ?l2 = [?y|?l1] & succeeds wf_one_arg(?e3,?t1),
+        [succeeds list(?e3) by lemma(wf_term:types),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 list_tail_ok(?l2,?l3,?t2) \/ err_msg(?l2,?l3),
+	 cases(list_tail_ok(?l2,?l3,?t2),
+          [ex e3: ?e3 ** ?l3 = ?l2 & succeeds wf_list_tail(?e3,?t2) by 
+            elimination(list_tail_ok,3),
+           exist(e4,
+            ?e4 ** ?l3 = ?l2 & succeeds wf_list_tail(?e4,?t2),
+            [succeeds list(?e4) by lemma(wf_term:types),
+	     succeeds token_list(?e4 ** ?l3),
+	     succeeds token_list(?l3) by corollary(token_list:app:2),
+	     more_ok(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3) 
+              \/ err_msg(?l3,?l4),
+	     cases(more_ok(?l3,0,?n,fun('.',[?t1,?t2]),?l4,?t3),
+              [[open_list|?e3] ** ?e4 = [open_list|?e3 ** ?e4]
+	        by concatenation,
+	       succeeds append([open_list|?e3],?e4,[open_list|?e3] ** ?e4)
+	        by existence(**,2),
+	       succeeds append([open_list|?e3],?e4,[open_list|?e3 ** ?e4]),
+	       succeeds wf_term([open_list|?e3 ** ?e4],0,fun('.',[?t1,?t2]))
+	        by sld,
+	       term_ok([open_list|?e3 ** ?e4] ** ?l3,?n,?l4,?t3) by 
+                lemma(more_ok:term_ok:zero),
+	       [open_list|?e3 ** ?e4] ** ?l3 =
+	        [open_list|?e3 ** (?e4 ** ?l3)] by concatenation,
+	       ?e3 ** (?e4 ** ?l3) = ?e3 ** ?l2 = [?y|?l1],
+	       [open_list|?e3 ** ?e4] ** ?l3 = [open_list,?y|?l1],
+	       term_ok([open_list,?y|?l1],?n,?l4,?t3)],
+              err_msg(?l3,?l4),
+              [err_msg(?e4 ** ?l3,?l4) by lemma(err_msg:append),
+	       err_msg(?l2,?l4),
+	       err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	       err_msg([?y|?l1],?l4),
+	       err_msg([open_list,?y|?l1],?l4) by corollary(err_msg:cons)],
+              term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+              err_msg([open_list,?y|?l1],?l4))],
+            term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+            err_msg([open_list,?y|?l1],?l4))],
+          err_msg(?l2,?l3),
+          [?l3 = ?l4 by lemma(err_msg:more),
+	   err_msg(?l2,?l4),
+	   err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	   err_msg([?y|?l1],?l4),
+	   err_msg([open_list,?y|?l1],?l4) by corollary(err_msg:cons)],
+          term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+          err_msg([open_list,?y|?l1],?l4))],
+        term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+        err_msg([open_list,?y|?l1],?l4))],
+      err_msg([?y|?l1],?l2),
+      [?l2 = ?l3 by lemma(err_msg:list_tail),
+       err_msg([?y|?l1],?l3),
+       ?l3 = ?l4 by lemma(err_msg:more),
+       err_msg([?y|?l1],?l4),
+       err_msg([open_list,?y|?l1],?l4) by corollary(err_msg:cons)],
+      term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+      err_msg([open_list,?y|?l1],?l4))],
+    term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+    err_msg([open_list,?y|?l1],?l4)),
+   succeeds token_list([open_list,?y|?l1]) => 
+   term_ok([open_list,?y|?l1],?n,?l4,?t3) \/ 
+   err_msg([open_list,?y|?l1],?l4)),
+  step([0,x,y,l1,n,l4,t2,z,l2,t1,l3],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,con(?z),?l4,?t2) \/ 
+    err_msg(?l1,?l4),
+    succeeds name_token(?x),
+    ?y = close,
+    ?x = name(?z),
+    succeeds more(?l1,0,?n,con(?z),?l4,?t2)],
+   assume(succeeds token_list([open(?0),?x,?y|?l1]),
+    [def succeeds token_list([open(?0),?x,?y|?l1]) by completion,
+     def succeeds token_list([?x,?y|?l1]) by completion,
+     def succeeds token_list([?y|?l1]) by completion,
+     more_ok(?l1,0,?n,con(?z),?l4,?t2) \/ err_msg(?l1,?l4),
+     cases(more_ok(?l1,0,?n,con(?z),?l4,?t2),
+      [def succeeds token(name(?z)) by completion,
+       succeeds atom(?z),
+       succeeds wf_term([open(?0),name(?z),close],0,con(?z)) by 
+        lemma(wf_term:constant),
+       succeeds wf_term([open(?0),?x,?y],0,con(?z)),
+       term_ok([open(?0),?x,?y] ** ?l1,?n,?l4,?t2) by 
+        lemma(more_ok:term_ok:zero),
+       [open(?0),?x,?y] ** ?l1 = [open(?0),?x,?y|?l1] by concatenation,
+       term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2)],
+      err_msg(?l1,?l4),
+      err_msg([open(?0),?x,?y|?l1],?l4) by corollary(err_msg:cons),
+      term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+      err_msg([open(?0),?x,?y|?l1],?l4))],
+    term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+    err_msg([open(?0),?x,?y|?l1],?l4)),
+   succeeds token_list([open(?0),?x,?y|?l1]) => 
+   term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+   err_msg([open(?0),?x,?y|?l1],?l4)),
+  step([0,x,y,l1,n,l4,t2,z,l2,t1,l3],
+   [succeeds token_list([?x,?y|?l1]) => term_ok([?x,?y|?l1],1200,?l2,?t1) 
+    \/ err_msg([?x,?y|?l1],?l2),
+    succeeds token_list(?l3) => more_ok(?l3,0,?n,?t1,?l4,?t2) \/ 
+    err_msg(?l3,?l4),
+    fails name_token(?x) \/ ?y <> close,
+    succeeds term([?x,?y|?l1],1200,?l2,?t1),
+    succeeds expect(?l2,close,?l3),
+    succeeds more(?l3,0,?n,?t1,?l4,?t2)],
+   assume(succeeds token_list([open(?0),?x,?y|?l1]),
+    [def succeeds token_list([open(?0),?x,?y|?l1]) by completion,
+     term_ok([?x,?y|?l1],1200,?l2,?t1) \/ err_msg([?x,?y|?l1],?l2),
+     cases(term_ok([?x,?y|?l1],1200,?l2,?t1),
+      [succeeds 0 =< 1200 by builtin,
+       succeeds 0 =< 1200 => 
+       (ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	 succeeds wf_term(?e3,?k,?t1)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+       exist([e3,k],
+	succeeds ?k =< 1200 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+	[succeeds list(?e3) by corollary(wf_term:list),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 ?l2 = [close|?l3] \/ err_msg(?l2,?l3) by lemma(expect:err_msg),
+	 cases(?l2 = [close|?l3],
+          [def succeeds token_list([close|?l3]) by completion,
+	   more_ok(?l3,0,?n,?t1,?l4,?t2) \/ err_msg(?l3,?l4),
+           cases(more_ok(?l3,0,?n,?t1,?l4,?t2),
+            [succeeds list([open(?0)|?e3]) by sld,
+             succeeds append([open(?0)|?e3],[close],[open(?0)|?e3] ** [close])
+              by existence(**,2),
+             succeeds wf_term([open(?0)|?e3] ** [close],0,?t1) by sld,
+             term_ok([open(?0)|?e3] ** [close] ** ?l3,?n,?l4,?t2)
+	      by lemma(more_ok:term_ok:zero),
+	     [open(?0)|?e3] ** [close] ** ?l3 =
+	      [open(?0)|?e3 ** [close|?l3]] by concatenation,
+	     [open(?0)|?e3] ** [close] ** ?l3 = [open(?0)|?e3 ** ?l2],
+	     [open(?0)|?e3] ** [close] ** ?l3 = [open(?0),?x,?y|?l1],
+	     term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2)],
+            err_msg(?l3,?l4),
+            [err_msg([close|?l3],?l4) by corollary(err_msg:cons),
+	     err_msg(?l2,?l4),
+	     err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	     err_msg([?x,?y|?l1],?l4),
+	     err_msg([open(?0),?x,?y|?l1],?l4) by corollary(err_msg:cons)],
+            term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+            err_msg([open(?0),?x,?y|?l1],?l4))],
+          err_msg(?l2,?l3),
+          [?l3 = ?l4 by lemma(err_msg:more),
+	   err_msg(?l2,?l4),
+	   err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+	   err_msg([?x,?y|?l1],?l4),
+	   err_msg([open(?0),?x,?y|?l1],?l4) by corollary(err_msg:cons)],
+          term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+          err_msg([open(?0),?x,?y|?l1],?l4))],
+	term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+	err_msg([open(?0),?x,?y|?l1],?l4))],
+      err_msg([?x,?y|?l1],?l2),
+      [?l2 = ?l3 by lemma(err_msg:expect),
+       err_msg([?x,?y|?l1],?l3),
+       ?l3 = ?l4 by lemma(err_msg:more),
+       err_msg([?x,?y|?l1],?l4),
+       err_msg([open(?0),?x,?y|?l1],?l4) by corollary(err_msg:cons)],
+      term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+      err_msg([open(?0),?x,?y|?l1],?l4))],
+    term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+    err_msg([open(?0),?x,?y|?l1],?l4)),
+   succeeds token_list([open(?0),?x,?y|?l1]) => 
+   term_ok([open(?0),?x,?y|?l1],?n,?l4,?t2) \/ 
+   err_msg([open(?0),?x,?y|?l1],?l4)),
+  step([y,l1,n,l4,t2,l2,t1,l3],
+   [succeeds token_list(?l1) => more_ok(?l1,0,?n,con('{}'),?l4,?t2) \/ 
+    err_msg(?l1,?l4),
+    ?y = close_curly,
+    succeeds more(?l1,0,?n,con('{}'),?l4,?t2)],
+   assume(succeeds token_list([open_curly,?y|?l1]),
+    [def succeeds token_list([open_curly,?y|?l1]) by completion,
+     def succeeds token_list([?y|?l1]) by completion,
+     more_ok(?l1,0,?n,con('{}'),?l4,?t2) \/ err_msg(?l1,?l4),
+     cases(more_ok(?l1,0,?n,con('{}'),?l4,?t2),
+      [succeeds wf_term([open_curly,close_curly],0,con('{}')) by sld,
+       succeeds wf_term([open_curly,?y],0,con('{}')),
+       term_ok([open_curly,?y] ** ?l1,?n,?l4,?t2) by 
+        lemma(more_ok:term_ok:zero),
+       [open_curly,?y] ** ?l1 = [open_curly,?y|?l1] by concatenation,
+       term_ok([open_curly,?y|?l1],?n,?l4,?t2)],
+      err_msg(?l1,?l4),
+      err_msg([open_curly,?y|?l1],?l4) by corollary(err_msg:cons),
+      term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+      err_msg([open_curly,?y|?l1],?l4))],
+    term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+    err_msg([open_curly,?y|?l1],?l4)),
+   succeeds token_list([open_curly,?y|?l1]) => 
+   term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+   err_msg([open_curly,?y|?l1],?l4)),
+  step([y,l1,n,l4,t2,l2,t1,l3],
+   [succeeds token_list([?y|?l1]) => term_ok([?y|?l1],1200,?l2,?t1) \/ 
+    err_msg([?y|?l1],?l2),
+    succeeds token_list(?l3) => more_ok(?l3,0,?n,fun('{}',[?t1]),?l4,?t2) \/ 
+    err_msg(?l3,?l4),
+    ?y <> close_curly,
+    succeeds term([?y|?l1],1200,?l2,?t1),
+    succeeds expect(?l2,close_curly,?l3),
+    succeeds more(?l3,0,?n,fun('{}',[?t1]),?l4,?t2)],
+   assume(succeeds token_list([open_curly,?y|?l1]),
+    [def succeeds token_list([open_curly,?y|?l1]) by completion,
+     term_ok([?y|?l1],1200,?l2,?t1) \/ err_msg([?y|?l1],?l2),
+     cases(term_ok([?y|?l1],1200,?l2,?t1),
+      [succeeds 0 =< 1200 by builtin,
+       succeeds 0 =< 1200 => 
+       (ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l2 = [?y|?l1] & 
+	 succeeds wf_term(?e3,?k,?t1)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l2 = [?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+       exist([e3,k],
+	succeeds ?k =< 1200 & ?e3 ** ?l2 = [?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t1),
+	[succeeds list(?e3) by corollary(wf_term:list),
+         succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 ?l2 = [close_curly|?l3] \/ err_msg(?l2,?l3)
+          by lemma(expect: err_msg),
+	 cases(?l2 = [close_curly|?l3],
+          [def succeeds token_list([close_curly|?l3]) by completion,
+	   more_ok(?l3,0,?n,fun('{}',[?t1]),?l4,?t2) \/ err_msg(?l3,?l4),
+	   cases(more_ok(?l3,0,?n,fun('{}',[?t1]),?l4,?t2),
+            [succeeds list([open_curly|?e3]) by sld,
+             succeeds append([open_curly|?e3],[close_curly],
+             [open_curly|?e3] ** [close_curly]) by existence(**,2),
+	     succeeds wf_term([open_curly|?e3] ** [close_curly],0,
+	      fun('{}',[?t1])) by sld,
+	     term_ok([open_curly|?e3] ** [close_curly] ** ?l3,?n,?l4,?t2)
+	      by lemma(more_ok:term_ok:zero),
+	     [open_curly|?e3] ** [close_curly] ** ?l3 =
+	      [open_curly|?e3 ** [close_curly|?l3]] by concatenation,
+	     [open_curly|?e3] ** [close_curly] ** ?l3 =
+	      [open_curly|?e3 ** ?l2],
+	     [open_curly|?e3] ** [close_curly] ** ?l3 =
+	      [open_curly,?y|?l1],
+	     term_ok([open_curly,?y|?l1],?n,?l4,?t2)],
+	      err_msg(?l3,?l4),
+	    [err_msg([close_curly|?l3],?l4) by corollary(err_msg:cons),
+             err_msg(?l2,?l4),
+             err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+             err_msg([?y|?l1],?l4),
+             err_msg([open_curly,?y|?l1],?l4) by corollary(err_msg:cons)],
+            term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+            err_msg([open_curly,?y|?l1],?l4))],
+          err_msg(?l2,?l3),
+          [?l3 = ?l4 by lemma(err_msg:more),
+           err_msg(?l2,?l4),
+           err_msg(?e3 ** ?l2,?l4) by lemma(err_msg:append),
+           err_msg([?y|?l1],?l4),
+           err_msg([open_curly,?y|?l1],?l4) by corollary(err_msg:cons)],
+          term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+          err_msg([open_curly,?y|?l1],?l4))],
+	term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+	err_msg([open_curly,?y|?l1],?l4))],
+      err_msg([?y|?l1],?l2),
+      [?l2 = ?l3 by lemma(err_msg:expect),
+       err_msg([?y|?l1],?l3),
+       ?l3 = ?l4 by lemma(err_msg:more),
+       err_msg([?y|?l1],?l4),
+       err_msg([open_curly,?y|?l1],?l4) by corollary(err_msg:cons)],
+      term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+      err_msg([open_curly,?y|?l1],?l4))],
+    term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+    err_msg([open_curly,?y|?l1],?l4)),
+   succeeds token_list([open_curly,?y|?l1]) => 
+   term_ok([open_curly,?y|?l1],?n,?l4,?t2) \/ 
+   err_msg([open_curly,?y|?l1],?l4)),
+  step([x,0],
+   [],
+   assume(succeeds token_list(error(?x)),
+    [def succeeds token_list(error(?x)) by completion,
+     ff],
+    term_ok(error(?x),?0,error(?x),error) \/ err_msg(error(?x),error(?x))),
+   succeeds token_list(error(?x)) => term_ok(error(?x),?0,error(?x),error) 
+   \/ err_msg(error(?x),error(?x))),
+  step([l,0],
+   [fails term_begin(?l)],
+   assume(succeeds token_list(?l),
+    err_msg(?l,error(term_begin / ?l)) by lemma(err_msg:trivial),
+    term_ok(?l,?0,error(term_begin / ?l),error) \/ 
+    err_msg(?l,error(term_begin / ?l))),
+   succeeds token_list(?l) => term_ok(?l,?0,error(term_begin / ?l),error) 
+   \/ err_msg(?l,error(term_begin / ?l))),
+  step([x,y,l1,l2,t,z],
+   [succeeds name_token(?x),
+    succeeds sep_token(?y),
+    ?x = name(?z),
+    ?l2 = [?y|?l1],
+    ?t = con(?z)],
+   assume(succeeds token_list([?x,?y|?l1]),
+    [def succeeds token_list([?x,?y|?l1]) by completion,
+     def succeeds token(name(?z)) by completion,
+     succeeds atom(?z),
+     succeeds wf_one_arg([name(?z)],con(?z)) by lemma(wf_one_arg:constant),
+     succeeds wf_one_arg([?x],?t),
+     [?x] ** [?y|?l1] = [?x,?y|?l1] by concatenation,
+     [?x] ** ?l2 = [?x,?y|?l1],
+     ex e3: ?e3 ** ?l2 = [?x,?y|?l1] & succeeds wf_one_arg(?e3,?t),
+     one_arg_ok([?x,?y|?l1],?l2,?t)
+      by introduction(one_arg_ok,3)],
+    one_arg_ok([?x,?y|?l1],?l2,?t) \/ err_msg([?x,?y|?l1],?l2)),
+   succeeds token_list([?x,?y|?l1]) => one_arg_ok([?x,?y|?l1],?l2,?t) \/ 
+   err_msg([?x,?y|?l1],?l2)),
+  step([x,y,l1,l2,t,z],
+   [succeeds token_list([?x,?y|?l1]) => term_ok([?x,?y|?l1],999,?l2,?t) \/ 
+    err_msg([?x,?y|?l1],?l2),
+    fails name_token(?x) \/ fails sep_token(?y),
+    succeeds term([?x,?y|?l1],999,?l2,?t)],
+   assume(succeeds token_list([?x,?y|?l1]),
+    [term_ok([?x,?y|?l1],999,?l2,?t) \/ err_msg([?x,?y|?l1],?l2),
+     cases(term_ok([?x,?y|?l1],999,?l2,?t),
+      [succeeds 0 =< 999 by builtin,
+       succeeds 0 =< 999 => 
+       (ex [e3,k]: succeeds ?k =< 999 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	 succeeds wf_term(?e3,?k,?t)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< 999 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t),
+       exist([e3,k],
+	succeeds ?k =< 999 & ?e3 ** ?l2 = [?x,?y|?l1] & 
+	succeeds wf_term(?e3,?k,?t),
+	[succeeds wf_one_arg(?e3,?t) by sld,
+         ex e3: ?e3 ** ?l2 = [?x,?y|?l1] & succeeds wf_one_arg(?e3,?t),
+          one_arg_ok([?x,?y|?l1],?l2,?t)
+           by introduction(one_arg_ok,3)],
+	one_arg_ok([?x,?y|?l1],?l2,?t))],
+      err_msg([?x,?y|?l1],?l2),
+      [],
+      one_arg_ok([?x,?y|?l1],?l2,?t) \/ err_msg([?x,?y|?l1],?l2))],
+    one_arg_ok([?x,?y|?l1],?l2,?t) \/ err_msg([?x,?y|?l1],?l2)),
+   succeeds token_list([?x,?y|?l1]) => one_arg_ok([?x,?y|?l1],?l2,?t) \/ 
+   err_msg([?x,?y|?l1],?l2)),
+  step([x],
+   [],
+   assume(succeeds token_list([?x]),
+    err_msg([?x],error(arg / [?x])) by lemma(err_msg:trivial),
+    one_arg_ok([?x],error(arg / [?x]),error) \/ 
+    err_msg([?x],error(arg / [?x]))),
+   succeeds token_list([?x]) => one_arg_ok([?x],error(arg / [?x]),error) \/
+   err_msg([?x],error(arg / [?x]))),
+  step([],
+   [],
+   assume(succeeds token_list([]),
+    err_msg([],error(arg / [])) by lemma(err_msg:trivial),
+    one_arg_ok([],error(arg / []),error) \/ err_msg([],error(arg / []))),
+   succeeds token_list([]) => one_arg_ok([],error(arg / []),error) \/ 
+   err_msg([],error(arg / []))),
+  step([x],
+   [],
+   assume(succeeds token_list(error(?x)),
+    [def succeeds token_list(error(?x)) by completion, ff],
+    one_arg_ok(error(?x),error(?x),error) \/ err_msg(error(?x),error(?x))),
+   succeeds token_list(error(?x)) => one_arg_ok(error(?x),error(?x),error) 
+   \/ err_msg(error(?x),error(?x))),
+  step([x,l1,l3,ts2,l2,t,ts1],
+   [?x = close,
+    ?l3 = ?l1,
+    ?ts2 = []],
+   assume(succeeds token_list([?x|?l1]),
+    [succeeds wf_arg_seq([close],[]) by sld,
+     succeeds wf_arg_seq([?x],?ts2),
+     [?x] ** ?l1 = [?x|?l1] by concatenation,
+     [?x] ** ?l3 = [?x|?l1],
+     ex e3: ?e3 ** ?l3 = [?x|?l1] & succeeds wf_arg_seq(?e3,?ts2),
+     arg_seq_ok([?x|?l1],?l3,?ts2) by 
+     introduction(arg_seq_ok,3)],
+    arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => arg_seq_ok([?x|?l1],?l3,?ts2) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([x,l1,l3,ts2,l2,t,ts1],
+   [succeeds token_list(?l1) => one_arg_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2),
+    succeeds token_list(?l2) => arg_seq_ok(?l2,?l3,?ts1) \/ 
+    err_msg(?l2,?l3),
+    ?x <> close,
+    ?x = comma,
+    succeeds one_arg(?l1,?l2,?t),
+    succeeds arg_seq(?l2,?l3,?ts1),
+    ?ts2 = [?t|?ts1]],
+   assume(succeeds token_list([?x|?l1]),
+    [def succeeds token_list([?x|?l1]) by completion,
+     one_arg_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2),
+     cases(one_arg_ok(?l1,?l2,?t),
+      [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t) by 
+        elimination(one_arg_ok,3),
+       exist(e3,
+        ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t),
+        [succeeds list(?e3) by lemma(wf_term:types),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 arg_seq_ok(?l2,?l3,?ts1) \/ err_msg(?l2,?l3),
+	 cases(arg_seq_ok(?l2,?l3,?ts1),
+          [ex e3: ?e3 ** ?l3 = ?l2 & succeeds wf_arg_seq(?e3,?ts1) by 
+            elimination(arg_seq_ok,3),
+           exist(0,
+            ?0 ** ?l3 = ?l2 & succeeds wf_arg_seq(?0,?ts1),
+            [succeeds list(?0) by corollary(wf_arg_seq:list),
+	     succeeds list([comma|?e3]) by sld,
+	     succeeds append([comma|?e3],?0,[comma|?e3] ** ?0)
+	      by existence(**,2),
+	     succeeds wf_arg_seq([comma|?e3] ** ?0,[?t|?ts1]) by sld,
+	     succeeds wf_arg_seq([?x|?e3] ** ?0,?ts2),
+	     ?e3 ** (?0 ** ?l3) = ?l1,
+	     [?x|?e3] ** ?0 ** ?l3 = [?x|?e3 ** (?0 ** ?l3)]
+	      by concatenation,
+	     [?x|?e3] ** ?0 ** ?l3 = [?x|?l1],
+	     ex e3: ?e3 ** ?l3 = [?x|?l1] & succeeds wf_arg_seq(?e3,?ts2),
+	     arg_seq_ok([?x|?l1],?l3,?ts2) by 
+	     introduction(arg_seq_ok,3)],
+            arg_seq_ok([?x|?l1],?l3,?ts2))],
+          err_msg(?l2,?l3),
+          [err_msg(?e3 ** ?l2,?l3) by lemma(err_msg:append),
+           err_msg(?l1,?l3),
+           err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+          arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3))],
+        arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:arg_seq),
+       err_msg(?l1,?l3),
+       err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+      arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3))],
+    arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => arg_seq_ok([?x|?l1],?l3,?ts2) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([x,l1,l3,ts2,l2,t,ts1],
+   [?x <> close,
+    ?x <> comma,
+    ?l3 = error(arg_seq / [?x|?l1]),
+    ?ts2 = error],
+   assume(succeeds token_list([?x|?l1]),
+    [err_msg([?x|?l1],error(arg_seq / [?x|?l1])) by lemma(err_msg:trivial),
+     err_msg([?x|?l1],?l3)],
+    arg_seq_ok([?x|?l1],?l3,?ts2) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => arg_seq_ok([?x|?l1],?l3,?ts2) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([],
+   [],
+   assume(succeeds token_list([]),
+    err_msg([],error(arg_seq / [])) by lemma(err_msg:trivial),
+    arg_seq_ok([],error(arg_seq / []),error) \/ 
+    err_msg([],error(arg_seq / []))),
+   succeeds token_list([]) => arg_seq_ok([],error(arg_seq / []),error) \/ 
+   err_msg([],error(arg_seq / []))),
+  step([x],
+   [],
+   assume(succeeds token_list(error(?x)),
+    [def succeeds token_list(error(?x)) by completion,ff],
+    arg_seq_ok(error(?x),error(?x),error) \/ err_msg(error(?x),error(?x))),
+   succeeds token_list(error(?x)) => arg_seq_ok(error(?x),error(?x),error) 
+   \/ err_msg(error(?x),error(?x))),
+  step([x,l1,l3,t3,l2,t1,t2],
+   [?x = close_list,
+    ?l3 = ?l1,
+    ?t3 = con([])],
+   assume(succeeds token_list([?x|?l1]),
+    [succeeds wf_list_tail([close_list],con([])) by sld,
+     succeeds wf_list_tail([?x],?t3),
+     [?x] ** ?l3 = [?x|?l3] by concatenation,
+     [?x] ** ?l3 = [?x|?l1],
+     ex e3: ?e3 ** ?l3 = [?x|?l1] & succeeds wf_list_tail(?e3,?t3),
+     list_tail_ok([?x|?l1],?l3,?t3)
+      by introduction(list_tail_ok,3)],
+    list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => list_tail_ok([?x|?l1],?l3,?t3) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([x,l1,l3,t3,l2,t1,t2],
+   [succeeds token_list(?l1) => one_arg_ok(?l1,?l2,?t1) \/ err_msg(?l1,?l2),
+    succeeds token_list(?l2) => list_tail_ok(?l2,?l3,?t2) \/ 
+    err_msg(?l2,?l3),
+    ?x <> close_list,
+    ?x = comma,
+    succeeds one_arg(?l1,?l2,?t1),
+    succeeds list_tail(?l2,?l3,?t2),
+    ?t3 = fun('.',[?t1,?t2])],
+   assume(succeeds token_list([?x|?l1]),
+    [def succeeds token_list([?x|?l1]) by completion,
+     one_arg_ok(?l1,?l2,?t1) \/ err_msg(?l1,?l2),
+     cases(one_arg_ok(?l1,?l2,?t1),
+      [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t1) by 
+	elimination(one_arg_ok,3),
+       exist(e3,
+	?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t1),
+	[succeeds list(?e3) by lemma(wf_term:types),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 list_tail_ok(?l2,?l3,?t2) \/ err_msg(?l2,?l3),
+	 cases(list_tail_ok(?l2,?l3,?t2),
+          [ex e3: ?e3 ** ?l3 = ?l2 & succeeds wf_list_tail(?e3,?t2) by 
+            elimination(list_tail_ok,3),
+           exist(e4,
+	    ?e4 ** ?l3 = ?l2 & succeeds wf_list_tail(?e4,?t2),
+	    [succeeds list(?e4) by lemma(wf_term:types),
+	     [comma|?e3] ** ?e4 = [comma|?e3 ** ?e4] by concatenation,
+	     succeeds append([comma|?e3],?e4,[comma|?e3] ** ?e4)
+	      by existence(**,2),
+	     succeeds append([comma|?e3],?e4,[comma|?e3 ** ?e4]),
+	     succeeds wf_list_tail([comma|?e3 ** ?e4],fun('.',[?t1,?t2]))
+	      by sld,
+	     succeeds wf_list_tail([?x|?e3 ** ?e4],?t3),
+	     [?x|?e3 ** ?e4] ** ?l3 = [?x|?e3 ** (?e4 ** ?l3)]
+	      by concatenation,
+	     ?e3 ** (?e4 ** ?l3) = ?e3 ** ?l2 = ?l1,
+	     [?x|?e3 ** ?e4] ** ?l3 = [?x|?l1],
+	     ex e3: ?e3 ** ?l3 = [?x|?l1] & succeeds wf_list_tail(?e3,?t3),
+	     list_tail_ok([?x|?l1],?l3,?t3) by introduction(list_tail_ok,3)],
+            list_tail_ok([?x|?l1],?l3,?t3))],
+          err_msg(?l2,?l3),
+          [err_msg(?e3 ** ?l2,?l3) by lemma(err_msg:append),
+	   err_msg(?l1,?l3),
+	   err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+          list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+        list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:list_tail),
+       err_msg(?l1,?l3),
+       err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+      list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+    list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => list_tail_ok([?x|?l1],?l3,?t3) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([x,l1,l3,t3,l2,t1,t2],
+   [succeeds token_list(?l1) => one_arg_ok(?l1,?l2,?t3) \/ err_msg(?l1,?l2),
+    ?x <> close_list,
+    ?x <> comma,
+    ?x = head_tail_sep,
+    succeeds one_arg(?l1,?l2,?t3),
+    succeeds expect(?l2,close_list,?l3)],
+   assume(succeeds token_list([?x|?l1]),
+    [def succeeds token_list([?x|?l1]) by completion,
+     one_arg_ok(?l1,?l2,?t3) \/ err_msg(?l1,?l2),
+     cases(one_arg_ok(?l1,?l2,?t3),
+      [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t3) by 
+        elimination(one_arg_ok,3),
+       exist(e3,
+        ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t3),
+        [succeeds list(?e3) by lemma(wf_term:types),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 ?l2 = [close_list|?l3] \/ err_msg(?l2,?l3) by 
+          lemma(expect:err_msg),
+	 cases(?l2 = [close_list|?l3],
+          [succeeds append([head_tail_sep|?e3],[close_list],
+	    [head_tail_sep|?e3] ** [close_list]) by existence(**,2),
+	   succeeds wf_list_tail([head_tail_sep|?e3] ** [close_list],?t3)
+	    by sld,
+	   [head_tail_sep|?e3] ** [close_list] ** ?l3 =
+	    [head_tail_sep|?e3 ** [close_list|?l3]] by concatenation,
+	   [head_tail_sep|?e3 ** [close_list|?l3]] =
+	    [?x|?e3 ** ?l2] = [?x|?l1],
+	   [head_tail_sep|?e3] ** [close_list] ** ?l3 = [?x|?l1],
+	   ex e3: ?e3 ** ?l3 = [?x|?l1] & succeeds wf_list_tail(?e3,?t3),
+           list_tail_ok([?x|?l1],?l3,?t3) by introduction(list_tail_ok,3)],
+          err_msg(?l2,?l3),
+          [err_msg(?e3 ** ?l2,?l3) by lemma(err_msg:append),
+	   err_msg(?l1,?l3),
+	   err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+          list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+        list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:expect),
+       err_msg(?l1,?l3),
+       err_msg([?x|?l1],?l3) by corollary(err_msg:cons)],
+      list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3))],
+    list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => list_tail_ok([?x|?l1],?l3,?t3) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([x,l1,l3,t3,l2,t1,t2],
+   [?x <> close_list,
+    ?x <> comma,
+    ?x <> head_tail_sep,
+    ?l3 = error(tail_begin / [?x|?l1]),
+    ?t3 = error],
+   assume(succeeds token_list([?x|?l1]),
+    [err_msg([?x|?l1],error(tail_begin / [?x|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([?x|?l1],?l3)],
+    list_tail_ok([?x|?l1],?l3,?t3) \/ err_msg([?x|?l1],?l3)),
+   succeeds token_list([?x|?l1]) => list_tail_ok([?x|?l1],?l3,?t3) \/ 
+   err_msg([?x|?l1],?l3)),
+  step([],
+   [],
+   assume(succeeds token_list([]),
+    err_msg([],error(tail_begin / [])) by lemma(err_msg:trivial),
+    list_tail_ok([],error(tail_begin / []),error) \/ 
+    err_msg([],error(tail_begin / []))),
+   succeeds token_list([]) => list_tail_ok([],error(tail_begin / []),error)
+   \/ err_msg([],error(tail_begin / []))),
+  step([x],
+   [],
+   assume(succeeds token_list(error(?x)),
+    [def succeeds token_list(error(?x)) by completion, ff],
+    list_tail_ok(error(?x),error(?x),error) \/ err_msg(error(?x),error(?x))),
+   succeeds token_list(error(?x)) => 
+   list_tail_ok(error(?x),error(?x),error) \/ err_msg(error(?x),error(?x))),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [succeeds token_list(?l1) => term_ok(?l1,?n5,?l2,?t2) \/ 
+    err_msg(?l1,?l2),
+    succeeds token_list(?l2) => 
+    more_ok(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/ err_msg(?l2,?l3),
+    succeeds infix_op(?x),
+    succeeds infix_prec(?x,?n3,?n4,?n5),
+    succeeds ?n3 =< ?n2,
+    succeeds ?n1 =< ?n4,
+    succeeds term(?l1,?n5,?l2,?t2),
+    succeeds more(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3)],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [def succeeds token_list([name(?x)|?l1]) by completion,
+     term_ok(?l1,?n5,?l2,?t2) \/ err_msg(?l1,?l2),
+     cases(term_ok(?l1,?n5,?l2,?t2),
+      [succeeds 0 =< ?n5 by corollary(infix_prec:zero),
+       succeeds 0 =< ?n5 => 
+       (ex [e3,k]: succeeds ?k =< ?n5 & ?e3 ** ?l2 = ?l1 & 
+	 succeeds wf_term(?e3,?k,?t2)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< ?n5 & ?e3 ** ?l2 = ?l1 & 
+	succeeds wf_term(?e3,?k,?t2),
+       exist([e3,k],
+	succeeds ?k =< ?n5 & ?e3 ** ?l2 = ?l1 & 
+	succeeds wf_term(?e3,?k,?t2),
+	[succeeds list(?e3) by corollary(wf_term:list),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 more_ok(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3) \/ err_msg(?l2,?l3),
+	 cases(more_ok(?l2,?n3,?n2,fun(?x,[?t1,?t2]),?l3,?t3),
+          [succeeds ?n3 =< ?n2 => 
+           (ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+             ?e3 ** ?l3 = ?l2 & 
+             (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1,?t2])) => 
+               succeeds wf_term(?e0 ** ?e3,?k,?t3))) by 
+            elimination(more_ok,6),
+           ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+            ?e3 ** ?l3 = ?l2 & 
+            (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1,?t2])) => 
+              succeeds wf_term(?e0 ** ?e3,?k,?t3)),
+           exist([e4,i],
+            succeeds ?i =< ?n2 & succeeds list(?e4) & ?e4 ** ?l3 = ?l2 & 
+            (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1,?t2])) => 
+              succeeds wf_term(?e0 ** ?e4,?i,?t3)),
+            [assume(succeeds ?n1 =< ?n2,
+              [assume(succeeds wf_term(?e0,?n1,?t1),
+                [succeeds list(?e0) by corollary(wf_term:list),
+		 succeeds append(?e0,[name(?x)|?e3],?e0 ** [name(?x)|?e3])
+		  by existence(**,2),
+		 succeeds wf_term(?e0 ** [name(?x)|?e3],?n3,fun(?x,[?t1,?t2]))
+		  by sld,
+		 succeeds wf_term(?e0 ** [name(?x)|?e3] ** ?e4,?i,?t3),
+		 ?e0 ** [name(?x)|?e3] ** ?e4 = ?e0 ** ([name(?x)|?e3] ** ?e4)
+		  by concatenation,
+		 succeeds wf_term(?e0 ** ([name(?x)|?e3] ** ?e4),?i,?t3)],
+                succeeds wf_term(?e0 ** ([name(?x)|?e3] ** ?e4),?i,?t3)),
+	       all e0: succeeds wf_term(?e0,?n1,?t1) => 
+		succeeds wf_term(?e0 ** ([name(?x)|?e3] ** ?e4),?i,?t3),
+	       succeeds list([name(?x)|?e3]) by sld,
+	       succeeds list([name(?x)|?e3] ** ?e4) by corollary(app:types:1),
+	       [name(?x)|?e3] ** ?e4** ?l3 = [name(?x)|?e3 ** (?e4 ** ?l3)]
+		by concatenation,
+	       ?e3 ** (?e4 ** ?l3) = ?l1,
+	       [name(?x)|?e3] ** ?e4** ?l3 = [name(?x)|?l1],
+	       ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+		?e3 ** ?l3 = [name(?x)|?l1] & 
+		(all e0: succeeds wf_term(?e0,?n1,?t1) => 
+		  succeeds wf_term(?e0 ** ?e3,?k,?t3))],
+              ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+               ?e3 ** ?l3 = [name(?x)|?l1] & 
+               (all e0: succeeds wf_term(?e0,?n1,?t1) => 
+                 succeeds wf_term(?e0 ** ?e3,?k,?t3))),
+             more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by 
+              introduction(more_ok,6)],
+            more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3))],
+          err_msg(?l2,?l3),
+          [err_msg(?e3 ** ?l2,?l3) by lemma(err_msg:append),
+	   err_msg(?l1,?l3),
+	   err_msg([name(?x)|?l1],?l3) by corollary(err_msg:cons)],
+          more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+          err_msg([name(?x)|?l1],?l3))],
+	more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+	err_msg([name(?x)|?l1],?l3))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:more),
+       err_msg(?l1,?l3),
+       err_msg([name(?x)|?l1],?l3) by corollary(err_msg:cons)],
+      more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+      err_msg([name(?x)|?l1],?l3))],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [succeeds infix_op(?x),
+    succeeds infix_prec(?x,?n3,?n4,?n5),
+    succeeds ?n3 =< ?n2,
+    fails ?n1 =< ?n4,
+    ?l3 = error(more_infix_prec / [name(?x)|?l1]),
+    ?t3 = error],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [err_msg([name(?x)|?l1],error(more_infix_prec / [name(?x)|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([name(?x)|?l1],?l3)],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [succeeds infix_op(?x),
+    succeeds infix_prec(?x,?n3,?n4,?n5),
+    fails ?n3 =< ?n2,
+    ?l3 = [name(?x)|?l1],
+    ?t3 = ?t1],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [more_ok([name(?x)|?l1],?n1,?n2,?t1,[name(?x)|?l1],?t1)
+      by lemma(more_ok:more),
+     more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3)],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [succeeds token_list(?l1) => more_ok(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) 
+    \/ err_msg(?l1,?l3),
+    fails infix_op(?x),
+    succeeds postfix_op(?x),
+    succeeds postfix_prec(?x,?n3,?n4),
+    succeeds ?n3 =< ?n2,
+    succeeds ?n1 =< ?n4,
+    succeeds more(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3)],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [def succeeds token_list([name(?x)|?l1]) by completion,
+     more_ok(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3) \/ err_msg(?l1,?l3),
+     cases(more_ok(?l1,?n3,?n2,fun(?x,[?t1]),?l3,?t3),
+      [succeeds ?n3 =< ?n2 => 
+       (ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+         ?e3 ** ?l3 = ?l1 & 
+         (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1])) => 
+           succeeds wf_term(?e0 ** ?e3,?k,?t3))) by elimination(more_ok,6),
+       ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+        ?e3 ** ?l3 = ?l1 & 
+        (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1])) => 
+          succeeds wf_term(?e0 ** ?e3,?k,?t3)),
+       exist([e3,k],
+        succeeds ?k =< ?n2 & succeeds list(?e3) & ?e3 ** ?l3 = ?l1 & 
+        (all e0: succeeds wf_term(?e0,?n3,fun(?x,[?t1])) => 
+          succeeds wf_term(?e0 ** ?e3,?k,?t3)),
+        [assume(succeeds ?n1 =< ?n2,
+	  [assume(succeeds wf_term(?e0,?n1,?t1),
+	   [succeeds list(?e0) by corollary(wf_term:list),
+	    succeeds append(?e0,[name(?x)],?e0 ** [name(?x)])
+	     by existence(**,2),
+	    succeeds wf_term(?e0 ** [name(?x)],?n3,fun(?x,[?t1])) by sld,
+	    succeeds wf_term(?e0 ** [name(?x)] ** ?e3,?k,?t3),
+	    ?e0 ** [name(?x)] ** ?e3 = ?e0 ** [name(?x)|?e3]
+	     by concatenation,
+	    succeeds wf_term(?e0 ** [name(?x)|?e3],?k,?t3)],
+	   succeeds wf_term(?e0 ** [name(?x)|?e3],?k,?t3)),
+	   all e0: succeeds wf_term(?e0,?n1,?t1) => 
+	    succeeds wf_term(?e0 ** [name(?x)|?e3],?k,?t3),
+	   succeeds list([name(?x)|?e3]) by sld,
+	   [name(?x)|?e3] ** ?l3 = [name(?x)|?e3 ** ?l3]
+	    by concatenation,
+	   [name(?x)|?e3] ** ?l3 = [name(?x)|?l1],
+	   ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+	    ?e3 ** ?l3 = [name(?x)|?l1] & 
+	    (all e0: succeeds wf_term(?e0,?n1,?t1) => 
+	      succeeds wf_term(?e0 ** ?e3,?k,?t3))],
+          ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+           ?e3 ** ?l3 = [name(?x)|?l1] & 
+           (all e0: succeeds wf_term(?e0,?n1,?t1) => 
+             succeeds wf_term(?e0 ** ?e3,?k,?t3))),
+         more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) by 
+          introduction(more_ok,6)],
+        more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3))],
+      err_msg(?l1,?l3),
+      err_msg([name(?x)|?l1],?l3) by corollary(err_msg:cons),
+      more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+      err_msg([name(?x)|?l1],?l3))],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [fails infix_op(?x),
+    succeeds postfix_op(?x),
+    succeeds postfix_prec(?x,?n3,?n4),
+    succeeds ?n3 =< ?n2,
+    fails ?n1 =< ?n4,
+    ?l3 = error(more_postfix_prec / [name(?x)|?l1]),
+    ?t3 = error],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [err_msg([name(?x)|?l1],error(more_postfix_prec / [name(?x)|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([name(?x)|?l1],?l3)],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [fails infix_op(?x),
+    succeeds postfix_op(?x),
+    succeeds postfix_prec(?x,?n3,?n4),
+    fails ?n3 =< ?n2,
+    ?l3 = [name(?x)|?l1],
+    ?t3 = ?t1],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [more_ok([name(?x)|?l1],?n1,?n2,?t1,[name(?x)|?l1],?t1) by 
+      lemma(more_ok:more),
+     more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3)],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([x,l1,n1,n2,t1,l3,t3,n3,n4,n5,l2,t2],
+   [fails infix_op(?x),
+    fails postfix_op(?x),
+    ?l3 = [name(?x)|?l1],
+    ?t3 = ?t1],
+   assume(succeeds token_list([name(?x)|?l1]),
+    [more_ok([name(?x)|?l1],?n1,?n2,?t1,[name(?x)|?l1],?t1) by 
+      lemma(more_ok:more),
+     more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3)],
+    more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+    err_msg([name(?x)|?l1],?l3)),
+   succeeds token_list([name(?x)|?l1]) => 
+   more_ok([name(?x)|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+   err_msg([name(?x)|?l1],?l3)),
+  step([l1,n1,n2,t1,l3,t3,l2,t2],
+   [succeeds token_list(?l1) => term_ok(?l1,1000,?l2,?t2) \/ 
+    err_msg(?l1,?l2),
+    succeeds token_list(?l2) => 
+    more_ok(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/ err_msg(?l2,?l3),
+    succeeds 1000 =< ?n2,
+    succeeds ?n1 =< 999,
+    succeeds term(?l1,1000,?l2,?t2),
+    succeeds more(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3)],
+   assume(succeeds token_list([comma|?l1]),
+    [def succeeds token_list([comma|?l1]) by completion,
+     term_ok(?l1,1000,?l2,?t2) \/ err_msg(?l1,?l2),
+     cases(term_ok(?l1,1000,?l2,?t2),
+      [succeeds 0 =< 1000 by builtin,
+       succeeds 0 =< 1000 => 
+       (ex [e3,k]: succeeds ?k =< 1000 & ?e3 ** ?l2 = ?l1 & 
+	 succeeds wf_term(?e3,?k,?t2)) by elimination(term_ok,4),
+       ex [e3,k]: succeeds ?k =< 1000 & ?e3 ** ?l2 = ?l1 & 
+	succeeds wf_term(?e3,?k,?t2),
+       exist([e3,k],
+	succeeds ?k =< 1000 & ?e3 ** ?l2 = ?l1 & 
+	succeeds wf_term(?e3,?k,?t2),
+	[succeeds list(?e3) by corollary(wf_term:list),
+	 succeeds token_list(?e3 ** ?l2),
+	 succeeds token_list(?l2) by corollary(token_list:app:2),
+	 more_ok(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3) \/ err_msg(?l2,?l3),
+	 cases(more_ok(?l2,1000,?n2,fun(',',[?t1,?t2]),?l3,?t3),
+          [succeeds 1000 =< ?n2 => 
+           (ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+             ?e3 ** ?l3 = ?l2 & 
+             (all e0: succeeds wf_term(?e0,1000,fun(',',[?t1,?t2])) => 
+               succeeds wf_term(?e0 ** ?e3,?k,?t3))) by 
+            elimination(more_ok,6),
+           ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+            ?e3 ** ?l3 = ?l2 & 
+            (all e0: succeeds wf_term(?e0,1000,fun(',',[?t1,?t2])) => 
+              succeeds wf_term(?e0 ** ?e3,?k,?t3)),
+           exist([0,i],
+            succeeds ?i =< ?n2 & succeeds list(?0) & ?0 ** ?l3 = ?l2 & 
+            (all e0: succeeds wf_term(?e0,1000,fun(',',[?t1,?t2])) => 
+              succeeds wf_term(?e0 ** ?0,?i,?t3)),
+            [assume(succeeds ?n1 =< ?n2,
+              [assume(succeeds wf_term(?e0,?n1,?t1),
+	        [succeeds list(?e0) by corollary(wf_term:list),
+		 succeeds append(?e0,[comma|?e3],?e0 ** [comma|?e3])
+		  by existence(**,2),
+		 succeeds wf_term(?e0 ** [comma|?e3],1000,fun(',',[?t1,?t2]))
+		  by sld,
+		 succeeds wf_term((?e0 ** [comma|?e3]) ** ?0,?i,?t3),
+		 (?e0 ** [comma|?e3]) ** ?0 = ?e0 ** ([comma|?e3] ** ?0)
+		  by concatenation,
+		 succeeds wf_term(?e0 ** ([comma|?e3] ** ?0),?i,?t3)],
+	       succeeds wf_term(?e0 ** ([comma|?e3] ** ?0),?i,?t3)),
+	       all e0: succeeds wf_term(?e0,?n1,?t1) => 
+		succeeds wf_term(?e0 ** ([comma|?e3] ** ?0),?i,?t3),
+	       succeeds list([comma|?e3]) by sld,
+	       succeeds list([comma|?e3] ** ?0) by corollary(app:types:1),
+	       ?e3 ** (?0 ** ?l3) = ?l1,
+	       [comma|?e3] ** ?0 ** ?l3 = [comma|?e3 ** (?0 ** ?l3)]
+		by concatenation,
+	       [comma|?e3] ** ?0 ** ?l3 = [comma|?l1],
+	       ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+               ?e3 ** ?l3 = [comma|?l1] & 
+               (all e0: succeeds wf_term(?e0,?n1,?t1) => 
+                 succeeds wf_term(?e0 ** ?e3,?k,?t3))],
+              ex [e3,k]: succeeds ?k =< ?n2 & succeeds list(?e3) & 
+               ?e3 ** ?l3 = [comma|?l1] & 
+               (all e0: succeeds wf_term(?e0,?n1,?t1) => 
+                 succeeds wf_term(?e0 ** ?e3,?k,?t3))),
+             more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) by 
+              introduction(more_ok,6)],
+            more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3))],
+          err_msg(?l2,?l3),
+          [err_msg(?e3 ** ?l2,?l3) by lemma(err_msg:append),
+	   err_msg(?l1,?l3),
+	   err_msg([comma|?l1],?l3) by corollary(err_msg:cons)],
+          more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+          err_msg([comma|?l1],?l3))],
+	more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ 
+	err_msg([comma|?l1],?l3))],
+      err_msg(?l1,?l2),
+      [?l2 = ?l3 by lemma(err_msg:more),
+       err_msg(?l1,?l3),
+       err_msg([comma|?l1],?l3) by corollary(err_msg:cons)],
+      more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3))],
+    more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+   succeeds token_list([comma|?l1]) => 
+   more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+  step([l1,n1,n2,t1,l3,t3,l2,t2],
+   [succeeds 1000 =< ?n2,
+    fails ?n1 =< 999,
+    ?l3 = error(more_comma_as_infix / [comma|?l1]),
+    ?t3 = error],
+   assume(succeeds token_list([comma|?l1]),
+    [err_msg([comma|?l1],error(more_comma_as_infix / [comma|?l1])) by 
+      lemma(err_msg:trivial),
+     err_msg([comma|?l1],?l3)],
+    more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+   succeeds token_list([comma|?l1]) => 
+   more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+  step([l1,n1,n2,t1,l3,t3,l2,t2],
+   [fails 1000 =< ?n2,
+    ?l3 = [comma|?l1],
+    ?t3 = ?t1],
+   assume(succeeds token_list([comma|?l1]),
+    [more_ok([comma|?l1],?n1,?n2,?t1,[comma|?l1],?t1) by 
+      lemma(more_ok:more),
+     more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3)],
+    more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+   succeeds token_list([comma|?l1]) => 
+   more_ok([comma|?l1],?n1,?n2,?t1,?l3,?t3) \/ err_msg([comma|?l1],?l3)),
+  step([l,0,1,t],
+   [fails more_begin(?l)],
+   assume(succeeds token_list(?l),
+    more_ok(?l,?0,?1,?t,?l,?t) by lemma(more_ok:more),
+    more_ok(?l,?0,?1,?t,?l,?t) \/ err_msg(?l,?l)),
+   succeeds token_list(?l) => more_ok(?l,?0,?1,?t,?l,?t) \/ err_msg(?l,?l))])
+).
+
+:- theorem(term:wf_term,
+all [e,n,t]: succeeds term(?e ** [end],?n,[end],?t) &
+  succeeds token_list(?e) & succeeds 0 =< ?n => 
+  (ex m: succeeds ?m =< ?n & succeeds wf_term(?e,?m,?t)),
+assume(succeeds term(?e ** [end],?n,[end],?t) & succeeds token_list(?e) & 
+ succeeds 0 =< ?n,
+ [succeeds token_list(?e ** [end]) =>
+   term_ok(?e ** [end],?n,[end],?t) \/ err_msg(?e ** [end],[end])
+  by lemma(term:wf_term),
+  succeeds token(end) by sld,
+  succeeds token_list([]) by sld,
+  succeeds token_list([end]) by sld,
+  succeeds token_list(?e ** [end]) by corollary(token_list:app),
+  term_ok(?e ** [end],?n,[end],?t) \/ err_msg(?e ** [end],[end]),
+  cases(term_ok(?e ** [end],?n,[end],?t),
+   [succeeds 0 =< ?n => 
+    (ex [e3,k]: succeeds ?k =< ?n & 
+      ?e3 ** [end] = ?e ** [end] & succeeds wf_term(?e3,?k,?t)) by 
+    elimination(term_ok,4),
+    ex [e3,k]: succeeds ?k =< ?n & 
+      ?e3 ** [end] = ?e ** [end] & succeeds wf_term(?e3,?k,?t),
+    exist([e3,k],
+     succeeds ?k =< ?n & ?e3 ** [end] = ?e ** [end] 
+     & succeeds wf_term(?e3,?k,?t),
+     [succeeds list(?e3) by corollary(wf_term:list),
+      succeeds list(?e) by lemma(token_list:list),
+      succeeds list([end]),
+      ?e3 = ?e by corollary(app:uniqueness:1),
+      succeeds ?k =< ?n & succeeds wf_term(?e,?k,?t),
+      ex m: succeeds ?m =< ?n & succeeds wf_term(?e,?m,?t)],
+     ex m: succeeds ?m =< ?n & succeeds wf_term(?e,?m,?t))],
+   err_msg(?e ** [end],[end]),
+   [ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?e ** [end] & gr(?y) &
+     [end] = error(?y / ?l2) by elimination(err_msg,2),
+    exist([l1,l2,y], succeeds list(?l1) & ?l1 ** ?l2 = ?e ** [end] & gr(?y) &
+     [end] = error(?y / ?l2),
+     [ff],
+     ff)],
+   ex m: succeeds ?m =< ?n & succeeds wf_term(?e,?m,?t))],
+ ex m: succeeds ?m =< ?n & succeeds wf_term(?e,?m,?t))
+).
+
+:- lemma(term_ok:error,
+all [e1,i,e2,r]: succeeds token_list(?e1) & succeeds 0 =< ?i &
+ term_ok(?e1,?i,?e2,?r) => fails error(?e2),
+assume(succeeds token_list(?e1) & succeeds 0 =< ?i & term_ok(?e1,?i,?e2,?r),
+ [succeeds 0 =< ?i => 
+  (ex [e3,k]: succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 &
+    succeeds wf_term(?e3,?k,?r)) by elimination(term_ok,4),
+  ex [e3,k]: succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 &
+   succeeds wf_term(?e3,?k,?r),
+  exist([e3,k],
+   succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 & succeeds wf_term(?e3,?k,?r),
+   [succeeds list(?e3) by corollary(wf_term:list),
+    succeeds token_list(?e3 ** ?e2),
+    succeeds token_list(?e2) by corollary(token_list:app:2),
+    contra(?e2 = error(?x),
+     [def succeeds token_list(error(?x)) by completion,
+      ff]),
+    all x: ~ ?e2 = error(?x),
+    fails error(?e2) by completion],
+   fails error(?e2))],
+ fails error(?e2))
+).
+
+:- lemma(term:error,
+all [e1,i,e2,r]: succeeds token_list(?e1) & succeeds 0 =< ?i &
+ succeeds term(?e1,?i,?e2,?r) & succeeds error(?e2) => err_msg(?e1,?e2),
+assume(succeeds token_list(?e1) & succeeds 0 =< ?i &
+ succeeds term(?e1,?i,?e2,?r) & succeeds error(?e2),
+ [succeeds token_list(?e1) => term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2) by
+   lemma(term:wf_term),
+  term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2),
+  cases(term_ok(?e1,?i,?e2,?r),
+   [fails error(?e2) by lemma(term_ok:error),
+    ff],
+   err_msg(?e1,?e2),
+   [],
+   err_msg(?e1,?e2))],
+ err_msg(?e1,?e2))
+).
+
+:- lemma(err_msg:error,
+all [l,x]: err_msg(?l,?x) => succeeds error(?x),
+assume(err_msg(?l,?x),
+ [ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) &
+   ?x = error(?y / ?l2) by
+   elimination(err_msg,2),
+  exist([l1,l2,y],
+   succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) & ?x = error(?y / ?l2),
+   [],
+   succeeds error(?x))],
+ succeeds error(?x))
+).
+
+:- lemma(term:parse_tree,
+all [e1,i,e2,r]: succeeds token_list(?e1) & succeeds 0 =< ?i &
+ succeeds term(?e1,?i,?e2,?r) & fails error(?e2) =>
+ succeeds parse_tree(?r),
+assume(succeeds token_list(?e1) & succeeds 0 =< ?i &
+ succeeds term(?e1,?i,?e2,?r) & fails error(?e2),
+ [succeeds token_list(?e1) => term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2) by
+   lemma(term:wf_term),
+  term_ok(?e1,?i,?e2,?r) \/ err_msg(?e1,?e2),
+  cases(term_ok(?e1,?i,?e2,?r),
+   [succeeds 0 =< ?i => 
+    (ex [e3,k]: succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 &
+      succeeds wf_term(?e3,?k,?r)) by elimination(term_ok,4),
+    ex [e3,k]: succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 &
+     succeeds wf_term(?e3,?k,?r),
+    exist([e3,k],
+     succeeds ?k =< ?i & ?e3 ** ?e2 = ?e1 & succeeds wf_term(?e3,?k,?r),
+     [succeeds list(?e3) by corollary(wf_term:list),
+      succeeds token_list(?e3 ** ?e2),
+      succeeds token_list(?e3) by corollary(token_list:app:1),
+      succeeds parse_tree(?r) by corollary(wf_term:parse_tree)],
+     succeeds parse_tree(?r))],
+   err_msg(?e1,?e2),
+   [succeeds error(?e2) by lemma(err_msg:error),
+    ff],
+   succeeds parse_tree(?r))],
+ succeeds parse_tree(?r))
+).
+
+:- lemma(err_msg:gr,
+all [l,x]: err_msg(?l,?x) & gr(?l) => gr(?x),
+assume(err_msg(?l,?x) & gr(?l),
+ [ex [l1,l2,y]: succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) &
+   ?x = error(?y / ?l2) by elimination(err_msg,2),
+  exist([l1,l2,y],
+   succeeds list(?l1) & ?l1 ** ?l2 = ?l & gr(?y) & ?x = error(?y / ?l2),
+   [gr(?l1 ** ?l2),
+    gr(?l1) & gr(?l2) by corollary(app:ground:2),
+    gr(error(?y / ?l2)),
+    gr(?x)],
+   gr(?x))],
+ gr(?x))
+).
+
+:- bye(soundness).

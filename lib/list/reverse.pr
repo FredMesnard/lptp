@@ -1,0 +1,511 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/26/95, 8:09 PM */
+/* Filename: reverse.pr */
+
+:- initialize.
+
+:- tex_file($(tmp)/reverse).
+:- thm_file($(lib)/list/reverse).
+
+:- needs_gr($(lib)/list/reverse).
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/list/permutation).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/list/permutation).
+
+:- lemma(n_reverse:types,
+all [l1,l2]: succeeds n_reverse(?l1,?l2) => succeeds list(?l1) & 
+ succeeds list(?l2),
+induction(
+ [all [l1,l2]: succeeds n_reverse(?l1,?l2) => succeeds list(?l1) & 
+   succeeds list(?l2)],
+ [step([],[],[],succeeds list([]) & succeeds list([])),
+  step([x,l1,l2,l3],
+   [succeeds list(?l1) & succeeds list(?l3),
+    succeeds n_reverse(?l1,?l3),
+    succeeds append(?l3,[?x],?l2)],
+   [succeeds list([?x]) by lemma(list:1),
+    succeeds list(?l2) by lemma(append:types:2)],
+   succeeds list([?x|?l1]) & succeeds list(?l2))])
+).
+
+:- lemma(n_reverse:termination,
+all [l1,l2]: succeeds list(?l1) => terminates n_reverse(?l1,?l2),
+[induction(
+  [all l1: succeeds list(?l1) => (all l2: terminates n_reverse(?l1,?l2))],
+  [step([],
+    [],
+    terminates n_reverse([],?l2) by completion,
+    all l2: terminates n_reverse([],?l2)),
+   step([x,l1],
+    [all l2: terminates n_reverse(?l1,?l2),
+     succeeds list(?l1)],
+    [terminates n_reverse(?l1,?l3),
+     succeeds n_reverse(?l1,?l3) \/ fails n_reverse(?l1,?l3),
+     cases(succeeds n_reverse(?l1,?l3),
+      [succeeds list(?l1) & succeeds list(?l3) by lemma(n_reverse:types),
+       terminates append(?l3,[?x],?l2) by lemma(append:termination:1),
+       terminates (n_reverse(?l1,?l3) & append(?l3,[?x],?l2))],
+      fails n_reverse(?l1,?l3),
+      [],
+      terminates (n_reverse(?l1,?l3) & append(?l3,[?x],?l2))),
+     all l3: terminates (n_reverse(?l1,?l3) & append(?l3,[?x],?l2)),
+     terminates n_reverse([?x|?l1],?l2) by completion],
+    all l2: terminates n_reverse([?x|?l1],?l2))]),
+ assume(succeeds list(?l1),
+  [all l2: terminates n_reverse(?l1,?l2),
+   terminates n_reverse(?l1,?l2)],
+  terminates n_reverse(?l1,?l2))]
+).
+
+:- lemma(a_reverse:types:1,
+all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => succeeds list(?l1),
+induction(
+ [all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => succeeds list(?l1)],
+ [step([0],[],[],succeeds list([])),
+  step([x,l1,l2,l3],
+   [succeeds list(?l1),
+    succeeds a_reverse(?l1,[?x|?l2],?l3)],
+   [],
+   succeeds list([?x|?l1]))])
+).
+
+:- lemma(a_reverse:types:2,
+all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) & succeeds list(?l2) => 
+ succeeds list(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => succeeds list(?l2) 
+    => succeeds list(?l3)],
+  [step([l],[],[],succeeds list(?l) => succeeds list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds list([?x|?l2]) => succeeds list(?l3),
+     succeeds a_reverse(?l1,[?x|?l2],?l3)],
+    assume(succeeds list(?l2),
+     [],
+     succeeds list(?l3)),
+    succeeds list(?l2) => succeeds list(?l3))]),
+ assume(succeeds a_reverse(?l1,?l2,?l3) & succeeds list(?l2),
+  [succeeds list(?l2) => succeeds list(?l3),
+   succeeds list(?l3)],
+  succeeds list(?l3))]
+).
+
+:- lemma(a_reverse:types:3,
+all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) & succeeds list(?l3) => 
+ succeeds list(?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => succeeds list(?l3) 
+    => succeeds list(?l2)],
+  [step([l],[],[],succeeds list(?l) => succeeds list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds list(?l3) => succeeds list([?x|?l2]),
+     succeeds a_reverse(?l1,[?x|?l2],?l3)],
+    assume(succeeds list(?l3),
+     [succeeds list([?x|?l2]),
+      def succeeds list([?x|?l2]) by completion,
+      succeeds list(?l2)],
+     succeeds list(?l2)),
+    succeeds list(?l3) => succeeds list(?l2))]),
+ assume(succeeds a_reverse(?l1,?l2,?l3) & succeeds list(?l3),
+  [succeeds list(?l3) => succeeds list(?l2),
+   succeeds list(?l2)],
+  succeeds list(?l2))]
+).
+
+:- lemma(a_reverse:termination,
+all [l1,l2,l3]: succeeds list(?l1) => terminates a_reverse(?l1,?l2,?l3),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    (all [l2,l3]: terminates a_reverse(?l1,?l2,?l3))],
+  [step([],
+    [],
+    terminates a_reverse([],?l2,?l3) by completion,
+    all [l2,l3]: terminates a_reverse([],?l2,?l3)),
+   step([x,l1],
+    [all [l2,l3]: terminates a_reverse(?l1,?l2,?l3),
+     succeeds list(?l1)],
+    [terminates a_reverse(?l1,[?x|?l2],?l3),
+     terminates a_reverse([?x|?l1],?l2,?l3) by completion],
+    all [l2,l3]: terminates a_reverse([?x|?l1],?l2,?l3))]),
+ assume(succeeds list(?l1),
+  [all [l2,l3]: terminates a_reverse(?l1,?l2,?l3),
+   terminates a_reverse(?l1,?l2,?l3)],
+  terminates a_reverse(?l1,?l2,?l3))]
+).
+
+:- lemma(n_reverse:existence,
+all l1: succeeds list(?l1) => (ex l2: succeeds n_reverse(?l1,?l2)),
+induction(
+ [all l1: succeeds list(?l1) => (ex l2: succeeds n_reverse(?l1,?l2))],
+ [step([],
+   [],
+   [succeeds n_reverse([],[]),
+    ex l2: succeeds n_reverse([],?l2)],
+   ex l2: succeeds n_reverse([],?l2)),
+  step([x,l1],
+   [ex l2: succeeds n_reverse(?l1,?l2),
+    succeeds list(?l1)],
+   exist(l2,
+    succeeds n_reverse(?l1,?l2),
+    [succeeds list(?l1) & succeeds list(?l2) by lemma(n_reverse:types),
+     succeeds append(?l2,[?x],?l2 ** [?x]) by existence(**,2),
+     succeeds n_reverse([?x|?l1],?l2 ** [?x]),
+     ex l2: succeeds n_reverse([?x|?l1],?l2)],
+    ex l2: succeeds n_reverse([?x|?l1],?l2)),
+   ex l2: succeeds n_reverse([?x|?l1],?l2))])
+).
+
+:- lemma(n_reverse:uniqueness,
+all [l1,l2,l3]: succeeds n_reverse(?l1,?l2) & succeeds n_reverse(?l1,?l3) 
+ => ?l2 = ?l3,
+[induction(
+  [all [l1,l2]: succeeds n_reverse(?l1,?l2) => 
+    (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3)],
+  [step([],
+    [],
+    assume(succeeds n_reverse([],?l3),
+     [def succeeds n_reverse([],?l3) by completion,
+      [] = ?l3],
+     [] = ?l3),
+    all l3: succeeds n_reverse([],?l3) => [] = ?l3),
+   step([x,l1,l2,l4],
+    [all l3: succeeds n_reverse(?l1,?l3) => ?l4 = ?l3,
+     succeeds n_reverse(?l1,?l4),
+     succeeds append(?l4,[?x],?l2)],
+    assume(succeeds n_reverse([?x|?l1],?l3),
+     [def succeeds n_reverse([?x|?l1],?l3) by completion,
+      exist(l5,
+       succeeds n_reverse(?l1,?l5) & succeeds append(?l5,[?x],?l3),
+       [?l4 = ?l5,
+        succeeds list(?l4) by lemma(append:types:1),
+        succeeds list(?l5),
+        ?l2 = ?l4 ** [?x] by uniqueness(**,2),
+        ?l3 = ?l5 ** [?x] by uniqueness(**,2),
+        ?l2 = ?l4 ** [?x] = ?l5 ** [?x] = ?l3],
+       ?l2 = ?l3)],
+     ?l2 = ?l3),
+    all l3: succeeds n_reverse([?x|?l1],?l3) => ?l2 = ?l3)]),
+ assume(succeeds n_reverse(?l1,?l2) & succeeds n_reverse(?l1,?l3),
+  [all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3,
+   succeeds n_reverse(?l1,?l3) => ?l2 = ?l3,
+   ?l2 = ?l3],
+  ?l2 = ?l3)]
+).
+
+:- theorem(n_reverse:function,
+all l1: succeeds list(?l1) => 
+ (ex l2: succeeds n_reverse(?l1,?l2) & 
+   (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3)),
+assume(succeeds list(?l1),
+ [ex l2: succeeds n_reverse(?l1,?l2) by lemma(n_reverse:existence),
+  exist(l2,
+   succeeds n_reverse(?l1,?l2),
+   [assume(succeeds n_reverse(?l1,?l3),
+     ?l2 = ?l3 by lemma(n_reverse:uniqueness),
+     ?l2 = ?l3),
+    succeeds n_reverse(?l1,?l2) & 
+    (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3),
+    ex l2: succeeds n_reverse(?l1,?l2) & 
+     (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3)],
+   ex l2: succeeds n_reverse(?l1,?l2) & 
+    (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3))],
+ ex l2: succeeds n_reverse(?l1,?l2) & 
+  (all l3: succeeds n_reverse(?l1,?l3) => ?l2 = ?l3))
+).
+
+:- lemma(n_reverse:ground,
+all [l1,l2]: succeeds n_reverse(?l1,?l2) & gr(?l1) => gr(?l2),
+[induction(
+  [all [l1,l2]: succeeds n_reverse(?l1,?l2) => gr(?l1) => gr(?l2)],
+  [step([],[],[],gr([]) => gr([])),
+   step([x,l1,l3,l2],
+    [gr(?l1) => gr(?l2),
+     succeeds n_reverse(?l1,?l2),
+     succeeds append(?l2,[?x],?l3)],
+    assume(gr([?x|?l1]),
+     [gr(?l2),
+      gr([?x]),
+      gr(?l3) by lemma(append:ground:1)],
+     gr(?l3)),
+    gr([?x|?l1]) => gr(?l3))]),
+ assume(succeeds n_reverse(?l1,?l2) & gr(?l1),
+  [gr(?l1) => gr(?l2),
+   gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- definition_fun(rev,1,
+ all [l1,l2]: succeeds list(?l1) => 
+  (rev(?l1) = ?l2 <=> succeeds n_reverse(?l1,?l2)),
+ existence by lemma(n_reverse:existence),
+ uniqueness by lemma(n_reverse:uniqueness)
+).
+
+:- corollary(rev:nil,
+rev([]) = [],
+[succeeds n_reverse([],[]),
+ succeeds list([]),
+ rev([]) = [] by uniqueness(rev,1)]
+).
+
+:- corollary(rev:types,
+all l: succeeds list(?l) => succeeds list(rev(?l)),
+assume(succeeds list(?l),
+ [succeeds n_reverse(?l,rev(?l)) by existence(rev,1),
+  succeeds list(?l) & succeeds list(rev(?l)) by lemma(n_reverse:types)],
+ succeeds list(rev(?l)))
+).
+
+:- corollary(rev:cons,
+all [x,l]: succeeds list(?l) => rev([?x|?l]) = rev(?l) ** [?x],
+assume(succeeds list(?l),
+ [succeeds n_reverse(?l,rev(?l)) by existence(rev,1),
+  succeeds list(rev(?l)) by corollary(rev:types),
+  succeeds append(rev(?l),[?x],rev(?l) ** [?x]) by existence(**,2),
+  succeeds n_reverse([?x|?l],rev(?l) ** [?x]),
+  succeeds list([?x|?l]),
+  rev([?x|?l]) = rev(?l) ** [?x] by uniqueness(rev,1)],
+ rev([?x|?l]) = rev(?l) ** [?x])
+).
+
+:- lemma(a_reverse:n_reverse,
+all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => rev(?l1) ** ?l2 = ?l3,
+induction(
+ [all [l1,l2,l3]: succeeds a_reverse(?l1,?l2,?l3) => rev(?l1) ** ?l2 = ?l3],
+ [step([l],
+   [],
+   [rev([]) = [] by corollary(rev:nil),
+    [] ** ?l = ?l by corollary(app:nil),
+    rev([]) ** ?l = [] ** ?l = ?l],
+   rev([]) ** ?l = ?l),
+  step([x,l1,l2,l3],
+   [rev(?l1) ** [?x|?l2] = ?l3,
+    succeeds a_reverse(?l1,[?x|?l2],?l3)],
+   [[?x|?l2] = [?x] ** ?l2 by concatenation,
+    succeeds list(?l1) by lemma(a_reverse:types:1),
+    succeeds list(rev(?l1)) by corollary(rev:types),
+    succeeds list([?x]) by lemma(list:1),
+    rev(?l1) ** [?x] ** ?l2 = rev(?l1) ** ([?x] ** ?l2) by 
+     theorem(app:associative),
+    rev([?x|?l1]) = rev(?l1) ** [?x] by corollary(rev:cons),
+    rev([?x|?l1]) ** ?l2 = rev(?l1) ** [?x] ** ?l2 = rev(?l1) ** 
+    ([?x] ** ?l2) = rev(?l1) ** [?x|?l2] = ?l3],
+   rev([?x|?l1]) ** ?l2 = ?l3)])
+).
+
+:- lemma(n_reverse:a_reverse,
+all [l1,l2]: succeeds n_reverse(?l1,?l2) => 
+ (all l3: succeeds a_reverse(?l1,?l3,?l2 ** ?l3)),
+induction(
+ [all [l1,l2]: succeeds n_reverse(?l1,?l2) => 
+   (all l3: succeeds a_reverse(?l1,?l3,?l2 ** ?l3))],
+ [step([],
+   [],
+   [succeeds a_reverse([],?l3,?l3),
+    [] ** ?l3 = ?l3 by corollary(app:nil),
+    succeeds a_reverse([],?l3,[] ** ?l3)],
+   all l3: succeeds a_reverse([],?l3,[] ** ?l3)),
+  step([x,l1,l2,l4],
+   [all l3: succeeds a_reverse(?l1,?l3,?l4 ** ?l3),
+    succeeds n_reverse(?l1,?l4),
+    succeeds append(?l4,[?x],?l2)],
+   [succeeds a_reverse(?l1,[?x|?l3],?l4 ** [?x|?l3]),
+    succeeds a_reverse([?x|?l1],?l3,?l4 ** [?x|?l3]),
+    succeeds list(?l4) by lemma(append:types:1),
+    ?l4 ** [?x] = ?l2 by uniqueness(**,2),
+    [?x|?l3] = [?x] ** ?l3 by concatenation,
+    succeeds list([?x]) by lemma(list:1),
+    ?l4 ** [?x] ** ?l3 = ?l4 ** ([?x] ** ?l3) by theorem(app:associative),
+    ?l4 ** [?x|?l3] = ?l4 ** ([?x] ** ?l3) = ?l4 ** [?x] ** ?l3 = ?l2 ** 
+    ?l3,
+    succeeds a_reverse([?x|?l1],?l3,?l2 ** ?l3)],
+   all l3: succeeds a_reverse([?x|?l1],?l3,?l2 ** ?l3))])
+).
+
+:- theorem(reverse:success,
+all [l1,l2]: succeeds reverse(?l1,?l2) <=> succeeds n_reverse(?l1,?l2),
+[assume(succeeds reverse(?l1,?l2),
+  [def succeeds reverse(?l1,?l2) by completion,
+   succeeds a_reverse(?l1,[],?l2),
+   rev(?l1) ** [] = ?l2 by lemma(a_reverse:n_reverse),
+   succeeds list(?l1) by lemma(a_reverse:types:1),
+   succeeds list(rev(?l1)) by corollary(rev:types),
+   rev(?l1) ** [] = rev(?l1) by lemma(app:nil),
+   rev(?l1) = rev(?l1) ** [] = ?l2,
+   succeeds n_reverse(?l1,rev(?l1)) by existence(rev,1),
+   succeeds n_reverse(?l1,?l2)],
+  succeeds n_reverse(?l1,?l2)),
+ assume(succeeds n_reverse(?l1,?l2),
+  [all l3: succeeds a_reverse(?l1,?l3,?l2 ** ?l3) by 
+    lemma(n_reverse:a_reverse),
+   succeeds a_reverse(?l1,[],?l2 ** []),
+   succeeds list(?l1) & succeeds list(?l2) by lemma(n_reverse:types),
+   ?l2 ** [] = ?l2 by lemma(app:nil),
+   succeeds a_reverse(?l1,[],?l2),
+   succeeds reverse(?l1,?l2)],
+  succeeds reverse(?l1,?l2)),
+ succeeds reverse(?l1,?l2) <=> succeeds n_reverse(?l1,?l2)]
+).
+
+:- corollary(reverse:termination,
+all [l1,l2]: succeeds list(?l1) => terminates reverse(?l1,?l2),
+assume(succeeds list(?l1),
+ [terminates a_reverse(?l1,[],?l2) by lemma(a_reverse:termination),
+  terminates reverse(?l1,?l2) by completion],
+ terminates reverse(?l1,?l2))
+).
+
+:- theorem(reverse:failure,
+all [l1,l2]: succeeds list(?l1) => 
+ (fails reverse(?l1,?l2) <=> fails n_reverse(?l1,?l2)),
+assume(succeeds list(?l1),
+ [assume(fails reverse(?l1,?l2),
+   [terminates n_reverse(?l1,?l2) by lemma(n_reverse:termination),
+    succeeds n_reverse(?l1,?l2) \/ fails n_reverse(?l1,?l2),
+    cases(succeeds n_reverse(?l1,?l2),
+     [succeeds reverse(?l1,?l2) <=> succeeds n_reverse(?l1,?l2) by 
+       theorem(reverse:success),
+      succeeds reverse(?l1,?l2),
+      ff],
+     fails n_reverse(?l1,?l2),
+     [],
+     fails n_reverse(?l1,?l2))],
+   fails n_reverse(?l1,?l2)),
+  assume(fails n_reverse(?l1,?l2),
+   [terminates reverse(?l1,?l2) by corollary(reverse:termination),
+    succeeds reverse(?l1,?l2) \/ fails reverse(?l1,?l2),
+    cases(succeeds reverse(?l1,?l2),
+     [succeeds reverse(?l1,?l2) <=> succeeds n_reverse(?l1,?l2) by 
+       theorem(reverse:success),
+      succeeds n_reverse(?l1,?l2),
+      ff],
+     fails reverse(?l1,?l2),
+     [],
+     fails reverse(?l1,?l2))],
+   fails reverse(?l1,?l2))],
+ fails reverse(?l1,?l2) <=> fails n_reverse(?l1,?l2))
+).
+
+:- corollary(rev:1,
+all x: rev([?x]) = [?x],
+[rev([?x]) = rev([]) ** [?x] by corollary(rev:cons),
+ rev([]) = [] by corollary(rev:nil),
+ [] ** [?x] = [?x] by corollary(app:nil),
+ rev([?x]) = rev([]) ** [?x] = [] ** [?x] = [?x],
+ rev([?x]) = [?x]]
+).
+
+:- corollary(rev:2,
+all [x,y]: rev([?x,?y]) = [?y,?x],
+[succeeds list([?y]) by lemma(list:1),
+ rev([?x,?y]) = rev([?y]) ** [?x] by corollary(rev:cons),
+ rev([?y]) = [?y] by corollary(rev:1),
+ [?y,?x] = [?y] ** [?x] by concatenation,
+ rev([?x,?y]) = rev([?y]) ** [?x] = [?y] ** [?x] = [?y,?x],
+ rev([?x,?y]) = [?y,?x]]
+).
+
+:- corollary(rev:3,
+all [x,y,z]: rev([?x,?y,?z]) = [?z,?y,?x],
+[succeeds list([?y,?z]) by lemma(list:2),
+ rev([?x,?y,?z]) = rev([?y,?z]) ** [?x] by corollary(rev:cons),
+ rev([?y,?z]) = [?z,?y] by corollary(rev:2),
+ succeeds list([?y]) by lemma(list:1),
+ [?z,?y] ** [?x] = [?z,?y,?x] by concatenation,
+ rev([?x,?y,?z]) = rev([?y,?z]) ** [?x] = [?z,?y] ** [?x] = [?z,?y,?x],
+ rev([?x,?y,?z]) = [?z,?y,?x]]
+).
+
+:- lemma(rev:app,
+all [l,y]: succeeds list(?l) => rev(?l ** [?y]) = [?y|rev(?l)],
+[induction(
+  [all l: succeeds list(?l) => (all y: rev(?l ** [?y]) = [?y|rev(?l)])],
+  [step([],
+    [],
+    [[] ** [?y] = [?y] by corollary(app:nil),
+     rev([?y]) = [?y] by corollary(rev:1),
+     rev([]) = [] by corollary(rev:nil),
+     rev([] ** [?y]) = rev([?y]) = [?y] = [?y|rev([])],
+     rev([] ** [?y]) = [?y|rev([])]],
+    all y: rev([] ** [?y]) = [?y|rev([])]),
+   step([x,l],
+    [all y: rev(?l ** [?y]) = [?y|rev(?l)],
+     succeeds list(?l)],
+    [[?x|?l] ** [?y] = [?x|?l ** [?y]] by corollary(app:cons),
+     succeeds list([?y]) by lemma(list:1),
+     succeeds list(?l ** [?y]) by corollary(app:types:1),
+     rev([?x|?l ** [?y]]) = rev(?l ** [?y]) ** [?x] by 
+      corollary(rev:cons),
+     rev(?l ** [?y]) = [?y|rev(?l)],
+     succeeds list(rev(?l)) by corollary(rev:types),
+     [?y|rev(?l)] ** [?x] = [?y|rev(?l) ** [?x]] by corollary(app:cons),
+     rev([?x|?l]) = rev(?l) ** [?x] by corollary(rev:cons),
+     rev([?x|?l] ** [?y]) = rev([?x|?l ** [?y]]) = rev(?l ** [?y]) ** [?x] 
+     = [?y|rev(?l)] ** [?x] = [?y|rev(?l) ** [?x]] = [?y|rev([?x|?l])],
+     rev([?x|?l] ** [?y]) = [?y|rev([?x|?l])]],
+    all y: rev([?x|?l] ** [?y]) = [?y|rev([?x|?l])])]),
+ assume(succeeds list(?l),
+  [all y: rev(?l ** [?y]) = [?y|rev(?l)],
+   rev(?l ** [?y]) = [?y|rev(?l)]],
+  rev(?l ** [?y]) = [?y|rev(?l)])]
+).
+
+:- theorem(rev:involution,
+all l: succeeds list(?l) => rev(rev(?l)) = ?l,
+induction([all l: succeeds list(?l) => rev(rev(?l)) = ?l],
+ [step([],
+   [],
+   [rev([]) = [] by corollary(rev:nil),
+    rev(rev([])) = rev([]) = []],
+   rev(rev([])) = []),
+  step([x,l],
+   [rev(rev(?l)) = ?l,
+    succeeds list(?l)],
+   [rev([?x|?l]) = rev(?l) ** [?x] by corollary(rev:cons),
+    succeeds list(rev(?l)) by corollary(rev:types),
+    rev(rev(?l) ** [?x]) = [?x|rev(rev(?l))] by lemma(rev:app),
+    rev(rev([?x|?l])) = rev(rev(?l) ** [?x]) = [?x|rev(rev(?l))] = [?x|?l]],
+   rev(rev([?x|?l])) = [?x|?l])])
+).
+
+:- theorem(n_reverse:involution,
+all [l1,l2]: succeeds n_reverse(?l1,?l2) => succeeds n_reverse(?l2,?l1),
+assume(succeeds n_reverse(?l1,?l2),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(n_reverse:types),
+  rev(?l1) = ?l2 by uniqueness(rev,1),
+  rev(rev(?l1)) = ?l1 by theorem(rev:involution),
+  rev(?l2) = rev(rev(?l1)) = ?l1,
+  succeeds n_reverse(?l2,rev(?l2)) by existence(rev,1),
+  succeeds n_reverse(?l2,?l1)],
+ succeeds n_reverse(?l2,?l1))
+).
+
+:- theorem(rev:permutation,
+all l: succeeds list(?l) => succeeds permutation(?l,rev(?l)),
+induction([all l: succeeds list(?l) => succeeds permutation(?l,rev(?l))],
+ [step([],
+   [],
+   [rev([]) = [] by corollary(rev:nil),
+    succeeds permutation([],[]),
+    succeeds permutation([],rev([]))],
+   succeeds permutation([],rev([]))),
+  step([x,l],
+   [succeeds permutation(?l,rev(?l)),
+    succeeds list(?l)],
+   [rev([?x|?l]) = rev(?l) ** [?x] by corollary(rev:cons),
+    succeeds list(rev(?l)) by corollary(rev:types),
+    succeeds delete(?x,rev(?l) ** [?x],rev(?l) ** []) by 
+     theorem(delete:app:1),
+    rev(?l) ** [] = rev(?l) by lemma(app:nil),
+    succeeds delete(?x,rev(?l) ** [?x],rev(?l)),
+    succeeds permutation(rev(?l),?l) by theorem(permutation:symmetric),
+    succeeds permutation(rev(?l) ** [?x],[?x|?l]),
+    succeeds permutation(rev([?x|?l]),[?x|?l]),
+    succeeds permutation([?x|?l],rev([?x|?l])) by 
+     theorem(permutation:symmetric)],
+   succeeds permutation([?x|?l],rev([?x|?l])))])
+).
+
+:- bye(reverse).

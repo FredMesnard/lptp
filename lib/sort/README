@@ -1,0 +1,35 @@
+The mergesort algorithm
+=======================
+
+Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+
+Files:
+	mergesort.pl	The Prolog source code of mergesort
+	mergesort.pr	The formal correctness proof.
+
+Main theorems:
+
+Termination (Theorem 15)
+all [l1,l2]: succeeds int_list(?l1) => terminates mergesort(?l1,?l2),
+
+Existence (Theorem 20)
+all l1: succeeds int_list(?l1) => (ex l2: succeeds mergesort(?l1,?l2)),
+
+Permutation (Theorem 23)
+all [l1,l2]: succeeds mergesort(?l1,?l2) & succeeds int_list(?l1) =>
+  succeeds permutation(?l1,?l2),
+
+Ordering (Theorem 27)
+all [l1,l2]: succeeds mergesort(?l1,?l2) & succeeds int_list(?l1) =>
+  succeeds int_ordered(?l2),
+
+
+Literature:
+
+@TECHREPORT{lindenstrauss97a,
+	AUTHOR = {N. Lindenstrauss, Y. Sagiv and A. Serebrenik},
+	TITLE = {Unfolding the Mystery of Mergesort},
+	INSTITUTION = {Dept. of Computer Science, Herbrew University},
+	YEAR = {1997},
+	ADDRESS = {Jerusalem, Israel}
+}

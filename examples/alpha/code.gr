@@ -1,0 +1,96 @@
+
+:- assert_clauses(n(#<,2),[
+ clause([n(#<,2),$(u),$(v)],
+  [&,[n(#=<,2),$(u),$(v)],[~,[=,$(u),$(v)]]],
+  [u,v]/0)
+]).
+
+:- assert_clauses(n(:-,1),[
+ clause([n(:-,1),[n(op,3),[n(700,0)],[n(xfy,0)],[n(#=<,0)]]],
+  [&],
+  []/0),
+ clause([n(:-,1),[n(op,3),[n(700,0)],[n(xfy,0)],[n(#<,0)]]],
+  [&],
+  []/0)
+]).
+
+:- assert_clauses(n(alpha_beta,5),[
+ clause([n(alpha_beta,5),$(0),$(1),$(p),[n(0,0)],$(v)],
+  [n(static_value,2),$(p),$(v)],
+  [0,1,p,v]/2),
+ clause([n(alpha_beta,5),$(a),$(b),$(p),[n(s,1),$(n)],$(v)],
+  [&,[n(and_pos,1),$(p)],[n(moves,2),$(p),$(l)],[n(beta_list,5),$(a),$(b),$(l),$(n),$(v)]],
+  [a,b,p,n,v,l]/0),
+ clause([n(alpha_beta,5),$(a),$(b),$(p),[n(s,1),$(n)],$(v)],
+  [&,[n(or_pos,1),$(p)],[n(moves,2),$(p),$(l)],[n(alpha_list,5),$(a),$(b),$(l),$(n),$(v)]],
+  [a,b,p,n,v,l]/0)
+]).
+
+:- assert_clauses(n(alpha_list,5),[
+ clause([n(alpha_list,5),$(a),$(b),$(l),$(0),$(a)],
+  [\/,[n(#=<,2),$(b),$(a)],[=,$(l),[n([],0)]]],
+  [a,b,l,0]/1),
+ clause([n(alpha_list,5),$(a),$(b),[n('.',2),$(p),$(l)],$(n),$(v)],
+  [&,[n(#<,2),$(a),$(b)],[n(alpha_beta,5),$(a),$(b),$(p),$(n),$(v1)],[n(max,3),$(a),$(v1),$(v2)],[n(alpha_list,5),$(v2),$(b),$(l),$(n),$(v)]],
+  [a,b,p,l,n,v,v1,v2]/0)
+]).
+
+:- assert_clauses(n(beta_list,5),[
+ clause([n(beta_list,5),$(a),$(b),$(l),$(0),$(b)],
+  [\/,[n(#=<,2),$(b),$(a)],[=,$(l),[n([],0)]]],
+  [a,b,l,0]/1),
+ clause([n(beta_list,5),$(a),$(b),[n('.',2),$(p),$(l)],$(n),$(v)],
+  [&,[n(#<,2),$(a),$(b)],[n(alpha_beta,5),$(a),$(b),$(p),$(n),$(v1)],[n(min,3),$(b),$(v1),$(v2)],[n(beta_list,5),$(a),$(v2),$(l),$(n),$(v)]],
+  [a,b,p,l,n,v,v1,v2]/0)
+]).
+
+:- assert_clauses(n(max,3),[
+ clause([n(max,3),$(v1),$(v2),$(v)],
+  [\/,[&,[n(#=<,2),$(v1),$(v2)],[=,$(v),$(v2)]],[&,[~,[n(#=<,2),$(v1),$(v2)]],[=,$(v),$(v1)]]],
+  [v1,v2,v]/0)
+]).
+
+:- assert_clauses(n(max_list,3),[
+ clause([n(max_list,3),[n([],0)],$(0),[n(bot,0)]],
+  [&],
+  [0]/1),
+ clause([n(max_list,3),[n('.',2),$(x),$(l)],$(n),$(v)],
+  [&,[n(min_max,3),$(x),$(n),$(v1)],[n(max_list,3),$(l),$(n),$(v2)],[n(max,3),$(v1),$(v2),$(v)]],
+  [x,l,n,v,v1,v2]/0)
+]).
+
+:- assert_clauses(n(min,3),[
+ clause([n(min,3),$(v1),$(v2),$(v)],
+  [\/,[&,[n(#=<,2),$(v1),$(v2)],[=,$(v),$(v1)]],[&,[~,[n(#=<,2),$(v1),$(v2)]],[=,$(v),$(v2)]]],
+  [v1,v2,v]/0)
+]).
+
+:- assert_clauses(n(min_list,3),[
+ clause([n(min_list,3),[n([],0)],$(0),[n(top,0)]],
+  [&],
+  [0]/1),
+ clause([n(min_list,3),[n('.',2),$(x),$(l)],$(n),$(v)],
+  [&,[n(min_max,3),$(x),$(n),$(v1)],[n(min_list,3),$(l),$(n),$(v2)],[n(min,3),$(v1),$(v2),$(v)]],
+  [x,l,n,v,v1,v2]/0)
+]).
+
+:- assert_clauses(n(min_max,3),[
+ clause([n(min_max,3),$(p),[n(0,0)],$(v)],
+  [n(static_value,2),$(p),$(v)],
+  [p,v]/0),
+ clause([n(min_max,3),$(p),[n(s,1),$(n)],$(v)],
+  [&,[n(and_pos,1),$(p)],[n(moves,2),$(p),$(l)],[n(min_list,3),$(l),$(n),$(v)]],
+  [p,n,v,l]/0),
+ clause([n(min_max,3),$(p),[n(s,1),$(n)],$(v)],
+  [&,[n(or_pos,1),$(p)],[n(moves,2),$(p),$(l)],[n(max_list,3),$(l),$(n),$(v)]],
+  [p,n,v,l]/0)
+]).
+
+:- assert_clauses(n(pos_list,1),[
+ clause([n(pos_list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(pos_list,1),[n('.',2),$(x),$(l)]],
+  [&,[n(pos,1),$(x)],[n(pos_list,1),$(l)]],
+  [x,l]/0)
+]).

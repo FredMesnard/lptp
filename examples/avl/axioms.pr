@@ -1,0 +1,48 @@
+%   Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+%  Created: Fri Jan 31 17:02:19 1997 
+% Filename: axioms.pr 
+% Abstract: Axioms for a total ordering r(?x,?y) on a domain a(?x)
+
+
+:-initialize.
+
+:- thm_file($(tmp)/axioms).
+:- tex_file($(tmp)/axioms).
+
+/** These are the basic axioms for an total ordered domain. 
+    The set a is a generic set of elements and r is a binary ordering relation.
+    This enables a general proof for the addavl program.
+    So, for instance, one can set a to int and r to =<. */
+
+:- axiom(ordering:reflexive,
+all x: succeeds a(?x) => succeeds r(?x,?x)
+).
+
+:- axiom(ordering:transitive,
+all [x,y,z]: succeeds a(?x) & succeeds a(?y) & succeeds a(?z) &
+ succeeds r(?x,?y) & succeeds r(?y,?z) => succeeds r(?x,?z)
+).
+
+:- axiom(ordering:antisymmetric,
+all [x,y]: succeeds a(?x) & succeeds a(?y) &
+ succeeds r(?x,?y) & succeeds r(?y,?x) => ?x = ?y
+).
+
+:- axiom(ordering:total,
+all [x,y]: succeeds a(?x) & succeeds a(?y) =>
+  succeeds r(?x,?y) \/ succeeds r(?y,?x)
+).
+
+:- axiom(ordering:termination,
+all [x,y]: succeeds a(?x) & succeeds a(?y) => terminates r(?x,?y)
+).
+
+:- axiom(domain:ground,
+all x: succeeds a(?x) => gr(?x)
+).
+
+:- axiom(domain:termination,
+all x: succeeds a(?x) => terminates a(?x)
+).
+
+:-bye(axioms).

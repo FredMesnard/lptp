@@ -1,0 +1,1718 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Wed Feb 28 16:39:45 1996 */
+/* Filename: grammar.pr */
+/* Abstract: Properties of wf_term/3 in grammar.pl.*/
+
+:- initialize.
+
+:- tex_file($(tmp)/grammar).
+:- thm_file($(tmp)/grammar).
+
+:- needs_gr($(examples)/parser/src/grammar).
+:- needs_gr($(examples)/parser/src/read).
+:- needs_gr($(lib)/list/list).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(tmp)/axioms).
+:- needs_thm($(tmp)/precedence).
+
+
+:- lemma(token:gr,
+all z: succeeds token(?z) => gr(?z),
+assume(succeeds token(?z),
+ [def succeeds token(?z) by completion,
+  cases(
+   [case(ex x: ?z = name(?x) & succeeds atom(?x),
+     exist(x,
+      ?z = name(?x) & succeeds atom(?x),
+      [gr(?x) by axiom(atom:gr),
+       gr(name(?x))],
+      gr(?z))),
+    case(ex x: ?z = variable(?x) & succeeds atomic(?x),
+     exist(x,
+      ?z = variable(?x) & succeeds atomic(?x),
+      [gr(?x) by axiom(atomic:gr),
+       gr(variable(?x))],
+      gr(?z))),
+    case(ex x: ?z = integer(?x) & succeeds integer(?x),
+     exist(x,
+      ?z = integer(?x) & succeeds integer(?x),
+      [gr(?x) by axiom(integer:gr),
+       gr(integer(?x))],
+      gr(?z))),
+    case(ex x: ?z = float_number(?x) & succeeds number(?x),
+     exist(x,
+      ?z = float_number(?x) & succeeds number(?x),
+      [gr(?x) by axiom(number:gr),
+       gr(float_number(?x))],
+      gr(?z))),
+    case(ex x: ?z = char_code_list(?x) & succeeds char_code_list(?x),
+     exist(x,
+      ?z = char_code_list(?x) & succeeds char_code_list(?x),
+      [gr(?x) by axiom(char_code_list:gr),
+       gr(char_code_list(?x))],
+      gr(?z))),
+    case(?z = open(nolayout),
+     gr(open(nolayout))),
+    case(?z = open(layout),
+     gr(open(layout))),
+    case(?z = close,
+     gr(close)),
+    case(?z = open_list,
+     gr(open_list)),
+    case(?z = close_list,
+     gr(close_list)),
+    case(?z = open_curly,
+     gr(open_curly)),
+    case(?z = close_curly,
+     gr(close_curly)),
+    case(?z = head_tail_sep,
+     gr(head_tail_sep)),
+    case(?z = comma,
+     gr(comma)),
+    case(?z = end,
+     gr(end))],
+   gr(?z))],
+ gr(?z))
+).
+
+:- lemma(token_list:gr,
+all l: succeeds token_list(?l) => gr(?l),
+induction([all l: succeeds token_list(?l) => gr(?l)],
+ [step([],[],[],gr([])),
+  step([x,l],
+   [gr(?l),
+    succeeds token(?x),
+    succeeds token_list(?l)],
+   [gr(?x) by lemma(token:gr),
+    gr([?x|?l])],
+   gr([?x|?l]))])
+).
+
+:- lemma(wf_term:types,
+(all [l,n,t]: succeeds wf_term(?l,?n,?t) => succeeds list(?l) &
+ succeeds integer(?n) & succeeds ?n =< 1200) &
+(all [l,t]: succeeds wf_one_arg(?l,?t)  => succeeds list(?l)) &
+(all [l,ts]: succeeds wf_arg_seq(?l,?ts) => succeeds list(?l)) &
+(all [l,t]: succeeds wf_list_tail(?l,?t) => succeeds list(?l)),
+induction(
+ [all [l,n,t]: succeeds wf_term(?l,?n,?t) => succeeds list(?l) & 
+   succeeds integer(?n) & succeeds ?n =< 1200,
+  all [l,t]: succeeds wf_one_arg(?l,?t) => succeeds list(?l),
+  all [l,ts]: succeeds wf_arg_seq(?l,?ts) => succeeds list(?l),
+  all [l,t]: succeeds wf_list_tail(?l,?t) => succeeds list(?l)],
+ [step([x],
+   [],
+   [],
+   succeeds list([variable(?x)]) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([x],
+   [],
+   [],
+   succeeds list([integer(?x)]) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([x],
+   [],
+   [],
+   succeeds list([float_number(?x)]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([x],
+   [],
+   [],
+   succeeds list([char_code_list(?x)]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([x],
+   [fails symbol_op(?x)],
+   [],
+   succeeds list([name(?x)]) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([l,x,t,ts,l1,l2],
+   [succeeds list(?l1),
+    succeeds list(?l2),
+    succeeds append([name(?x),open(nolayout)|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   [succeeds list([open(nolayout)|?l1]) by sld,
+    succeeds list([name(?x),open(nolayout)|?l1]) by sld,
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([],
+   [],
+   succeeds list([open_list,close_list]) by lemma(list:2),
+   succeeds list([open_list,close_list]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([l,t1,t2,l1,l2],
+   [succeeds list(?l1),
+    succeeds list(?l2),
+    succeeds append([open_list|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   [succeeds list([open_list|?l1]) by sld,
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([l,t,0,l1,n],
+   [succeeds list(?l1) & succeeds integer(?n) & succeeds ?n =< 1200,
+    succeeds append([open(?0)|?l1],[close],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [succeeds list([open(?0)|?l1]) by sld,
+    succeeds list([close]) by lemma(list:1),
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([],
+   [],
+   succeeds list([open_curly,close_curly]) by lemma(list:2),
+   succeeds list([open_curly,close_curly]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([l,t,l1,n],
+   [succeeds list(?l1) & succeeds integer(?n) & succeeds ?n =< 1200,
+    succeeds append([open_curly|?l1],[close_curly],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [succeeds list([open_curly|?l1]) by sld,
+    succeeds list([close_curly]) by lemma(list:1),
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l) & succeeds integer(0) & succeeds 0 =< 1200),
+  step([0,x],
+   [succeeds symbol_op(?x)],
+   succeeds list([open(?0),name(?x),close]) by lemma(list:3),
+   succeeds list([open(?0),name(?x),close]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([x,y,l,n,t,m,k],
+   [succeeds list([?y|?l]) & succeeds integer(?k) & succeeds ?k =< 1200,
+    succeeds prefix_prec(?x,?n,?m),
+    ?y <> open(nolayout),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds wf_term([?y|?l],?k,?t),
+    succeeds ?k =< ?m],
+   [succeeds integer(?n) & succeeds integer(?m) by 
+     lemma(prefix_prec:integer),
+    succeeds ?n =< 1200 & succeeds 0 =< ?m by 
+     lemma(prefix_prec:precedence)],
+   succeeds list([name(?x),?y|?l]) & succeeds integer(?n) & 
+   succeeds ?n =< 1200),
+  step([l,n,x,t1,t2,l1,l2,m1,m2,k1,k2],
+   [succeeds list(?l1) & succeeds integer(?k1) & succeeds ?k1 =< 1200,
+    succeeds list(?l2) & succeeds integer(?k2) & succeeds ?k2 =< 1200,
+    succeeds append(?l1,[name(?x)|?l2],?l),
+    succeeds infix_prec(?x,?n,?m1,?m2),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< ?m1,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< ?m2],
+   [succeeds list([name(?x)|?l2]) by sld,
+    succeeds list(?l) by lemma(append:types:2),
+    succeeds integer(?n) & succeeds integer(?m1) & succeeds integer(?m2) by
+     lemma(infix_prec:integer),
+    succeeds ?n =< 1200 & succeeds 0 =< ?m1 & succeeds 0 =< ?m2 by 
+     lemma(infix_prec:precedence)],
+   succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200),
+  step([l,t1,t2,l1,l2,k1,k2],
+   [succeeds list(?l1) & succeeds integer(?k1) & succeeds ?k1 =< 1200,
+    succeeds list(?l2) & succeeds integer(?k2) & succeeds ?k2 =< 1200,
+    succeeds append(?l1,[comma|?l2],?l),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< 999,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< 1000],
+   [succeeds list([comma|?l2]) by sld,
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l) & succeeds integer(1000) & succeeds 1000 =< 1200),
+  step([l,n,x,t,l1,m,k],
+   [succeeds list(?l1) & succeeds integer(?k) & succeeds ?k =< 1200,
+    succeeds append(?l1,[name(?x)],?l),
+    succeeds postfix_prec(?x,?n,?m),
+    succeeds wf_term(?l1,?k,?t),
+    succeeds ?k =< ?m],
+   [succeeds list([name(?x)]) by lemma(list:1),
+    succeeds list(?l) by lemma(append:types:2),
+    succeeds integer(?n) & succeeds integer(?m) by 
+     lemma(postfix_prec:integer),
+    succeeds ?n =< 1200 & succeeds 0 =< ?m by 
+     lemma(postfix_prec:precedence)],
+   succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   succeeds list([name(-),integer(?x)]) by lemma(list:2),
+   succeeds list([name(-),integer(?x)]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   succeeds list([name(-),float_number(?x)]) by lemma(list:2),
+   succeeds list([name(-),float_number(?x)]) & succeeds integer(0) & 
+   succeeds 0 =< 1200),
+  step([l,t,n],
+   [succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200,
+    succeeds wf_term(?l,?n,?t),
+    succeeds ?n =< 999],
+   [],
+   succeeds list(?l)),
+  step([x],
+   [succeeds symbol_op(?x)],
+   [],
+   succeeds list([name(?x)])),
+  step([],
+   [],
+   [],
+   succeeds list([close])),
+  step([l,t,ts,l1,l2],
+   [succeeds list(?l1),
+    succeeds list(?l2),
+    succeeds append([comma|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   [succeeds list([comma|?l1]) by sld,
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l)),
+  step([],
+   [],
+   [],
+   succeeds list([close_list])),
+  step([l,t1,t2,l1,l2],
+   [succeeds list(?l1),
+    succeeds list(?l2),
+    succeeds append([comma|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   [succeeds list([comma|?l1]) by sld,
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l)),
+  step([l,t,l1],
+   [succeeds list(?l1),
+    succeeds append([head_tail_sep|?l1],[close_list],?l),
+    succeeds wf_one_arg(?l1,?t)],
+   [succeeds list([head_tail_sep|?l1]) by sld,
+    succeeds list([close_list]) by lemma(list:1),
+    succeeds list(?l) by lemma(append:types:2)],
+   succeeds list(?l))])
+).
+
+:- corollary(wf_term:list,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) => succeeds list(?l),
+assume(succeeds wf_term(?l,?n,?t),
+ succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200
+  by lemma(wf_term:types),
+ succeeds list(?l))
+).
+
+:- corollary(wf_term:integer,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) => succeeds integer(?n),
+assume(succeeds wf_term(?l,?n,?t),
+ succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200
+  by lemma(wf_term:types),
+ succeeds integer(?n))
+).
+
+:- corollary(wf_term:1200,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) => succeeds ?n =< 1200,
+assume(succeeds wf_term(?l,?n,?t),
+ succeeds list(?l) & succeeds integer(?n) & succeeds ?n =< 1200
+  by lemma(wf_term:types),
+ succeeds ?n =< 1200)
+).
+
+:- corollary(wf_one_arg:list,
+all [l,t]: succeeds wf_one_arg(?l,?t) => succeeds list(?l),
+all [l,t]: succeeds wf_one_arg(?l,?t) => succeeds list(?l) by 
+ lemma(wf_term:types)
+).
+
+:- corollary(wf_arg_seq:list,
+all [l,ts]: succeeds wf_arg_seq(?l,?ts) => succeeds list(?l),
+all [l,ts]: succeeds wf_arg_seq(?l,?ts) => succeeds list(?l) by 
+ lemma(wf_term:types)
+).
+
+:- corollary(wf_list_tail:list,
+all [l,t]: succeeds wf_list_tail(?l,?t) => succeeds list(?l),
+all [l,t]: succeeds wf_list_tail(?l,?t) => succeeds list(?l) by 
+ lemma(wf_term:types)
+).
+
+:- lemma(wf_term:term_start,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) => 
+ (ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+induction(
+ [all [l,n,t]: succeeds wf_term(?l,?n,?t) => 
+   (ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+ [step([x],
+   [],
+   [variable(?x)] = [variable(?x)] & succeeds start_token(variable(?x)),
+   ex [x0,l0]: [variable(?x)] = [?x0|?l0] & succeeds start_token(?x0)),
+  step([x],
+   [],
+   [integer(?x)] = [integer(?x)] & succeeds start_token(integer(?x)),
+   ex [x0,l0]: [integer(?x)] = [?x0|?l0] & succeeds start_token(?x0)),
+  step([x],
+   [],
+   [float_number(?x)] = [float_number(?x)] & 
+   succeeds start_token(float_number(?x)),
+   ex [x0,l0]: [float_number(?x)] = [?x0|?l0] & succeeds start_token(?x0)),
+  step([x],
+   [],
+   [char_code_list(?x)] = [char_code_list(?x)] & 
+   succeeds start_token(char_code_list(?x)),
+   ex [x0,l0]: [char_code_list(?x)] = [?x0|?l0] & 
+    succeeds start_token(?x0)),
+  step([x],
+   [fails symbol_op(?x)],
+   [name(?x)] = [name(?x)] & succeeds start_token(name(?x)),
+   ex [x0,l0]: [name(?x)] = [?x0|?l0] & succeeds start_token(?x0)),
+  step([l,x,t,ts,l1,l2],
+   [succeeds append([name(?x),open(nolayout)|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   [def succeeds append([name(?x),open(nolayout)|?l1],?l2,?l) by completion,
+    exist(l3,
+     ?l = [name(?x)|?l3] & succeeds append([open(nolayout)|?l1],?l2,?l3),
+     ?l = [name(?x)|?l3] & succeeds start_token(name(?x)),
+     ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([],
+   [],
+   [open_list,close_list] = [open_list,close_list] & 
+   succeeds start_token(open_list),
+   ex [x0,l0]: [open_list,close_list] = [?x0|?l0] & 
+    succeeds start_token(?x0)),
+  step([l,t1,t2,l1,l2],
+   [succeeds append([open_list|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   [def succeeds append([open_list|?l1],?l2,?l) by completion,
+    exist(l3,
+     ?l = [open_list|?l3] & succeeds append(?l1,?l2,?l3),
+     ?l = [open_list|?l3] & succeeds start_token(open_list),
+     ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([l,t,0,l1,n],
+   [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds append([open(?0)|?l1],[close],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [def succeeds append([open(?0)|?l1],[close],?l) by completion,
+    exist(l3,
+     ?l = [open(?0)|?l3] & succeeds append(?l1,[close],?l3),
+     ?l = [open(?0)|?l3] & succeeds start_token(open(?0)),
+     ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([],
+   [],
+   [open_curly,close_curly] = [open_curly,close_curly] & 
+   succeeds start_token(open_curly),
+   ex [x0,l0]: [open_curly,close_curly] = [?x0|?l0] & 
+    succeeds start_token(?x0)),
+  step([l,t,l1,n],
+   [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds append([open_curly|?l1],[close_curly],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [def succeeds append([open_curly|?l1],[close_curly],?l) by completion,
+    exist(l3,
+     ?l = [open_curly|?l3] & succeeds append(?l1,[close_curly],?l3),
+     ?l = [open_curly|?l3] & succeeds start_token(open_curly),
+     ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([0,x],
+   [succeeds symbol_op(?x)],
+   [open(?0),name(?x),close] = [open(?0),name(?x),close] & 
+   succeeds start_token(open(?0)),
+   ex [x0,l0]: [open(?0),name(?x),close] = [?x0|?l0] & 
+    succeeds start_token(?x0)),
+  step([x,y,l,n,t,m,k],
+   [ex [x0,l0]: [?y|?l] = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds prefix_prec(?x,?n,?m),
+    ?y <> open(nolayout),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds wf_term([?y|?l],?k,?t),
+    succeeds ?k =< ?m],
+   [name(?x),?y|?l] = [name(?x),?y|?l] & succeeds start_token(name(?x)),
+   ex [x0,l0]: [name(?x),?y|?l] = [?x0|?l0] & succeeds start_token(?x0)),
+  step([l,n,x,t1,t2,l1,l2,m1,m2,k1,k2],
+   [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    ex [x0,l0]: ?l2 = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds append(?l1,[name(?x)|?l2],?l),
+    succeeds infix_prec(?x,?n,?m1,?m2),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< ?m1,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< ?m2],
+   exist([x0,l0],
+    ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    [def succeeds append([?x0|?l0],[name(?x)|?l2],?l) by completion,
+     exist(l3,
+      ?l = [?x0|?l3] & succeeds append(?l0,[name(?x)|?l2],?l3),
+      ?l = [?x0|?l3] & succeeds start_token(?x0),
+      ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+    ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([l,t1,t2,l1,l2,k1,k2],
+   [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    ex [x0,l0]: ?l2 = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds append(?l1,[comma|?l2],?l),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< 999,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< 1000],
+   exist([x0,l0],
+    ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    [def succeeds append([?x0|?l0],[comma|?l2],?l) by completion,
+     exist(l3,
+      ?l = [?x0|?l3] & succeeds append(?l0,[comma|?l2],?l3),
+      ?l = [?x0|?l3] & succeeds start_token(?x0),
+      ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+    ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([l,n,x,t,l1,m,k],
+   [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    succeeds append(?l1,[name(?x)],?l),
+    succeeds postfix_prec(?x,?n,?m),
+    succeeds wf_term(?l1,?k,?t),
+    succeeds ?k =< ?m],
+   exist([x0,l0],
+    ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+    [def succeeds append([?x0|?l0],[name(?x)],?l) by completion,
+     exist(l3,
+      ?l = [?x0|?l3] & succeeds append(?l0,[name(?x)],?l3),
+      ?l = [?x0|?l3] & succeeds start_token(?x0),
+      ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+    ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-),integer(?x)] = [name(-),integer(?x)] & 
+   succeeds start_token(name(-)),
+   ex [x0,l0]: [name(-),integer(?x)] = [?x0|?l0] & 
+    succeeds start_token(?x0)),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-),float_number(?x)] = [name(-),float_number(?x)] & 
+   succeeds start_token(name(-)),
+   ex [x0,l0]: [name(-),float_number(?x)] = [?x0|?l0] & 
+    succeeds start_token(?x0))])
+).
+
+:- corollary(wf_term:term_start,
+all [x,l,n,t]: succeeds wf_term([?x|?l],?n,?t) => succeeds start_token(?x),
+assume(succeeds wf_term([?x|?l],?n,?t),
+ [ex [x0,l0]: [?x|?l] = [?x0|?l0] & succeeds start_token(?x0)
+  by lemma(wf_term:term_start),
+  exist([x0,l0],
+   [?x|?l] = [?x0|?l0] & succeeds start_token(?x0),
+   [],
+   succeeds start_token(?x)) ],
+ succeeds start_token(?x))
+).
+
+:- corollary(wf_one_arg:term_start,
+all [l,n,t]: succeeds wf_one_arg(?l,?t) => 
+ (ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+assume(succeeds wf_one_arg(?l,?t),
+ [def succeeds wf_one_arg(?l,?t) by completion,
+  cases(ex n: succeeds wf_term(?l,?n,?t) & succeeds ?n =< 999,
+   exist(n,
+    succeeds wf_term(?l,?n,?t) & succeeds ?n =< 999,
+     ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0) by
+      lemma(wf_term:term_start),
+    ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+   ex x: ?l = [name(?x)] & ?t = con(?x) & succeeds symbol_op(?x),
+   exist(x,
+    ?l = [name(?x)] & ?t = con(?x) & succeeds symbol_op(?x),
+    ?l = [name(?x)] & succeeds start_token(name(?x)),
+    ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0)),
+   ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))],
+ ex [x0,l0]: ?l = [?x0|?l0] & succeeds start_token(?x0))
+).
+
+:- definition_pred(non_empty,2,
+all [l,n]: non_empty(?l,?n) <=>
+ (ex x: ?l = [?x]) \/
+ (ex [x,y,l0]: ?l = [?x,?y|?l0] &
+  (all z: ?x = name(?z) => 
+   succeeds start_token(?y) \/ (?y = comma & fails ?n =< 999)))
+).
+
+:- lemma(non_empty:append,
+all [l1,m1,x,l,l2,m2]: non_empty(?l1,?m1) &
+ succeeds append(?l1,[name(?x)|?l],?l2) & succeeds ?m1 =< ?m2 &
+ succeeds integer(?m2) => non_empty(?l2,?m2),
+assume(non_empty(?l1,?m1) & succeeds append(?l1,[name(?x)|?l],?l2) & 
+ succeeds ?m1 =< ?m2 & succeeds integer(?m2),
+ [(ex x: ?l1 = [?x]) \/
+    (ex [x,y,l0]: ?l1 = [?x,?y|?l0] &
+     (all z: ?x = name(?z) => 
+      succeeds start_token(?y) \/ (?y = comma & fails ?m1 =< 999)))
+     by elimination(non_empty,2),
+  cases(ex x: ?l1 = [?x],
+   exist(0,
+    ?l1 = [?0],
+    [def(succeeds append([?0],[name(?x)|?l],?l2)) by completion,
+     exist(l3,
+      ?l2 = [?0|?l3] & succeeds append([],[name(?x)|?l],?l3),
+      [def succeeds append([],[name(?x)|?l],?l3) by completion,
+       ?l3 = [name(?x)|?l],
+       ?0 = name(?z) => succeeds start_token(name(?x)) \/
+         name(?x) = comma & fails ?m2 =< 999,
+       ?l2 = [?0,name(?x)|?l] &
+        (all z: ?0 = name(?z) => succeeds start_token(name(?x)) \/
+         name(?x) = comma & fails ?m2 =< 999),
+       non_empty(?l2,?m2) by introduction(non_empty,2)],
+      non_empty(?l2,?m2))],
+    non_empty(?l2,?m2)),
+   ex [x,y,l0]: ?l1 = [?x,?y|?l0] & 
+    (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+      fails ?m1 =< 999),
+   exist([0,y,l0],
+    ?l1 = [?0,?y|?l0] & 
+    (all z: ?0 = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+      fails ?m1 =< 999),
+    [def(succeeds append([?0,?y|?l0],[name(?x)|?l],?l2)) by completion,
+     exist(l3,
+      ?l2 = [?0|?l3] & succeeds append([?y|?l0],[name(?x)|?l],?l3),
+      [def succeeds append([?y|?l0],[name(?x)|?l],?l3) by completion,
+       exist(1,
+        ?l3 = [?y|?1] & succeeds append(?l0,[name(?x)|?l],?1),
+        [assume(?0 = name(?z),
+          [succeeds start_token(?y) \/ ?y = comma & 
+           fails ?m1 =< 999,
+	   succeeds integer(999) by builtin,
+           cases(succeeds start_token(?y),
+            [],
+            ?y = comma & fails ?m1 =< 999,
+	    [terminates ?m2 =< 999 by axiom(leq:termination),
+             succeeds ?m2 =< 999 \/ fails ?m2 =< 999,
+             cases(succeeds ?m2 =< 999,
+              [succeeds ?m1 =< 999 by axiom(leq:leq:transitive),
+               ff],
+              fails ?m2 =< 999,
+              [],
+              ?y = comma & fails ?m2 =< 999)],
+            succeeds start_token(?y) \/ ?y = comma & fails ?m2 =< 999)],
+          succeeds start_token(?y) \/ ?y = comma & fails ?m2 =< 999),
+         ?l2 = [?0,?y|?1] &
+          (all z: ?0 = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+           fails ?m2 =< 999),
+         non_empty(?l2,?m2) by introduction(non_empty,2)],
+        non_empty(?l2,?m2))],
+      non_empty(?l2,?m2))],
+    non_empty(?l2,?m2)),
+   non_empty(?l2,?m2))],
+ non_empty(?l2,?m2))
+).
+
+:- lemma(wf_term:arg,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) => non_empty(?l,?n),
+induction([all [l,n,t]: succeeds wf_term(?l,?n,?t) => non_empty(?l,?n)],
+ [step([x],
+   [],
+   [[variable(?x)] = [variable(?x)],
+    non_empty([variable(?x)],0) by introduction(non_empty,2)],
+   non_empty([variable(?x)],0)),
+  step([x],
+   [],
+   [[integer(?x)] = [integer(?x)],
+    non_empty([integer(?x)],0) by introduction(non_empty,2)],
+   non_empty([integer(?x)],0)),
+  step([x],
+   [],
+   [[float_number(?x)] = [float_number(?x)],
+    non_empty([float_number(?x)],0) by introduction(non_empty,2)],
+   non_empty([float_number(?x)],0)),
+  step([x],
+   [],
+   [[char_code_list(?x)] = [char_code_list(?x)],
+    non_empty([char_code_list(?x)],0) by introduction(non_empty,2)],
+   non_empty([char_code_list(?x)],0)),
+  step([x],
+   [fails symbol_op(?x)],
+   [[name(?x)] = [name(?x)],
+    non_empty([name(?x)],0) by introduction(non_empty,2)],
+   non_empty([name(?x)],0)),
+  step([l,x,t,ts,l1,l2],
+   [succeeds append([name(?x),open(nolayout)|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   [def succeeds append([name(?x),open(nolayout)|?l1],?l2,?l) by completion,
+    exist(l3,
+     ?l = [name(?x)|?l3] & succeeds append([open(nolayout)|?l1],?l2,?l3),
+     [def succeeds append([open(nolayout)|?l1],?l2,?l3) by completion,
+      exist(2,
+       ?l3 = [open(nolayout)|?2] & succeeds append(?l1,?l2,?2),
+       [name(?x) = name(?z) => succeeds start_token(open(nolayout)) \/ 
+        open(nolayout) = comma & fails 0 =< 999,
+        ?l = [name(?x),open(nolayout)|?2] & 
+        (all z: name(?x) = name(?z) => 
+          succeeds start_token(open(nolayout)) \/ open(nolayout) = comma & 
+          fails 0 =< 999),
+        non_empty(?l,0) by introduction(non_empty,2)],
+       non_empty(?l,0))],
+     non_empty(?l,0))],
+   non_empty(?l,0)),
+  step([],
+   [],
+   [open_list = name(?z) => succeeds start_token(close_list) \/ 
+    close_list = comma & fails 0 =< 999,
+    [open_list,close_list] = [open_list,close_list] & 
+    (all z: open_list = name(?z) => succeeds start_token(close_list) \/ 
+      close_list = comma & fails 0 =< 999),
+    non_empty([open_list,close_list],0) by introduction(non_empty,2)],
+   non_empty([open_list,close_list],0)),
+  step([l,t1,t2,l1,l2],
+   [succeeds append([open_list|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   [def succeeds append([open_list|?l1],?l2,?l) by completion,
+    exist(l3,
+     ?l = [open_list|?l3] & succeeds append(?l1,?l2,?l3),
+     [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0) by 
+       corollary(wf_one_arg:term_start),
+      exist([x0,l0],
+       ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+       [def succeeds append([?x0|?l0],?l2,?l3) by completion,
+        exist(1,
+         ?l3 = [?x0|?1] & succeeds append(?l0,?l2,?1),
+         [open_list = name(?z) => succeeds start_token(?x0) \/ ?x0 = comma 
+          & fails 0 =< 999,
+          ?l = [open_list,?x0|?1] & 
+          (all z: open_list = name(?z) => succeeds start_token(?x0) \/ 
+            ?x0 = comma & fails 0 =< 999),
+          non_empty(?l,0) by introduction(non_empty,2)],
+         non_empty(?l,0))],
+       non_empty(?l,0))],
+     non_empty(?l,0))],
+   non_empty(?l,0)),
+  step([l,t,0,l1,n],
+   [non_empty(?l1,?n),
+    succeeds append([open(?0)|?l1],[close],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [def succeeds append([open(?0)|?l1],[close],?l) by completion,
+    exist(l3,
+     ?l = [open(?0)|?l3] & succeeds append(?l1,[close],?l3),
+     [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0) by 
+       lemma(wf_term:term_start),
+      exist([x0,l0],
+       ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+       [def succeeds append([?x0|?l0],[close],?l3) by completion,
+        exist(1,
+         ?l3 = [?x0|?1] & succeeds append(?l0,[close],?1),
+         [open(?0) = name(?z) => succeeds start_token(?x0) \/ ?x0 = comma &
+          fails 0 =< 999,
+          ?l = [open(?0),?x0|?1] & 
+          (all z: open(?0) = name(?z) => succeeds start_token(?x0) \/ 
+            ?x0 = comma & fails 0 =< 999),
+          non_empty(?l,0) by introduction(non_empty,2)],
+         non_empty(?l,0))],
+       non_empty(?l,0))],
+     non_empty(?l,0))],
+   non_empty(?l,0)),
+  step([],
+   [],
+   [open_curly = name(?z) => succeeds start_token(close_curly) \/ 
+    close_curly = comma & fails 0 =< 999,
+    [open_curly,close_curly] = [open_curly,close_curly] & 
+    (all z: open_curly = name(?z) => succeeds start_token(close_curly) \/ 
+      close_curly = comma & fails 0 =< 999),
+    non_empty([open_curly,close_curly],0) by introduction(non_empty,2)],
+   non_empty([open_curly,close_curly],0)),
+  step([l,t,l1,n],
+   [non_empty(?l1,?n),
+    succeeds append([open_curly|?l1],[close_curly],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   [def succeeds append([open_curly|?l1],[close_curly],?l) by completion,
+    exist(l3,
+     ?l = [open_curly|?l3] & succeeds append(?l1,[close_curly],?l3),
+     [ex [x0,l0]: ?l1 = [?x0|?l0] & succeeds start_token(?x0) by 
+       lemma(wf_term:term_start),
+      exist([x0,l0],
+       ?l1 = [?x0|?l0] & succeeds start_token(?x0),
+       [def succeeds append([?x0|?l0],[close_curly],?l3) by completion,
+        exist(1,
+         ?l3 = [?x0|?1] & succeeds append(?l0,[close_curly],?1),
+         [open_curly = name(?z) => succeeds start_token(?x0) \/ ?x0 = comma
+          & fails 0 =< 999,
+          ?l = [open_curly,?x0|?1] & 
+          (all z: open_curly = name(?z) => succeeds start_token(?x0) \/ 
+            ?x0 = comma & fails 0 =< 999),
+          non_empty(?l,0) by introduction(non_empty,2)],
+         non_empty(?l,0))],
+       non_empty(?l,0))],
+     non_empty(?l,0))],
+   non_empty(?l,0)),
+  step([0,x],
+   [succeeds symbol_op(?x)],
+   [open(?0) = name(?z) => succeeds start_token(name(?x)) \/ 
+    name(?x) = comma & fails 0 =< 999,
+    [open(?0),name(?x),close] = [open(?0),name(?x),close] & 
+    (all z: open(?0) = name(?z) => succeeds start_token(name(?x)) \/ 
+      name(?x) = comma & fails 0 =< 999),
+    non_empty([open(?0),name(?x),close],0) by introduction(non_empty,2)],
+   non_empty([open(?0),name(?x),close],0)),
+  step([x,y,l,n,t,m,k],
+   [non_empty([?y|?l],?k),
+    succeeds prefix_prec(?x,?n,?m),
+    ?y <> open(nolayout),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds wf_term([?y|?l],?k,?t),
+    succeeds ?k =< ?m],
+   [succeeds start_token(?y) by corollary(wf_term:term_start),
+    name(?x) = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+    fails ?n =< 999,
+    [name(?x),?y|?l] = [name(?x),?y|?l] & 
+    (all z: name(?x) = name(?z) => succeeds start_token(?y) \/ ?y = comma 
+      & fails ?n =< 999),
+    non_empty([name(?x),?y|?l],?n) by introduction(non_empty,2)],
+   non_empty([name(?x),?y|?l],?n)),
+  step([l,n,x,t1,t2,l1,l2,m1,m2,k1,k2],
+   [non_empty(?l1,?k1),
+    non_empty(?l2,?k2),
+    succeeds append(?l1,[name(?x)|?l2],?l),
+    succeeds infix_prec(?x,?n,?m1,?m2),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< ?m1,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< ?m2],
+   [succeeds integer(?n) & succeeds integer(?m1) & succeeds integer(?m2) by
+     lemma(infix_prec:integer),
+    succeeds ?m1 =< ?n & succeeds ?m2 =< ?n by lemma(infix_prec:leq),
+    succeeds integer(?k1) by corollary(wf_term:integer),
+    succeeds ?k1 =< ?n by axiom(leq:leq:transitive),
+    non_empty(?l,?n) by lemma(non_empty:append)],
+   non_empty(?l,?n)),
+  step([l,t1,t2,l1,l2,k1,k2],
+   [non_empty(?l1,?k1),
+    non_empty(?l2,?k2),
+    succeeds append(?l1,[comma|?l2],?l),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< 999,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< 1000],
+   [(ex x: ?l1 = [?x]) \/ 
+    (ex [x,y,l0]: ?l1 = [?x,?y|?l0] & 
+      (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+        fails ?k1 =< 999)) by elimination(non_empty,2),
+    cases(ex x: ?l1 = [?x],
+     exist(x,
+      ?l1 = [?x],
+      [def succeeds append([?x],[comma|?l2],?l) by completion,
+       exist(l3,
+        ?l = [?x|?l3] & succeeds append([],[comma|?l2],?l3),
+        [def succeeds append([],[comma|?l2],?l3) by completion,
+         ?l3 = [comma|?l2],
+         fails 1000 =< 999 by builtin,
+         ?x = name(?z) => succeeds start_token(comma) \/ comma = comma & 
+         fails 1000 =< 999,
+         ?l = [?x,comma|?l2] & 
+         (all z: ?x = name(?z) => succeeds start_token(comma) \/ 
+           comma = comma & fails 1000 =< 999),
+         non_empty(?l,1000) by introduction(non_empty,2)],
+        non_empty(?l,1000))],
+      non_empty(?l,1000)),
+     ex [x,y,l0]: ?l1 = [?x,?y|?l0] & 
+      (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+        fails ?k1 =< 999),
+     exist([x,y,l0],
+      ?l1 = [?x,?y|?l0] & 
+      (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+        fails ?k1 =< 999),
+      [def succeeds append([?x,?y|?l0],[comma|?l2],?l) by completion,
+       exist(l3,
+        ?l = [?x|?l3] & succeeds append([?y|?l0],[comma|?l2],?l3),
+        [def succeeds append([?y|?l0],[comma|?l2],?l3) by completion,
+         exist(1,
+          ?l3 = [?y|?1] & succeeds append(?l0,[comma|?l2],?1),
+          [?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+           fails ?k1 =< 999,
+           assume(?x = name(?z),
+            [succeeds start_token(?y) \/ ?y = comma & fails ?k1 =< 999,
+             cases(succeeds start_token(?y),
+              [],
+              ?y = comma & fails ?k1 =< 999,
+              fails 1000 =< 999 by builtin,
+              succeeds start_token(?y) \/ ?y = comma & fails 1000 =< 999)],
+            succeeds start_token(?y) \/ ?y = comma & fails 1000 =< 999),
+           ?l = [?x,?y|?1] & 
+           (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma
+             & fails 1000 =< 999),
+           non_empty(?l,1000) by introduction(non_empty,2)],
+          non_empty(?l,1000))],
+        non_empty(?l,1000))],
+      non_empty(?l,1000)),
+     non_empty(?l,1000))],
+   non_empty(?l,1000)),
+  step([l,n,x,t,l1,m,k],
+   [non_empty(?l1,?k),
+    succeeds append(?l1,[name(?x)],?l),
+    succeeds postfix_prec(?x,?n,?m),
+    succeeds wf_term(?l1,?k,?t),
+    succeeds ?k =< ?m],
+   [succeeds integer(?n) & succeeds integer(?m) by 
+     lemma(postfix_prec:integer),
+    succeeds ?m =< ?n by lemma(postfix_prec:leq),
+    succeeds integer(?k) by corollary(wf_term:integer),
+    succeeds ?k =< ?n by axiom(leq:leq:transitive),
+    non_empty(?l,?n) by lemma(non_empty:append)],
+   non_empty(?l,?n)),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-) = name(?z) => succeeds start_token(integer(?x)) \/ 
+    integer(?x) = comma & fails 0 =< 999,
+    [name(-),integer(?x)] = [name(-),integer(?x)] & 
+    (all z: name(-) = name(?z) => succeeds start_token(integer(?x)) \/ 
+      integer(?x) = comma & fails 0 =< 999),
+    non_empty([name(-),integer(?x)],0) by introduction(non_empty,2)],
+   non_empty([name(-),integer(?x)],0)),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-) = name(?z) => succeeds start_token(float_number(?x)) \/ 
+    float_number(?x) = comma & fails 0 =< 999,
+    [name(-),float_number(?x)] = [name(-),float_number(?x)] & 
+    (all z: name(-) = name(?z) => succeeds start_token(float_number(?x)) 
+      \/ float_number(?x) = comma & fails 0 =< 999),
+    non_empty([name(-),float_number(?x)],0) by introduction(non_empty,2)],
+   non_empty([name(-),float_number(?x)],0))])
+).
+
+:- corollary(wf_term:cons,
+all [l0,n,t]: succeeds wf_term(?l0,?n,?t) =>
+  (ex [x,l1]: ?l0 = [?x|?l1]),
+assume(succeeds wf_term(?l0,?n,?t),
+ [non_empty(?l0,?n) by lemma(wf_term:arg),
+  (ex x: ?l0 = [?x]) \/
+  (ex [x,y,0]: ?l0 = [?x,?y|?0] &
+    (all z: ?x = name(?z) => succeeds start_token(?y) \/
+       ?y = comma & fails ?n =< 999)) by elimination(non_empty,2),
+  cases(ex x: ?l0 = [?x],
+   exist(x,
+    ?l0 = [?x],
+    [],
+    ex [x,l1]: ?l0 = [?x|?l1]),
+   ex [x,y,0]: ?l0 = [?x,?y|?0] &
+    (all z: ?x = name(?z) => succeeds start_token(?y) \/
+       ?y = comma & fails ?n =< 999),
+   exist([x,y,0],
+    ?l0 = [?x,?y|?0] &
+    (all z: ?x = name(?z) => succeeds start_token(?y) \/
+       ?y = comma & fails ?n =< 999),
+    [],
+    ex [x,l1]: ?l0 = [?x|?l1]),
+   ex [x,l1]: ?l0 = [?x|?l1])],
+ ex [x,l1]: ?l0 = [?x|?l1])
+).
+
+:- lemma(wf_arg_seq:sep_token_cons,
+all [l,ts]: succeeds wf_arg_seq(?l,?ts) => succeeds sep_token_cons(?l),
+assume(succeeds wf_arg_seq(?l,?ts),
+ [def succeeds wf_arg_seq(?l,?ts) by completion,
+  cases(?l = [close] & ?ts = [],
+   [succeeds sep_token(close),
+    succeeds sep_token_cons([close]),
+    succeeds sep_token_cons(?l)],
+   ex [t,1,l1,l2]: ?ts = [?t|?1] & 
+    succeeds append([comma|?l1],?l2,?l) & succeeds wf_one_arg(?l1,?t) &
+      succeeds wf_arg_seq(?l2,?1),
+   exist([t,1,l1,l2],
+    ?ts = [?t|?1] & 
+    succeeds append([comma|?l1],?l2,?l) & succeeds wf_one_arg(?l1,?t) &
+      succeeds wf_arg_seq(?l2,?1),
+    [def(succeeds append([comma|?l1],?l2,?l)) by completion,
+     exist(l3,
+      ?l = [comma|?l3] & succeeds append(?l1,?l2,?l3),
+      [succeeds sep_token(comma),
+       succeeds sep_token_cons([comma|?l3]),
+       succeeds sep_token_cons(?l)],
+      succeeds sep_token_cons(?l))],
+    succeeds sep_token_cons(?l)),
+   succeeds sep_token_cons(?l))],
+ succeeds sep_token_cons(?l))
+).
+
+:- lemma(sep_token_cons:append,
+all [l1,l2]: succeeds list(?l1) & succeeds sep_token_cons(?l1) =>
+ succeeds sep_token_cons(?l1 ** ?l2),
+assume(succeeds list(?l1) & succeeds sep_token_cons(?l1),
+ [def(succeeds sep_token_cons(?l1)) by completion,
+  exist([x,0],
+   ?l1 = [?x|?0] & succeeds sep_token(?x),
+   [succeeds sep_token_cons([?x|?0 ** ?l2]),
+    def(succeeds list([?x|?0])) by completion,
+    succeeds list(?0),
+    [?x|?0] ** ?l2 = [?x|?0 ** ?l2] by corollary(app:cons),
+    succeeds sep_token_cons([?x|?0] ** ?l2),
+    succeeds sep_token_cons(?l1 ** ?l2)],
+   succeeds sep_token_cons(?l1 ** ?l2))],
+ succeeds sep_token_cons(?l1 ** ?l2))
+).
+
+:- lemma(wf_list_tail:sep_token_cons,
+all [l,t]: succeeds wf_list_tail(?l,?t) => succeeds sep_token_cons(?l),
+assume(succeeds wf_list_tail(?l,?t),
+ [def succeeds wf_list_tail(?l,?t) by completion,
+  cases(
+   [case(?l = [close_list] & ?t = con([]),
+     [succeeds sep_token(close_list) by sld,
+      succeeds sep_token_cons([close_list]) by sld,
+      succeeds sep_token_cons(?l)]),
+    case(
+     ex [t1,t2,l1,l2]: ?t = fun('.',[?t1,?t2]) & 
+      succeeds append([comma|?l1],?l2,?l) & succeeds wf_one_arg(?l1,?t1) & 
+      succeeds wf_list_tail(?l2,?t2),
+     exist([t1,t2,l1,l2],
+      ?t = fun('.',[?t1,?t2]) & succeeds append([comma|?l1],?l2,?l) & 
+      succeeds wf_one_arg(?l1,?t1) & succeeds wf_list_tail(?l2,?t2),
+      [def succeeds append([comma|?l1],?l2,?l) by completion,
+       exist(l3,
+        ?l = [comma|?l3] & succeeds append(?l1,?l2,?l3),
+        [succeeds sep_token(comma) by sld,
+	 succeeds sep_token_cons([comma|?l3]) by sld,
+	 succeeds sep_token_cons(?l)],
+        succeeds sep_token_cons(?l))],
+      succeeds sep_token_cons(?l))),
+    case(
+     ex l1: succeeds append([head_tail_sep|?l1],[close_list],?l) & 
+      succeeds wf_one_arg(?l1,?t),
+     exist(l1,
+      succeeds append([head_tail_sep|?l1],[close_list],?l) & 
+      succeeds wf_one_arg(?l1,?t),
+      [def succeeds append([head_tail_sep|?l1],[close_list],?l) by 
+        completion,
+       exist(l3,
+        ?l = [head_tail_sep|?l3] & succeeds append(?l1,[close_list],?l3),
+        [succeeds sep_token(head_tail_sep) by sld,
+	 succeeds sep_token_cons([head_tail_sep|?l3]) by sld,
+	 succeeds sep_token_cons(?l)],
+        succeeds sep_token_cons(?l))],
+      succeeds sep_token_cons(?l)))],
+   succeeds sep_token_cons(?l))],
+ succeeds sep_token_cons(?l))
+).
+
+:- lemma(wfterm:singleton,
+all [x,y,l1,l2,n,t]: succeeds wf_term(?l1,?n,?t) =>
+ ~ succeeds append(?l1,[?x|?l2],[?y]),
+assume(succeeds wf_term(?l1,?n,?t),
+ contra(succeeds append(?l1,[?x|?l2],[?y]),
+  [non_empty(?l1,?n) by lemma(wf_term:arg),
+   (ex x: ?l1 = [?x]) \/ 
+   (ex [x,y,l0]: ?l1 = [?x,?y|?l0] & 
+     (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+       fails ?n =< 999)) by elimination(non_empty,2),
+   cases(ex x: ?l1 = [?x],
+    exist(0,
+     ?l1 = [?0],
+     [def succeeds append([?0],[?x|?l2],[?y]) by completion,
+      def succeeds append([],[?x|?l2],[]) by completion,
+      ff],
+     ff),
+    ex [x,y,l0]: ?l1 = [?x,?y|?l0] & 
+     (all z: ?x = name(?z) => succeeds start_token(?y) \/ ?y = comma & 
+       fails ?n =< 999),
+    exist([0,1,l0],
+     ?l1 = [?0,?1|?l0] & 
+     (all z: ?0 = name(?z) => succeeds start_token(?1) \/ ?1 = comma & 
+       fails ?n =< 999),
+     [def succeeds append([?0,?1|?l0],[?x|?l2],[?y]) by completion,
+      def succeeds append([?1|?l0],[?x|?l2],[]) by completion,
+      ff],
+     ff),
+    ff)]),
+ ~ succeeds append(?l1,[?x|?l2],[?y]))
+).
+
+:- corollary(wf_term:name,
+all [z,n,t]: succeeds wf_term([name(?z)],?n,?t) => ?t = con(?z),
+assume(succeeds wf_term([name(?z)],?n,?t),
+ [def succeeds wf_term([name(?z)],?n,?t) by completion,
+  cases(
+   [case(?n = 0 & ?t = con(?z) & fails symbol_op(?z),[]),
+    case(
+     ex [x,0,ts,l1,l2]: ?n = 0 & ?t = fun(?x,[?0|?ts]) & 
+      succeeds append([name(?x),open(nolayout)|?l1],?l2,[name(?z)]) & 
+      succeeds wf_one_arg(?l1,?0) & succeeds wf_arg_seq(?l2,?ts),
+     exist([x,0,ts,l1,l2],
+      ?n = 0 & ?t = fun(?x,[?0|?ts]) & 
+      succeeds append([name(?x),open(nolayout)|?l1],?l2,[name(?z)]) & 
+      succeeds wf_one_arg(?l1,?0) & succeeds wf_arg_seq(?l2,?ts),
+      [def succeeds append([name(?x),open(nolayout)|?l1],?l2,[name(?z)])
+        by completion,
+       def succeeds append([open(nolayout)|?l1],?l2,[]) by completion,
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [t1,t2,l1,l2]: ?n = 0 & ?t = fun('.',[?t1,?t2]) & 
+      succeeds append([open_list|?l1],?l2,[name(?z)]) & 
+      succeeds wf_one_arg(?l1,?t1) & succeeds wf_list_tail(?l2,?t2),
+     exist([t1,t2,l1,l2],
+      ?n = 0 & ?t = fun('.',[?t1,?t2]) & 
+      succeeds append([open_list|?l1],?l2,[name(?z)]) & 
+      succeeds wf_one_arg(?l1,?t1) & succeeds wf_list_tail(?l2,?t2),
+      [def succeeds append([open_list|?l1],?l2,[name(?z)]) by completion,
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [0,l1,2]: ?n = 0 & 
+      succeeds append([open(?0)|?l1],[close],[name(?z)]) & 
+      succeeds wf_term(?l1,?2,?t) & succeeds ?2 =< 1200,
+     exist([0,l1,2],
+      ?n = 0 & succeeds append([open(?0)|?l1],[close],[name(?z)]) & 
+      succeeds wf_term(?l1,?2,?t) & succeeds ?2 =< 1200,
+      [def succeeds append([open(?0)|?l1],[close],[name(?z)])
+        by completion,
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [0,l1,1]: ?n = 0 & ?t = fun('{}',[?0]) & 
+      succeeds append([open_curly|?l1],[close_curly],[name(?z)]) & 
+      succeeds wf_term(?l1,?1,?0) & succeeds ?1 =< 1200,
+     exist([0,l1,1],
+      ?n = 0 & ?t = fun('{}',[?0]) & 
+      succeeds append([open_curly|?l1],[close_curly],[name(?z)]) & 
+      succeeds wf_term(?l1,?1,?0) & succeeds ?1 =< 1200,
+      [def succeeds append([open_curly|?l1],[close_curly],[name(?z)])
+        by completion,
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [x,t1,t2,l1,l2,m1,m2,k1,k2]: ?t = fun(?x,[?t1,?t2]) & 
+      succeeds append(?l1,[name(?x)|?l2],[name(?z)]) & 
+      succeeds infix_prec(?x,?n,?m1,?m2) & succeeds wf_term(?l1,?k1,?t1) & 
+      succeeds ?k1 =< ?m1 & succeeds wf_term(?l2,?k2,?t2) & 
+      succeeds ?k2 =< ?m2,
+     exist([x,t1,t2,l1,l2,m1,m2,k1,k2],
+      ?t = fun(?x,[?t1,?t2]) & 
+      succeeds append(?l1,[name(?x)|?l2],[name(?z)]) & 
+      succeeds infix_prec(?x,?n,?m1,?m2) & succeeds wf_term(?l1,?k1,?t1) & 
+      succeeds ?k1 =< ?m1 & succeeds wf_term(?l2,?k2,?t2) & 
+      succeeds ?k2 =< ?m2,
+      [~ succeeds append(?l1,[name(?x)|?l2],[name(?z)]) by 
+        lemma(wfterm:singleton),
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [t1,t2,l1,l2,k1,k2]: ?n = 1000 & ?t = fun(',',[?t1,?t2]) & 
+      succeeds append(?l1,[comma|?l2],[name(?z)]) & 
+      succeeds wf_term(?l1,?k1,?t1) & succeeds ?k1 =< 999 & 
+      succeeds wf_term(?l2,?k2,?t2) & succeeds ?k2 =< 1000,
+     exist([t1,t2,l1,l2,k1,k2],
+      ?n = 1000 & ?t = fun(',',[?t1,?t2]) & 
+      succeeds append(?l1,[comma|?l2],[name(?z)]) & 
+      succeeds wf_term(?l1,?k1,?t1) & succeeds ?k1 =< 999 & 
+      succeeds wf_term(?l2,?k2,?t2) & succeeds ?k2 =< 1000,
+      [~ succeeds append(?l1,[comma|?l2],[name(?z)]) by 
+        lemma(wfterm:singleton),
+       ff],
+      ?t = con(?z))),
+    case(
+     ex [x,1,l1,m,k]: ?t = fun(?x,[?1]) & 
+      succeeds append(?l1,[name(?x)],[name(?z)]) & 
+      succeeds postfix_prec(?x,?n,?m) & succeeds wf_term(?l1,?k,?1) & 
+      succeeds ?k =< ?m,
+     exist([x,1,l1,m,k],
+      ?t = fun(?x,[?1]) & succeeds append(?l1,[name(?x)],[name(?z)]) & 
+      succeeds postfix_prec(?x,?n,?m) & succeeds wf_term(?l1,?k,?1) & 
+      succeeds ?k =< ?m,
+      [~ succeeds append(?l1,[name(?x)],[name(?z)]) by 
+        lemma(wfterm:singleton),
+       ff],
+      ?t = con(?z)))],
+   ?t = con(?z))],
+ ?t = con(?z))
+).
+
+:- lemma(token_list:split,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3) =>
+ succeeds token_list(?l1) & succeeds token_list(?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds token_list(?l3) =>
+    succeeds token_list(?l1) & succeeds token_list(?l2)],
+  [step([l],
+    [],
+    assume(succeeds token_list(?l),
+     [],
+     succeeds token_list([]) & succeeds token_list(?l)),
+    succeeds token_list(?l) => succeeds token_list([]) &
+    succeeds token_list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds token_list(?l3) => succeeds token_list(?l1) &
+     succeeds token_list(?l2),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds token_list([?x|?l3]),
+     [def succeeds token_list([?x|?l3]) by completion,
+      succeeds token_list(?l1) & succeeds token_list(?l2),
+      succeeds token_list([?x|?l1]) by sld],
+     succeeds token_list([?x|?l1]) & succeeds token_list(?l2)),
+    succeeds token_list([?x|?l3]) => succeeds token_list([?x|?l1]) &
+    succeeds token_list(?l2))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3),
+  [succeeds token_list(?l3) => succeeds token_list(?l1) &
+   succeeds token_list(?l2),
+   succeeds token_list(?l1) & succeeds token_list(?l2)],
+  succeeds token_list(?l1) & succeeds token_list(?l2))]
+).
+
+:- corollary(token_list:split:1,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3) =>
+ succeeds token_list(?l1),
+assume(succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3),
+ succeeds token_list(?l1) & succeeds token_list(?l2) by 
+  lemma(token_list:split),
+ succeeds token_list(?l1))
+).
+
+:- corollary(token_list:split:2,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3) =>
+ succeeds token_list(?l2),
+assume(succeeds append(?l1,?l2,?l3) & succeeds token_list(?l3),
+ succeeds token_list(?l1) & succeeds token_list(?l2) by 
+  lemma(token_list:split),
+ succeeds token_list(?l2))
+).
+
+:- lemma(wf_term:parse_tree,
+(all [e,i,r]: succeeds wf_term(?e,?i,?r) => succeeds token_list(?e) =>
+  succeeds parse_tree(?r)) &
+(all [e,r]: succeeds wf_one_arg(?e,?r) => succeeds token_list(?e) =>
+  succeeds parse_tree(?r)) &
+(all [e,rs]: succeeds wf_arg_seq(?e,?rs)  => succeeds token_list(?e) =>
+  succeeds parse_tree_list(?rs)) &
+(all [e,r]: succeeds wf_list_tail(?e,?r)  => succeeds token_list(?e) =>
+  succeeds parse_tree(?r)),
+induction(
+ [all [e,i,r]: succeeds wf_term(?e,?i,?r) => succeeds token_list(?e) => 
+   succeeds parse_tree(?r),
+  all [e,r]: succeeds wf_one_arg(?e,?r) => succeeds token_list(?e) => 
+   succeeds parse_tree(?r),
+  all [e,rs]: succeeds wf_arg_seq(?e,?rs) => succeeds token_list(?e) => 
+   succeeds parse_tree_list(?rs),
+  all [e,r]: succeeds wf_list_tail(?e,?r) => succeeds token_list(?e) => 
+   succeeds parse_tree(?r)],
+ [step([x],
+   [],
+   assume(succeeds token_list([variable(?x)]),
+    [def succeeds token_list([variable(?x)]) by completion,
+     def succeeds token(variable(?x)) by completion,
+     succeeds atomic(?x),
+     succeeds parse_tree(variable(?x)) by sld],
+    succeeds parse_tree(variable(?x))),
+   succeeds token_list([variable(?x)]) => succeeds parse_tree(variable(?x))),
+  step([x],
+   [],
+   assume(succeeds token_list([integer(?x)]),
+    [def succeeds token_list([integer(?x)]) by completion,
+     def succeeds token(integer(?x)) by completion,
+     succeeds integer(?x),
+     succeeds parse_tree(integer(?x)) by sld],
+    succeeds parse_tree(integer(?x))),
+   succeeds token_list([integer(?x)]) => succeeds parse_tree(integer(?x))),
+  step([x],
+   [],
+   assume(succeeds token_list([float_number(?x)]),
+    [def succeeds token_list([float_number(?x)]) by completion,
+     def succeeds token(float_number(?x)) by completion,
+     succeeds number(?x),
+     succeeds parse_tree(float_number(?x)) by sld],
+    succeeds parse_tree(float_number(?x))),
+   succeeds token_list([float_number(?x)]) => 
+   succeeds parse_tree(float_number(?x))),
+  step([x],
+   [],
+   assume(succeeds token_list([char_code_list(?x)]),
+    [def succeeds token_list([char_code_list(?x)]) by completion,
+     def succeeds token(char_code_list(?x)) by completion,
+     succeeds char_code_list(?x),
+     succeeds parse_tree(char_code_list(?x)) by sld],
+    succeeds parse_tree(char_code_list(?x))),
+   succeeds token_list([char_code_list(?x)]) => 
+   succeeds parse_tree(char_code_list(?x))),
+  step([x],
+   [fails symbol_op(?x)],
+   assume(succeeds token_list([name(?x)]),
+    [def succeeds token_list([name(?x)]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(con(?x)) by sld],
+    succeeds parse_tree(con(?x))),
+   succeeds token_list([name(?x)]) => succeeds parse_tree(con(?x))),
+  step([l,x,t,ts,l1,l2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds token_list(?l2) => succeeds parse_tree_list(?ts),
+    succeeds append([name(?x),open(nolayout)|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([name(?x),open(nolayout)|?l1]) &
+     succeeds token_list(?l2) by lemma(token_list:split),
+     succeeds parse_tree_list(?ts),
+     def succeeds token_list([name(?x),open(nolayout)|?l1]) by completion,
+     def succeeds token_list([open(nolayout)|?l1]) by completion,
+     succeeds parse_tree(?t),
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree_list([?t|?ts]) by sld,
+     succeeds parse_tree(fun(?x,[?t|?ts])) by sld],
+    succeeds parse_tree(fun(?x,[?t|?ts]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun(?x,[?t|?ts]))),
+  step([],
+   [],
+   assume(succeeds token_list([open_list,close_list]),
+    [succeeds atom([]) by builtin,
+     succeeds parse_tree(con([])) by sld],
+    succeeds parse_tree(con([]))),
+   succeeds token_list([open_list,close_list]) => 
+   succeeds parse_tree(con([]))),
+  step([l,t1,t2,l1,l2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t1),
+    succeeds token_list(?l2) => succeeds parse_tree(?t2),
+    succeeds append([open_list|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([open_list|?l1]) & succeeds token_list(?l2) by 
+      lemma(token_list:split),
+     def succeeds token_list([open_list|?l1]) by completion,
+     succeeds parse_tree(?t1),
+     succeeds parse_tree(?t2),
+     succeeds atom('.') by builtin,
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t2]) by sld,
+     succeeds parse_tree_list([?t1,?t2]) by sld,
+     succeeds parse_tree(fun('.',[?t1,?t2])) by sld],
+    succeeds parse_tree(fun('.',[?t1,?t2]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun('.',[?t1,?t2]))),
+  step([l,t,0,l1,n],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds append([open(?0)|?l1],[close],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([open(?0)|?l1]) by 
+      corollary(token_list:split:1),
+     def succeeds token_list([open(?0)|?l1]) by completion,
+     succeeds parse_tree(?t)],
+    succeeds parse_tree(?t)),
+   succeeds token_list(?l) => succeeds parse_tree(?t)),
+  step([],
+   [],
+   assume(succeeds token_list([open_curly,close_curly]),
+    [succeeds atom('{}') by builtin,
+     succeeds parse_tree(con('{}'))],
+    succeeds parse_tree(con('{}'))),
+   succeeds token_list([open_curly,close_curly]) => 
+   succeeds parse_tree(con('{}'))),
+  step([l,t,l1,n],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds append([open_curly|?l1],[close_curly],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([open_curly|?l1]) by 
+      corollary(token_list:split:1),
+     def succeeds token_list([open_curly|?l1]) by completion,
+     succeeds parse_tree(?t),
+     succeeds atom('{}') by builtin,
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t]) by sld,
+     succeeds parse_tree(fun('{}',[?t])) by sld],
+    succeeds parse_tree(fun('{}',[?t]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun('{}',[?t]))),
+  step([0,x],
+   [succeeds symbol_op(?x)],
+   assume(succeeds token_list([open(?0),name(?x),close]),
+    [def succeeds token_list([open(?0),name(?x),close]) by completion,
+     def succeeds token_list([name(?x),close]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(con(?x)) by sld],
+    succeeds parse_tree(con(?x))),
+   succeeds token_list([open(?0),name(?x),close]) => 
+   succeeds parse_tree(con(?x))),
+  step([x,y,l,n,t,m,k],
+   [succeeds token_list([?y|?l]) => succeeds parse_tree(?t),
+    succeeds prefix_prec(?x,?n,?m),
+    ?y <> open(nolayout),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds wf_term([?y|?l],?k,?t),
+    succeeds ?k =< ?m],
+   assume(succeeds token_list([name(?x),?y|?l]),
+    [def succeeds token_list([name(?x),?y|?l]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(?t),
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t]) by sld,
+     succeeds parse_tree(fun(?x,[?t])) by sld],
+    succeeds parse_tree(fun(?x,[?t]))),
+   succeeds token_list([name(?x),?y|?l]) => 
+   succeeds parse_tree(fun(?x,[?t]))),
+  step([l,n,x,t1,t2,l1,l2,m1,m2,k1,k2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t1),
+    succeeds token_list(?l2) => succeeds parse_tree(?t2),
+    succeeds append(?l1,[name(?x)|?l2],?l),
+    succeeds infix_prec(?x,?n,?m1,?m2),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< ?m1,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< ?m2],
+   assume(succeeds token_list(?l),
+    [succeeds token_list(?l1) & succeeds token_list([name(?x)|?l2]) by 
+      lemma(token_list:split),
+     def succeeds token_list([name(?x)|?l2]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(?t1),
+     succeeds parse_tree(?t2),
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t2]) by sld,
+     succeeds parse_tree_list([?t1,?t2]) by sld,
+     succeeds parse_tree(fun(?x,[?t1,?t2])) by sld],
+    succeeds parse_tree(fun(?x,[?t1,?t2]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun(?x,[?t1,?t2]))),
+  step([l,t1,t2,l1,l2,k1,k2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t1),
+    succeeds token_list(?l2) => succeeds parse_tree(?t2),
+    succeeds append(?l1,[comma|?l2],?l),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< 999,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< 1000],
+   assume(succeeds token_list(?l),
+    [succeeds token_list(?l1) & succeeds token_list([comma|?l2]) by 
+      lemma(token_list:split),
+     def succeeds token_list([comma|?l2]) by completion,
+     succeeds atom(',') by builtin,
+     succeeds parse_tree(?t1),
+     succeeds parse_tree(?t2),
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t2]) by sld,
+     succeeds parse_tree_list([?t1,?t2]) by sld,
+     succeeds parse_tree(fun(',',[?t1,?t2])) by sld],
+    succeeds parse_tree(fun(',',[?t1,?t2]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun(',',[?t1,?t2]))),
+  step([l,n,x,t,l1,m,k],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds append(?l1,[name(?x)],?l),
+    succeeds postfix_prec(?x,?n,?m),
+    succeeds wf_term(?l1,?k,?t),
+    succeeds ?k =< ?m],
+   assume(succeeds token_list(?l),
+    [succeeds token_list(?l1) & succeeds token_list([name(?x)]) by
+      lemma(token_list:split),
+     def succeeds token_list([name(?x)]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(?t),
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t]) by sld,
+     succeeds parse_tree(fun(?x,[?t])) by sld],
+    succeeds parse_tree(fun(?x,[?t]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun(?x,[?t]))),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   assume(succeeds token_list([name(-),integer(?x)]),
+    [def succeeds token_list([name(-),integer(?x)]) by completion,
+     def succeeds token_list([integer(?x)]) by completion,
+     def succeeds token(integer(?x)) by completion,
+     succeeds integer(?x),
+     succeeds integer(?y) by lemma((is):integer:minus),
+     succeeds parse_tree(integer(?y))],
+    succeeds parse_tree(integer(?y))),
+   succeeds token_list([name(-),integer(?x)]) => 
+   succeeds parse_tree(integer(?y))),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   assume(succeeds token_list([name(-),float_number(?x)]),
+    [def succeeds token_list([name(-),float_number(?x)]) by completion,
+     def succeeds token_list([float_number(?x)]) by completion,
+     def succeeds token(float_number(?x)) by completion,
+     succeeds number(?x),
+     succeeds number(?y) by lemma((is):number:minus),
+     succeeds parse_tree(float_number(?y))],
+    succeeds parse_tree(float_number(?y))),
+   succeeds token_list([name(-),float_number(?x)]) => 
+   succeeds parse_tree(float_number(?y))),
+  step([l,t,n],
+   [succeeds token_list(?l) => succeeds parse_tree(?t),
+    succeeds wf_term(?l,?n,?t),
+    succeeds ?n =< 999],
+   [],
+   succeeds token_list(?l) => succeeds parse_tree(?t)),
+  step([x],
+   [succeeds symbol_op(?x)],
+   assume(succeeds token_list([name(?x)]),
+    [def succeeds token_list([name(?x)]) by completion,
+     def succeeds token(name(?x)) by completion,
+     succeeds atom(?x),
+     succeeds parse_tree(con(?x))],
+    succeeds parse_tree(con(?x))),
+   succeeds token_list([name(?x)]) => succeeds parse_tree(con(?x))),
+  step([],
+   [],
+   [],
+   succeeds token_list([close]) => succeeds parse_tree_list([])),
+  step([l,t,ts,l1,l2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds token_list(?l2) => succeeds parse_tree_list(?ts),
+    succeeds append([comma|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([comma|?l1]) & succeeds token_list(?l2) by 
+      lemma(token_list:split),
+     def succeeds token_list([comma|?l1]) by completion,
+     succeeds parse_tree(?t),
+     succeeds parse_tree_list(?ts),
+     succeeds parse_tree_list([?t|?ts]) by sld],
+    succeeds parse_tree_list([?t|?ts])),
+   succeeds token_list(?l) => succeeds parse_tree_list([?t|?ts])),
+  step([],
+   [],
+   assume(succeeds token_list([close_list]),
+    [succeeds atom([]) by builtin,
+     succeeds parse_tree(con([])) by sld],
+    succeeds parse_tree(con([]))),
+   succeeds token_list([close_list]) => succeeds parse_tree(con([]))),
+  step([l,t1,t2,l1,l2],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t1),
+    succeeds token_list(?l2) => succeeds parse_tree(?t2),
+    succeeds append([comma|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([comma|?l1]) & succeeds token_list(?l2) by 
+      lemma(token_list:split),
+     def succeeds token_list([comma|?l1]) by completion,
+     succeeds parse_tree(?t1),
+     succeeds parse_tree(?t2),
+     succeeds parse_tree_list([]) by sld,
+     succeeds parse_tree_list([?t2]) by sld,
+     succeeds parse_tree_list([?t1,?t2]) by sld,
+     succeeds atom('.') by builtin,
+     succeeds parse_tree(fun('.',[?t1,?t2])) by sld],
+    succeeds parse_tree(fun('.',[?t1,?t2]))),
+   succeeds token_list(?l) => succeeds parse_tree(fun('.',[?t1,?t2]))),
+  step([l,t,l1],
+   [succeeds token_list(?l1) => succeeds parse_tree(?t),
+    succeeds append([head_tail_sep|?l1],[close_list],?l),
+    succeeds wf_one_arg(?l1,?t)],
+   assume(succeeds token_list(?l),
+    [succeeds token_list([head_tail_sep|?l1]) by 
+      corollary(token_list:split:1),
+     def succeeds token_list([head_tail_sep|?l1]) by completion,
+     succeeds parse_tree(?t)],
+    succeeds parse_tree(?t)),
+   succeeds token_list(?l) => succeeds parse_tree(?t))])
+).
+
+:- corollary(wf_term:parse_tree,
+all [l,n,t]: succeeds wf_term(?l,?n,?t) & succeeds token_list(?l) =>
+ succeeds parse_tree(?t),
+assume(succeeds wf_term(?l,?n,?t) & succeeds token_list(?l),
+ [succeeds token_list(?l) => succeeds parse_tree(?t) by 
+   lemma(wf_term:parse_tree),
+  succeeds parse_tree(?t)],
+ succeeds parse_tree(?t))
+).
+
+:- lemma(wf_term:layout,
+all [e,k,r]: succeeds wf_term(?e,?k,?r) =>
+  (all f: ?e = [open(nolayout)|?f] =>
+     succeeds wf_term([open(layout)|?f],?k,?r)),
+induction(
+ [all [e,k,r]: succeeds wf_term(?e,?k,?r) => 
+    (all f: ?e = [open(nolayout)|?f] => 
+       succeeds wf_term([open(layout)|?f],?k,?r))],
+ [step([x],
+   [],
+   [variable(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,variable(?x)),
+   all f: [variable(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,variable(?x))),
+  step([x],
+   [],
+   [integer(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,integer(?x)),
+   all f: [integer(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,integer(?x))),
+  step([x],
+   [],
+   [float_number(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,float_number(?x)),
+   all f: [float_number(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,float_number(?x))),
+  step([x],
+   [],
+   [char_code_list(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,char_code_list(?x)),
+   all f: [char_code_list(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,char_code_list(?x))),
+  step([x],
+   [fails symbol_op(?x)],
+   [name(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,con(?x)),
+   all f: [name(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,con(?x))),
+  step([l,x,t,ts,l1,l2],
+   [succeeds append([name(?x),open(nolayout)|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t),
+    succeeds wf_arg_seq(?l2,?ts)],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append([name(?x),open(nolayout)|?l1],?l2,[open(nolayout)|?f])
+      by completion,
+     ff],
+    succeeds wf_term([open(layout)|?f],0,fun(?x,[?t|?ts]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,fun(?x,[?t|?ts]))),
+  step([],
+   [],
+   [open_list,close_list] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,con([])),
+   all f: [open_list,close_list] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,con([]))),
+  step([l,t1,t2,l1,l2],
+   [succeeds append([open_list|?l1],?l2,?l),
+    succeeds wf_one_arg(?l1,?t1),
+    succeeds wf_list_tail(?l2,?t2)],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append([open_list|?l1],?l2,[open(nolayout)|?f])
+      by completion,
+     ff],
+    succeeds wf_term([open(layout)|?f],0,fun('.',[?t1,?t2]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,fun('.',[?t1,?t2]))),
+  step([l,t,0,l1,n],
+   [all f: ?l1 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?n,?t),
+    succeeds append([open(?0)|?l1],[close],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append([open(?0)|?l1],[close],[open(nolayout)|?f])
+      by completion,
+     succeeds append([open(layout)|?l1],[close],[open(layout)|?f]) by sld,
+     succeeds wf_term([open(layout)|?f],0,?t) by sld],
+    succeeds wf_term([open(layout)|?f],0,?t)),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,?t)),
+  step([],
+   [],
+   [open_curly,close_curly] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,con('{}')),
+   all f: [open_curly,close_curly] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,con('{}'))),
+  step([l,t,l1,n],
+   [all f: ?l1 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?n,?t),
+    succeeds append([open_curly|?l1],[close_curly],?l),
+    succeeds wf_term(?l1,?n,?t),
+    succeeds ?n =< 1200],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append([open_curly|?l1],[close_curly],[open(nolayout)|?f])
+      by completion,
+     ff],
+    succeeds wf_term([open(layout)|?f],0,fun('{}',[?t]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,fun('{}',[?t]))),
+  step([0,x],
+   [succeeds symbol_op(?x)],
+   assume([open(?0),name(?x),close] = [open(nolayout)|?f],
+    [],
+    succeeds wf_term([open(layout)|?f],0,con(?x))),
+   all f: [open(?0),name(?x),close] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,con(?x))),
+  step([x,y,l,n,t,m,k],
+   [all f: [?y|?l] = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k,?t),
+    succeeds prefix_prec(?x,?n,?m),
+    ?y <> open(nolayout),
+    ?x <> (-) \/ fails number_token(?y),
+    succeeds wf_term([?y|?l],?k,?t),
+    succeeds ?k =< ?m],
+   [name(?x),?y|?l] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t])),
+   all f: [name(?x),?y|?l] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t]))),
+  step([l,n,x,t1,t2,l1,l2,m1,m2,k1,k2],
+   [all f: ?l1 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k1,?t1),
+    all f: ?l2 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k2,?t2),
+    succeeds append(?l1,[name(?x)|?l2],?l),
+    succeeds infix_prec(?x,?n,?m1,?m2),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< ?m1,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< ?m2],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append(?l1,[name(?x)|?l2],[open(nolayout)|?f]) by completion,
+     exist(l0,
+      ?l1 = [open(nolayout)|?l0] & succeeds append(?l0,[name(?x)|?l2],?f),
+      [succeeds wf_term([open(layout)|?l0],?k1,?t1),
+       succeeds append([open(layout)|?l0],[name(?x)|?l2],[open(layout)|?f])
+	by sld,
+       succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t1,?t2])) by sld],
+      succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t1,?t2])))],
+    succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t1,?t2]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t1,?t2]))),
+  step([l,t1,t2,l1,l2,k1,k2],
+   [all f: ?l1 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k1,?t1),
+    all f: ?l2 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k2,?t2),
+    succeeds append(?l1,[comma|?l2],?l),
+    succeeds wf_term(?l1,?k1,?t1),
+    succeeds ?k1 =< 999,
+    succeeds wf_term(?l2,?k2,?t2),
+    succeeds ?k2 =< 1000],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append(?l1,[comma|?l2],[open(nolayout)|?f]) by completion,
+     exist(l0,
+      ?l1 = [open(nolayout)|?l0] & succeeds append(?l0,[comma|?l2],?f),
+      [succeeds wf_term([open(layout)|?l0],?k1,?t1),
+       succeeds append([open(layout)|?l0],[comma|?l2],[open(layout)|?f])
+	by sld,
+       succeeds wf_term([open(layout)|?f],1000,fun(',',[?t1,?t2])) by sld],
+      succeeds wf_term([open(layout)|?f],1000,fun(',',[?t1,?t2])))],
+    succeeds wf_term([open(layout)|?f],1000,fun(',',[?t1,?t2]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],1000,fun(',',[?t1,?t2]))),
+  step([l,n,x,t,l1,m,k],
+   [all f: ?l1 = [open(nolayout)|?f] => 
+      succeeds wf_term([open(layout)|?f],?k,?t),
+    succeeds append(?l1,[name(?x)],?l),
+    succeeds postfix_prec(?x,?n,?m),
+    succeeds wf_term(?l1,?k,?t),
+    succeeds ?k =< ?m],
+   assume(?l = [open(nolayout)|?f],
+    [def succeeds append(?l1,[name(?x)],[open(nolayout)|?f]) by completion,
+     exist(l0,
+      ?l1 = [open(nolayout)|?l0] & succeeds append(?l0,[name(?x)],?f),
+      [succeeds wf_term([open(layout)|?l0],?k,?t),
+       succeeds append([open(layout)|?l0],[name(?x)],[open(layout)|?f]) by sld,
+       succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t])) by sld],
+      succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t])))],
+    succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t]))),
+   all f: ?l = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],?n,fun(?x,[?t]))),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-),integer(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,integer(?y)),
+   all f: [name(-),integer(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,integer(?y))),
+  step([x,y],
+   [succeeds ?y is - ?x],
+   [name(-),float_number(?x)] = [open(nolayout)|?f] => 
+    succeeds wf_term([open(layout)|?f],0,float_number(?y)),
+   all f: [name(-),float_number(?x)] = [open(nolayout)|?f] => 
+     succeeds wf_term([open(layout)|?f],0,float_number(?y)))])
+).
+
+:- corollary(wf_term:layout,
+all [l1,n,t]: succeeds wf_term([open(nolayout)|?l1],?n,?t) =>
+  succeeds wf_term([open(layout)|?l1],?n,?t),
+assume(succeeds wf_term([open(nolayout)|?l1],?n,?t),
+ [all l0: [open(nolayout)|?l1] = [open(nolayout)|?l0] => 
+    succeeds wf_term([open(layout)|?l0],?n,?t) by lemma(wf_term:layout),
+  succeeds wf_term([open(layout)|?l1],?n,?t)],
+ succeeds wf_term([open(layout)|?l1],?n,?t))
+).
+
+:- bye(grammar).

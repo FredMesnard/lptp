@@ -1,0 +1,1407 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/28/95, 9:15 PM */
+/* Filename: sort.pr */
+
+:- initialize.
+:- tex_file($(tmp)/sort).
+:- thm_file($(tmp)/sort).
+
+:- needs_gr($(lib)/sort/sort).
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/list/permutation).
+
+:- needs_thm($(lib)/nat/nat).
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/list/permutation).
+
+:- lemma(ordered:termination,
+all l: succeeds nat_list(?l) => terminates ordered(?l),
+induction([all l: succeeds nat_list(?l) => terminates ordered(?l)],
+ [step([],[],terminates ordered([]) by completion,terminates ordered([])),
+  step([x,l],
+   [terminates ordered(?l),
+    succeeds nat(?x),
+    succeeds nat_list(?l)],
+   [assume(?l = [?y|?z],
+     [terminates ?x @=< ?y by lemma(leq:termination:1),
+      terminates ordered([?y|?z]),
+      terminates (?x @=< ?y & ordered([?y|?z]))],
+     terminates (?x @=< ?y & ordered([?y|?z]))),
+    all [y,z]: ?l = [?y|?z] => terminates (?x @=< ?y & ordered([?y|?z])),
+    terminates ordered([?x|?l]) by completion],
+   terminates ordered([?x|?l]))])
+).
+
+:- theorem(permutation_sort:termination,
+all [l1,l2]: succeeds nat_list(?l1) => 
+ terminates permutation_sort(?l1,?l2),
+assume(succeeds nat_list(?l1),
+ [succeeds list(?l1) by lemma(nat_list:list),
+  terminates permutation(?l1,?l2) by theorem(permutation:termination),
+  succeeds permutation(?l1,?l2) \/ fails permutation(?l1,?l2),
+  cases(succeeds permutation(?l1,?l2),
+   [succeeds nat_list(?l2) by lemma(permutation:nat_list),
+    terminates ordered(?l2) by lemma(ordered:termination),
+    terminates (permutation(?l1,?l2) & ordered(?l2))],
+   fails permutation(?l1,?l2),
+   [],
+   terminates (permutation(?l1,?l2) & ordered(?l2))),
+  terminates permutation_sort(?l1,?l2) by completion],
+ terminates permutation_sort(?l1,?l2))
+).
+
+:- lemma(insert:delete,
+all [x,l1,l2]: succeeds insert(?x,?l1,?l2) => succeeds delete(?x,?l2,?l1),
+induction(
+ [all [x,l1,l2]: succeeds insert(?x,?l1,?l2) => 
+   succeeds delete(?x,?l2,?l1)],
+ [step([x],[],[],succeeds delete(?x,[?x],[])),
+  step([x,y,l],
+   [succeeds ?x @=< ?y],
+   [],
+   succeeds delete(?x,[?x,?y|?l],[?y|?l])),
+  step([x,y,l1,l2],
+   [succeeds delete(?x,?l2,?l1),
+    fails ?x @=< ?y,
+    succeeds insert(?x,?l1,?l2)],
+   [],
+   succeeds delete(?x,[?y|?l2],[?y|?l1]))])
+).
+
+:- lemma(insert_sort:permutation,
+all [l1,l2]: succeeds insert_sort(?l1,?l2) => 
+ succeeds permutation(?l2,?l1),
+induction(
+ [all [l1,l2]: succeeds insert_sort(?l1,?l2) => 
+   succeeds permutation(?l2,?l1)],
+ [step([],[],[],succeeds permutation([],[])),
+  step([x,l1,l2,l3],
+   [succeeds permutation(?l3,?l1),
+    succeeds insert_sort(?l1,?l3),
+    succeeds insert(?x,?l3,?l2)],
+   [succeeds delete(?x,?l2,?l3) by lemma(insert:delete),
+    succeeds permutation(?l2,[?x|?l1])],
+   succeeds permutation(?l2,[?x|?l1]))])
+).
+
+:- theorem(insert_sort:permutation,
+all [l1,l2]: succeeds insert_sort(?l1,?l2) => 
+ succeeds permutation(?l1,?l2),
+assume(succeeds insert_sort(?l1,?l2),
+ [succeeds permutation(?l2,?l1) by lemma(insert_sort:permutation),
+  succeeds permutation(?l1,?l2) by theorem(permutation:symmetric)],
+ succeeds permutation(?l1,?l2))
+).
+
+:- lemma(insert_sort:nat_list,
+all [l1,l2]: succeeds insert_sort(?l1,?l2) & succeeds nat_list(?l1) => 
+ succeeds nat_list(?l2),
+assume(succeeds insert_sort(?l1,?l2) & succeeds nat_list(?l1),
+ [succeeds permutation(?l1,?l2) by theorem(insert_sort:permutation),
+  succeeds nat_list(?l2) by lemma(permutation:nat_list)],
+ succeeds nat_list(?l2))
+).
+
+:- lemma(insert:termination,
+all [x,l1,l2]: succeeds nat_list(?l1) & succeeds nat(?x) & gr(?l1) & 
+ gr(?x) => terminates insert(?x,?l1,?l2),
+[induction(
+  [all l1: succeeds nat_list(?l1) => 
+    (all [x,l2]: succeeds nat(?x) & gr(?l1) & gr(?x) => 
+      terminates insert(?x,?l1,?l2))],
+  [step([],
+    [],
+    succeeds nat(?x) & gr([]) & gr(?x) => terminates insert(?x,[],?l2),
+    all [x,l2]: succeeds nat(?x) & gr([]) & gr(?x) => 
+     terminates insert(?x,[],?l2)),
+   step([x,l],
+    [all [x,l2]: succeeds nat(?x) & gr(?l) & gr(?x) => 
+      terminates insert(?x,?l,?l2),
+     succeeds nat(?x),
+     succeeds nat_list(?l)],
+    assume(succeeds nat(?y) & gr([?x|?l]) & gr(?y),
+     [assume(?l2 = [?y,?x|?l],
+       terminates ?y @=< ?x by lemma(leq:termination:1),
+       terminates ?y @=< ?x),
+      assume(?l2 = [?x|?l3],
+       [terminates ?y @=< ?x by lemma(leq:termination:1),
+        terminates insert(?y,?l,?l3),
+        terminates (~ ?y @=< ?x & insert(?y,?l,?l3))],
+       terminates (~ ?y @=< ?x & insert(?y,?l,?l3))),
+      (?l2 = [?y,?x|?l] => terminates ?y @=< ?x) & 
+      (all l3: ?l2 = [?x|?l3] => 
+        terminates (~ ?y @=< ?x & insert(?y,?l,?l3))),
+      terminates insert(?y,[?x|?l],?l2) by completion],
+     terminates insert(?y,[?x|?l],?l2)),
+    all [y,l2]: succeeds nat(?y) & gr([?x|?l]) & gr(?y) => 
+     terminates insert(?y,[?x|?l],?l2))]),
+ assume(succeeds nat_list(?l1) & succeeds nat(?x) & gr(?l1) & gr(?x),
+  [all [x,l2]: succeeds nat(?x) & gr(?l1) & gr(?x) => 
+    terminates insert(?x,?l1,?l2),
+   succeeds nat(?x) & gr(?l1) & gr(?x) => terminates insert(?x,?l1,?l2),
+   terminates insert(?x,?l1,?l2)],
+  terminates insert(?x,?l1,?l2))]
+).
+
+:- lemma(insert:ground,
+all [x,l1,l2]: succeeds insert(?x,?l1,?l2) & gr(?x) & gr(?l1) => gr(?l2),
+[induction(
+  [all [x,l1,l2]: succeeds insert(?x,?l1,?l2) => gr(?x) & gr(?l1) => 
+    gr(?l2)],
+  [step([x],
+    [],
+    assume(gr(?x) & gr([]),
+     [],
+     gr([?x])),
+    gr(?x) & gr([]) => gr([?x])),
+   step([x,y,l],
+    [succeeds ?x @=< ?y],
+    assume(gr(?x) & gr([?y|?l]),
+     [],
+     gr([?x,?y|?l])),
+    gr(?x) & gr([?y|?l]) => gr([?x,?y|?l])),
+   step([x,y,l1,l2],
+    [gr(?x) & gr(?l1) => gr(?l2),
+     fails ?x @=< ?y,
+     succeeds insert(?x,?l1,?l2)],
+    assume(gr(?x) & gr([?y|?l1]),
+     [],
+     gr([?y|?l2])),
+    gr(?x) & gr([?y|?l1]) => gr([?y|?l2]))]),
+ assume(succeeds insert(?x,?l1,?l2) & gr(?x) & gr(?l1),
+  [gr(?x) & gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- lemma(insert_sort:ground,
+all [l1,l2]: succeeds insert_sort(?l1,?l2) & gr(?l1) => gr(?l2),
+[induction(
+  [all [l1,l2]: succeeds insert_sort(?l1,?l2) => gr(?l1) => gr(?l2)],
+  [step([],[],[],gr([]) => gr([])),
+   step([x,l1,l3,l2],
+    [gr(?l1) => gr(?l2),
+     succeeds insert_sort(?l1,?l2),
+     succeeds insert(?x,?l2,?l3)],
+    assume(gr([?x|?l1]),
+     [gr(?x),
+      gr(?l2),
+      gr(?l3) by lemma(insert:ground)],
+     gr(?l3)),
+    gr([?x|?l1]) => gr(?l3))]),
+ assume(succeeds insert_sort(?l1,?l2) & gr(?l1),
+  [gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- theorem(insert_sort:termination,
+all [l1,l2]: succeeds nat_list(?l1) & gr(?l1) => 
+ terminates insert_sort(?l1,?l2),
+[induction(
+  [all l1: succeeds nat_list(?l1) => 
+    (all l2: gr(?l1) => terminates insert_sort(?l1,?l2))],
+  [step([],
+    [],
+    gr([]) => terminates insert_sort([],?l2),
+    all l2: gr([]) => terminates insert_sort([],?l2)),
+   step([x,l],
+    [all l2: gr(?l) => terminates insert_sort(?l,?l2),
+     succeeds nat(?x),
+     succeeds nat_list(?l)],
+    assume(gr([?x|?l]),
+     [terminates insert_sort(?l,?l3),
+      succeeds insert_sort(?l,?l3) \/ fails insert_sort(?l,?l3),
+      cases(succeeds insert_sort(?l,?l3),
+       [gr(?x),
+        gr(?l),
+        gr(?l3) by lemma(insert_sort:ground),
+        succeeds nat_list(?l3) by lemma(insert_sort:nat_list),
+        terminates insert(?x,?l3,?l2) by lemma(insert:termination),
+        terminates (insert_sort(?l,?l3) & insert(?x,?l3,?l2))],
+       fails insert_sort(?l,?l3),
+       [],
+       terminates (insert_sort(?l,?l3) & insert(?x,?l3,?l2))),
+      all l3: terminates (insert_sort(?l,?l3) & insert(?x,?l3,?l2)),
+      terminates insert_sort([?x|?l],?l2) by completion],
+     terminates insert_sort([?x|?l],?l2)),
+    all l2: gr([?x|?l]) => terminates insert_sort([?x|?l],?l2))]),
+ assume(succeeds nat_list(?l1) & gr(?l1),
+  [all l2: gr(?l1) => terminates insert_sort(?l1,?l2),
+   gr(?l1) => terminates insert_sort(?l1,?l2),
+   terminates insert_sort(?l1,?l2)],
+  terminates insert_sort(?l1,?l2))]
+).
+
+:- lemma(insert:existence,
+all [x,l1]: succeeds nat_list(?l1) & succeeds nat(?x) => 
+ (ex l2: succeeds insert(?x,?l1,?l2)),
+[induction(
+  [all l1: succeeds nat_list(?l1) => 
+    (all x: succeeds nat(?x) => (ex l2: succeeds insert(?x,?l1,?l2)))],
+  [step([],
+    [],
+    assume(succeeds nat(?x),
+     [succeeds insert(?x,[],[?x]),
+      ex l2: succeeds insert(?x,[],?l2)],
+     ex l2: succeeds insert(?x,[],?l2)),
+    all x: succeeds nat(?x) => (ex l2: succeeds insert(?x,[],?l2))),
+   step([y,l],
+    [all x: succeeds nat(?x) => (ex l2: succeeds insert(?x,?l,?l2)),
+     succeeds nat(?y),
+     succeeds nat_list(?l)],
+    assume(succeeds nat(?x),
+     [terminates ?x @=< ?y by lemma(leq:termination:1),
+      succeeds ?x @=< ?y \/ fails ?x @=< ?y,
+      cases(succeeds ?x @=< ?y,
+       [succeeds insert(?x,[?y|?l],[?x,?y|?l]),
+        ex l2: succeeds insert(?x,[?y|?l],?l2)],
+       fails ?x @=< ?y,
+       [ex l2: succeeds insert(?x,?l,?l2),
+        exist(l2,
+         succeeds insert(?x,?l,?l2),
+         [succeeds insert(?x,[?y|?l],[?y|?l2]),
+          ex l2: succeeds insert(?x,[?y|?l],?l2)],
+         ex l2: succeeds insert(?x,[?y|?l],?l2))],
+       ex l2: succeeds insert(?x,[?y|?l],?l2))],
+     ex l2: succeeds insert(?x,[?y|?l],?l2)),
+    all x: succeeds nat(?x) => (ex l2: succeeds insert(?x,[?y|?l],?l2)))]),
+ assume(succeeds nat_list(?l1) & succeeds nat(?x),
+  [all x: succeeds nat(?x) => (ex l2: succeeds insert(?x,?l1,?l2)),
+   ex l2: succeeds insert(?x,?l1,?l2)],
+  ex l2: succeeds insert(?x,?l1,?l2))]
+).
+
+:- theorem(insert_sort:existence,
+all l1: succeeds nat_list(?l1) => (ex l2: succeeds insert_sort(?l1,?l2)),
+induction(
+ [all l1: succeeds nat_list(?l1) => 
+   (ex l2: succeeds insert_sort(?l1,?l2))],
+ [step([],
+   [],
+   [succeeds insert_sort([],[]),
+    ex l2: succeeds insert_sort([],?l2)],
+   ex l2: succeeds insert_sort([],?l2)),
+  step([x,l1],
+   [ex l2: succeeds insert_sort(?l1,?l2),
+    succeeds nat(?x),
+    succeeds nat_list(?l1)],
+   exist(l2,
+    succeeds insert_sort(?l1,?l2),
+    [succeeds nat_list(?l2) by lemma(insert_sort:nat_list),
+     ex l3: succeeds insert(?x,?l2,?l3) by lemma(insert:existence),
+     exist(l3,
+      succeeds insert(?x,?l2,?l3),
+      [succeeds insert_sort([?x|?l1],?l3),
+       ex l3: succeeds insert_sort([?x|?l1],?l3)],
+      ex l3: succeeds insert_sort([?x|?l1],?l3))],
+    ex l2: succeeds insert_sort([?x|?l1],?l2)),
+   ex l2: succeeds insert_sort([?x|?l1],?l2))])
+).
+
+:- lemma(insert:ordered,
+all [x,l1,l2]: succeeds insert(?x,?l1,?l2) & succeeds nat(?x) & 
+ succeeds nat_list(?l1) & succeeds ordered(?l1) => succeeds ordered(?l2),
+[induction(
+  [all [x,l1,l2]: succeeds insert(?x,?l1,?l2) => succeeds nat(?x) & 
+    succeeds nat_list(?l1) & succeeds ordered(?l1) => succeeds ordered(?l2)],
+  [step([x],
+    [],
+    [],
+    succeeds nat(?x) & succeeds nat_list([]) & succeeds ordered([]) => 
+    succeeds ordered([?x])),
+   step([x,y,l],
+    [succeeds ?x @=< ?y],
+    assume(succeeds nat(?x) & succeeds nat_list([?y|?l]) & 
+     succeeds ordered([?y|?l]),
+     [],
+     succeeds ordered([?x,?y|?l])),
+    succeeds nat(?x) & succeeds nat_list([?y|?l]) & 
+    succeeds ordered([?y|?l]) => succeeds ordered([?x,?y|?l])),
+   step([x,y,l1,l2],
+    [succeeds nat(?x) & succeeds nat_list(?l1) & succeeds ordered(?l1) => 
+     succeeds ordered(?l2),
+     fails ?x @=< ?y,
+     succeeds insert(?x,?l1,?l2)],
+    assume(succeeds nat(?x) & succeeds nat_list([?y|?l1]) & 
+     succeeds ordered([?y|?l1]),
+     [def succeeds nat_list([?y|?l1]) by completion,
+      succeeds nat(?y) & succeeds nat_list(?l1),
+      succeeds ?y @=< ?x by corollary(leq:failure),
+      def succeeds ordered([?y|?l1]) by completion,
+      cases(?l1 = [],
+       [def succeeds insert(?x,[],?l2) by completion,
+        ?l2 = [?x],
+        succeeds ordered([?x]),
+        succeeds ordered([?y,?x]),
+        succeeds ordered([?y|?l2])],
+       ex [z,l3]: ?l1 = [?z|?l3] & succeeds ?y @=< ?z & 
+        succeeds ordered([?z|?l3]),
+       exist([z,l3],
+        ?l1 = [?z|?l3] & succeeds ?y @=< ?z & succeeds ordered([?z|?l3]),
+        [def succeeds insert(?x,[?z|?l3],?l2) by completion,
+         succeeds ordered(?l1),
+         succeeds ordered(?l2),
+         cases(?l2 = [?x,?z|?l3] & succeeds ?x @=< ?z,
+          [succeeds ordered([?x,?z|?l3]),
+           succeeds ordered([?y,?x,?z|?l3]),
+           succeeds ordered([?y|?l2])],
+          ex l4: ?l2 = [?z|?l4] & fails ?x @=< ?z & 
+           succeeds insert(?x,?l3,?l4),
+          exist(l4,
+           ?l2 = [?z|?l4] & fails ?x @=< ?z & succeeds insert(?x,?l3,?l4),
+           [succeeds ordered([?z|?l4]),
+            succeeds ordered([?y,?z|?l4]),
+            succeeds ordered([?y|?l2])],
+           succeeds ordered([?y|?l2])),
+          succeeds ordered([?y|?l2]))],
+        succeeds ordered([?y|?l2])),
+       succeeds ordered([?y|?l2]))],
+     succeeds ordered([?y|?l2])),
+    succeeds nat(?x) & succeeds nat_list([?y|?l1]) & 
+    succeeds ordered([?y|?l1]) => succeeds ordered([?y|?l2]))]),
+ assume(succeeds insert(?x,?l1,?l2) & succeeds nat(?x) & 
+  succeeds nat_list(?l1) & succeeds ordered(?l1),
+  [succeeds nat(?x) & succeeds nat_list(?l1) & succeeds ordered(?l1) => 
+   succeeds ordered(?l2),
+   succeeds ordered(?l2)],
+  succeeds ordered(?l2))]
+).
+
+:- theorem(insert_sort:ordered,
+all [l1,l2]: succeeds insert_sort(?l1,?l2) & succeeds nat_list(?l1) => 
+ succeeds ordered(?l2),
+[induction(
+  [all [l1,l2]: succeeds insert_sort(?l1,?l2) => succeeds nat_list(?l1) =>
+    succeeds ordered(?l2)],
+  [step([],[],[],succeeds nat_list([]) => succeeds ordered([])),
+   step([x,l1,l2,l3],
+    [succeeds nat_list(?l1) => succeeds ordered(?l3),
+     succeeds insert_sort(?l1,?l3),
+     succeeds insert(?x,?l3,?l2)],
+    assume(succeeds nat_list([?x|?l1]),
+     [def succeeds nat_list([?x|?l1]) by completion,
+      succeeds nat(?x) & succeeds nat_list(?l1),
+      succeeds ordered(?l3),
+      succeeds nat_list(?l3) by lemma(insert_sort:nat_list),
+      succeeds ordered(?l2) by lemma(insert:ordered)],
+     succeeds ordered(?l2)),
+    succeeds nat_list([?x|?l1]) => succeeds ordered(?l2))]),
+ assume(succeeds insert_sort(?l1,?l2) & succeeds nat_list(?l1),
+  [succeeds nat_list(?l1) => succeeds ordered(?l2),
+   succeeds ordered(?l2)],
+  succeeds ordered(?l2))]
+).
+
+:- theorem(insert_sort:permutation_sort,
+all [l1,l2]: succeeds nat_list(?l1) & succeeds insert_sort(?l1,?l2) => 
+ succeeds permutation_sort(?l1,?l2),
+assume(succeeds nat_list(?l1) & succeeds insert_sort(?l1,?l2),
+ [succeeds permutation(?l1,?l2) by theorem(insert_sort:permutation),
+  succeeds ordered(?l2) by theorem(insert_sort:ordered),
+  succeeds permutation_sort(?l1,?l2)],
+ succeeds permutation_sort(?l1,?l2))
+).
+
+:- lemma(ordered:cons,
+all [x,l]: succeeds ordered([?x|?l]) => succeeds ordered(?l),
+assume(succeeds ordered([?x|?l]),
+ [def succeeds ordered([?x|?l]) by completion,
+  cases(?l = [],
+   [succeeds ordered([]),
+    succeeds ordered(?l)],
+   ex [y,l1]: ?l = [?y|?l1] & succeeds ?x @=< ?y & 
+    succeeds ordered([?y|?l1]),
+   exist([y,l1],
+    ?l = [?y|?l1] & succeeds ?x @=< ?y & succeeds ordered([?y|?l1]),
+    [succeeds ?x @=< ?y & succeeds ordered([?y|?l1]),
+     succeeds ordered(?l)],
+    succeeds ordered(?l)),
+   succeeds ordered(?l))],
+ succeeds ordered(?l))
+).
+
+:- lemma(ordered:min,
+all [x,y,l]: succeeds nat_list(?l) & succeeds ordered([?x|?l]) & 
+ succeeds member(?y,?l) => succeeds ?x @=< ?y,
+[induction(
+  [all l: succeeds nat_list(?l) => 
+    (all [x,y]: succeeds ordered([?x|?l]) & succeeds member(?y,?l) => 
+      succeeds ?x @=< ?y)],
+  [step([],
+    [],
+    assume(succeeds ordered([?x]) & succeeds member(?y,[]),
+     [def succeeds member(?y,[]) by completion,
+      ff],
+     succeeds ?x @=< ?y),
+    all [x,y]: succeeds ordered([?x]) & succeeds member(?y,[]) => 
+     succeeds ?x @=< ?y),
+   step([z,l],
+    [all [x,y]: succeeds ordered([?x|?l]) & succeeds member(?y,?l) => 
+      succeeds ?x @=< ?y,
+     succeeds nat(?z),
+     succeeds nat_list(?l)],
+    assume(succeeds ordered([?x,?z|?l]) & succeeds member(?y,[?z|?l]),
+     [def succeeds ordered([?x,?z|?l]) by completion,
+      succeeds ?x @=< ?z & succeeds ordered([?z|?l]),
+      def succeeds member(?y,[?z|?l]) by completion,
+      cases(?y = ?z,
+       [],
+       succeeds member(?y,?l),
+       [succeeds ?z @=< ?y,
+        succeeds ?x @=< ?y by theorem(leq:transitive)],
+       succeeds ?x @=< ?y)],
+     succeeds ?x @=< ?y),
+    all [x,y]: succeeds ordered([?x,?z|?l]) & succeeds member(?y,[?z|?l]) 
+     => succeeds ?x @=< ?y)]),
+ assume(succeeds nat_list(?l) & succeeds ordered([?x|?l]) & 
+  succeeds member(?y,?l),
+  [all [x,y]: succeeds ordered([?x|?l]) & succeeds member(?y,?l) => 
+    succeeds ?x @=< ?y,
+   succeeds ordered([?x|?l]) & succeeds member(?y,?l) => 
+   succeeds ?x @=< ?y,
+   succeeds ?x @=< ?y],
+  succeeds ?x @=< ?y)]
+).
+
+:- lemma(ordered:permutation:uniqueneness,
+all [l1,l2]: succeeds nat_list(?l1) & succeeds permutation(?l1,?l2) & 
+ succeeds ordered(?l1) & succeeds ordered(?l2) => ?l1 = ?l2,
+[induction(
+  [all l1: succeeds nat_list(?l1) => 
+    (all l2: succeeds permutation(?l1,?l2) & succeeds ordered(?l1) & 
+      succeeds ordered(?l2) => ?l1 = ?l2)],
+  [step([],
+    [],
+    assume(succeeds permutation([],?l2) & succeeds ordered([]) & 
+     succeeds ordered(?l2),
+     [?l2 = [] by lemma(permutation:nil),
+      [] = ?l2],
+     [] = ?l2),
+    all l2: succeeds permutation([],?l2) & succeeds ordered([]) & 
+     succeeds ordered(?l2) => [] = ?l2),
+   step([x,l1],
+    [all l2: succeeds permutation(?l1,?l2) & succeeds ordered(?l1) & 
+      succeeds ordered(?l2) => ?l1 = ?l2,
+     succeeds nat(?x),
+     succeeds nat_list(?l1)],
+    assume(succeeds permutation([?x|?l1],?l2) & succeeds ordered([?x|?l1]) 
+     & succeeds ordered(?l2),
+     [succeeds nat_list([?x|?l1]),
+      succeeds nat_list(?l2) by lemma(permutation:nat_list),
+      def succeeds permutation([?x|?l1],?l2) by completion,
+      exist([y,l3,l4],
+       ?l2 = [?y|?l3] & succeeds delete(?y,[?x|?l1],?l4) & 
+       succeeds permutation(?l4,?l3),
+       [succeeds ordered(?l1) by lemma(ordered:cons),
+        succeeds ordered([?y|?l3]),
+        succeeds ordered(?l3) by lemma(ordered:cons),
+        succeeds member(?x,[?x|?l1]),
+        succeeds member(?x,?l2) by theorem(permutation:member),
+        succeeds member(?x,[?y|?l3]),
+        succeeds member(?y,[?y|?l3]),
+        succeeds member(?y,?l2),
+        succeeds permutation(?l2,[?x|?l1]) by 
+         theorem(permutation:symmetric),
+        succeeds member(?y,[?x|?l1]) by theorem(permutation:member),
+        def succeeds member(?x,[?y|?l3]) by completion,
+        cases(?x = ?y,
+         [],
+         succeeds member(?x,?l3),
+         [def succeeds nat_list([?y|?l3]) by completion,
+          succeeds nat(?y) & succeeds nat_list(?l3),
+          succeeds ?y @=< ?x by lemma(ordered:min),
+          def succeeds member(?y,[?x|?l1]) by completion,
+          cases(?y = ?x,
+           [],
+           succeeds member(?y,?l1),
+           [succeeds ?x @=< ?y by lemma(ordered:min),
+            ?x = ?y by theorem(leq:antisymmetric)],
+           ?x = ?y)],
+         ?x = ?y),
+        succeeds permutation([?x|?l1],[?x|?l3]),
+        succeeds permutation(?l1,?l3) by theorem(permutation:cons),
+        ?l1 = ?l3,
+        [?x|?l1] = ?l2],
+       [?x|?l1] = ?l2)],
+     [?x|?l1] = ?l2),
+    all l2: succeeds permutation([?x|?l1],?l2) & 
+     succeeds ordered([?x|?l1]) & succeeds ordered(?l2) => [?x|?l1] = ?l2)]),
+ assume(succeeds nat_list(?l1) & succeeds permutation(?l1,?l2) & 
+  succeeds ordered(?l1) & succeeds ordered(?l2),
+  [all l2: succeeds permutation(?l1,?l2) & succeeds ordered(?l1) & 
+    succeeds ordered(?l2) => ?l1 = ?l2,
+   succeeds permutation(?l1,?l2) & succeeds ordered(?l1) & 
+   succeeds ordered(?l2) => ?l1 = ?l2,
+   ?l1 = ?l2],
+  ?l1 = ?l2)]
+).
+
+:- lemma(permutation_sort:uniqueness,
+all [l1,l2,l3]: succeeds nat_list(?l1) & 
+ succeeds permutation_sort(?l1,?l2) & succeeds permutation_sort(?l1,?l3) =>
+ ?l2 = ?l3,
+assume(succeeds nat_list(?l1) & succeeds permutation_sort(?l1,?l2) & 
+ succeeds permutation_sort(?l1,?l3),
+ [def succeeds permutation_sort(?l1,?l2) by completion,
+  succeeds permutation(?l1,?l2) & succeeds ordered(?l2),
+  succeeds nat_list(?l2) by lemma(permutation:nat_list),
+  def succeeds permutation_sort(?l1,?l3) by completion,
+  succeeds permutation(?l1,?l3) & succeeds ordered(?l3),
+  succeeds nat_list(?l3) by lemma(permutation:nat_list),
+  succeeds permutation(?l2,?l1) by theorem(permutation:symmetric),
+  succeeds permutation(?l2,?l3) by theorem(permutation:transitive),
+  ?l2 = ?l3 by lemma(ordered:permutation:uniqueneness)],
+ ?l2 = ?l3)
+).
+
+:- theorem(permutation_sort:insert_sort,
+all [l1,l2]: succeeds nat_list(?l1) & succeeds permutation_sort(?l1,?l2) 
+ => succeeds insert_sort(?l1,?l2),
+assume(succeeds nat_list(?l1) & succeeds permutation_sort(?l1,?l2),
+ [ex l3: succeeds insert_sort(?l1,?l3) by theorem(insert_sort:existence),
+  exist(l3,
+   succeeds insert_sort(?l1,?l3),
+   [succeeds permutation_sort(?l1,?l3) by 
+     theorem(insert_sort:permutation_sort),
+    ?l2 = ?l3 by lemma(permutation_sort:uniqueness),
+    succeeds insert_sort(?l1,?l2)],
+   succeeds insert_sort(?l1,?l2))],
+ succeeds insert_sort(?l1,?l2))
+).
+
+:- lemma(split:termination,
+all [x,l1,l2,l3,l4]: succeeds list(?l1) & succeeds nat(?x) & gr(?x) & 
+ gr(?l1) => terminates split(?x,?l1,?l2,?l3),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    (all [x,l2,l3,l4]: succeeds nat(?x) & gr(?x) & gr(?l1) => 
+      terminates split(?x,?l1,?l2,?l3))],
+  [step([],
+    [],
+    succeeds nat(?x) & gr(?x) & gr([]) => terminates split(?x,[],?l2,?l3),
+    all [x,l2,l3,l4]: succeeds nat(?x) & gr(?x) & gr([]) => 
+     terminates split(?x,[],?l2,?l3)),
+   step([x,l],
+    [all [x,l2,l3,l4]: succeeds nat(?x) & gr(?x) & gr(?l) => 
+      terminates split(?x,?l,?l2,?l3),
+     succeeds list(?l)],
+    assume(succeeds nat(?y) & gr(?y) & gr([?x|?l]),
+     [terminates split(?y,?l,?l4,?l5),
+      terminates ?y @=< ?x by lemma(leq:termination:1),
+      terminates 
+      ((?y @=< ?x & ?l2 = [?x|?l4] & ?l3 = ?l5 \/ ~ ?y @=< ?x & ?l2 = ?l4
+        & ?l3 = [?x|?l5]) & split(?y,?l,?l4,?l5)),
+      all [l4,l5]: 
+       terminates 
+       ((?y @=< ?x & ?l2 = [?x|?l4] & ?l3 = ?l5 \/ ~ ?y @=< ?x & 
+         ?l2 = ?l4 & ?l3 = [?x|?l5]) & split(?y,?l,?l4,?l5)),
+      terminates split(?y,[?x|?l],?l2,?l3) by completion],
+     terminates split(?y,[?x|?l],?l2,?l3)),
+    all [y,l2,l3,l4]: succeeds nat(?y) & gr(?y) & gr([?x|?l]) => 
+     terminates split(?y,[?x|?l],?l2,?l3))]),
+ assume(succeeds list(?l1) & succeeds nat(?x) & gr(?x) & gr(?l1),
+  [all [x,l2,l3,l4]: succeeds nat(?x) & gr(?x) & gr(?l1) => 
+    terminates split(?x,?l1,?l2,?l3),
+   succeeds nat(?x) & gr(?x) & gr(?l1) => terminates split(?x,?l1,?l2,?l3),
+   terminates split(?x,?l1,?l2,?l3)],
+  terminates split(?x,?l1,?l2,?l3))]
+).
+
+:- lemma(split:nat_list:lh,
+all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) & succeeds nat_list(?l1) 
+ => succeeds nat_list(?l2) & succeeds nat_list(?l3) & 
+ lh(?l1) = lh(?l2) @+ lh(?l3),
+[induction(
+  [all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => 
+    succeeds nat_list(?l1) => succeeds nat_list(?l2) & 
+    succeeds nat_list(?l3) & lh(?l1) = lh(?l2) @+ lh(?l3)],
+  [step([x],
+    [],
+    assume(succeeds nat_list([]),
+     [lh([]) = 0 by corollary(lh:nil),
+      0 @+ 0 = 0 by corollary(plus:zero),
+      lh([]) = 0 = 0 @+ 0 = lh([]) @+ lh([])],
+     succeeds nat_list([]) & succeeds nat_list([]) & 
+     lh([]) = lh([]) @+ lh([])),
+    succeeds nat_list([]) => succeeds nat_list([]) & succeeds nat_list([]) 
+    & lh([]) = lh([]) @+ lh([])),
+   step([x,y,l1,l2,l3,l4,l5],
+    [succeeds nat_list(?l1) => succeeds nat_list(?l4) & 
+     succeeds nat_list(?l5) & lh(?l1) = lh(?l4) @+ lh(?l5),
+     succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ fails ?x @=< ?y &
+     ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5)],
+    assume(succeeds nat_list([?y|?l1]),
+     [def succeeds nat_list([?y|?l1]) by completion,
+      succeeds nat(?y) & succeeds nat_list(?l1),
+      succeeds nat_list(?l4) & succeeds nat_list(?l5) & 
+      lh(?l1) = lh(?l4) @+ lh(?l5),
+      succeeds list(?l1) by lemma(nat_list:list),
+      lh([?y|?l1]) = s(lh(?l1)) by corollary(lh:cons),
+      cases(succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5,
+       [succeeds nat_list([?y|?l4]),
+        succeeds nat_list(?l2),
+        succeeds nat_list(?l3),
+        succeeds list(?l4) by lemma(nat_list:list),
+        lh([?y|?l4]) = s(lh(?l4)) by corollary(lh:cons),
+        succeeds nat(lh(?l4)) by corollary(lh:types),
+        s(lh(?l4)) @+ lh(?l5) = s(lh(?l4) @+ lh(?l5)) by 
+         corollary(plus:successor),
+        lh([?y|?l1]) = s(lh(?l1)) = s(lh(?l4) @+ lh(?l5)) = s(lh(?l4)) @+
+        lh(?l5) = lh([?y|?l4]) @+ lh(?l5) = lh(?l2) @+ lh(?l3)],
+       fails ?x @=< ?y & ?l2 = ?l4 & ?l3 = [?y|?l5],
+       [succeeds nat_list(?l2),
+        succeeds nat_list([?y|?l5]),
+        succeeds nat_list(?l3),
+        succeeds list(?l5) by lemma(nat_list:list),
+        lh([?y|?l5]) = s(lh(?l5)) by corollary(lh:cons),
+        succeeds list(?l2) by lemma(nat_list:list),
+        succeeds nat(lh(?l2)) by corollary(lh:types),
+        succeeds nat(lh(?l5)) by corollary(lh:types),
+        lh(?l2) @+ s(lh(?l5)) = s(lh(?l2)) @+ lh(?l5) by 
+         lemma(plus:successor),
+        s(lh(?l2)) @+ lh(?l5) = s(lh(?l2) @+ lh(?l5)) by 
+         corollary(plus:successor),
+        lh([?y|?l1]) = s(lh(?l1)) = s(lh(?l4) @+ lh(?l5)) = 
+        s(lh(?l2) @+ lh(?l5)) = s(lh(?l2)) @+ lh(?l5) = lh(?l2) @+ 
+        s(lh(?l5)) = lh(?l2) @+ lh([?y|?l5]) = lh(?l2) @+ lh(?l3)],
+       succeeds nat_list(?l2) & succeeds nat_list(?l3) & 
+       lh([?y|?l1]) = lh(?l2) @+ lh(?l3))],
+     succeeds nat_list(?l2) & succeeds nat_list(?l3) & 
+     lh([?y|?l1]) = lh(?l2) @+ lh(?l3)),
+    succeeds nat_list([?y|?l1]) => succeeds nat_list(?l2) & 
+    succeeds nat_list(?l3) & lh([?y|?l1]) = lh(?l2) @+ lh(?l3))]),
+ assume(succeeds split(?x,?l1,?l2,?l3) & succeeds nat_list(?l1),
+  [succeeds nat_list(?l1) => succeeds nat_list(?l2) & 
+   succeeds nat_list(?l3) & lh(?l1) = lh(?l2) @+ lh(?l3),
+   succeeds nat_list(?l1) => succeeds nat_list(?l2) & 
+   succeeds nat_list(?l3) & lh(?l1) = lh(?l2) @+ lh(?l3),
+   succeeds nat_list(?l2) & succeeds nat_list(?l3) & 
+   lh(?l1) = lh(?l2) @+ lh(?l3)],
+  succeeds nat_list(?l2) & succeeds nat_list(?l3) & 
+  lh(?l1) = lh(?l2) @+ lh(?l3))]
+).
+
+:- lemma(split:ground,
+all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) & gr(?x) & gr(?l1) => 
+ gr(?l2) & gr(?l3),
+[induction(
+  [all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => gr(?x) & gr(?l1) =>
+    gr(?l2) & gr(?l3)],
+  [step([x],[],[],gr(?x) & gr([]) => gr([]) & gr([])),
+   step([x,y,l1,l2,l3,l4,l5],
+    [gr(?x) & gr(?l1) => gr(?l4) & gr(?l5),
+     succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ fails ?x @=< ?y &
+     ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5)],
+    assume(gr(?x) & gr([?y|?l1]),
+     [gr(?l4) & gr(?l5),
+      cases(succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5,
+       [gr([?y|?l4]),
+        gr(?l2),
+        gr(?l3)],
+       fails ?x @=< ?y & ?l2 = ?l4 & ?l3 = [?y|?l5],
+       [gr([?y|?l5]),
+        gr(?l2),
+        gr(?l3)],
+       gr(?l2) & gr(?l3))],
+     gr(?l2) & gr(?l3)),
+    gr(?x) & gr([?y|?l1]) => gr(?l2) & gr(?l3))]),
+ assume(succeeds split(?x,?l1,?l2,?l3) & gr(?x) & gr(?l1),
+  [gr(?x) & gr(?l1) => gr(?l2) & gr(?l3),
+   gr(?l2) & gr(?l3)],
+  gr(?l2) & gr(?l3))]
+).
+
+:- lemma(quick_sort:3:ground,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) & gr(?l1) & gr(?l2) => 
+ gr(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) => gr(?l1) & gr(?l2) 
+    => gr(?l3)],
+  [step([l],[],assume(gr([]) & gr(?l),[],gr(?l)),gr([]) & gr(?l) => gr(?l)),
+   step([x,l1,l2,l6,l3,l4,l5],
+    [gr(?l3) & gr(?l2) => gr(?l5),
+     gr(?l4) & gr([?x|?l5]) => gr(?l6),
+     succeeds split(?x,?l1,?l3,?l4),
+     succeeds quick_sort(?l3,?l2,?l5),
+     succeeds quick_sort(?l4,[?x|?l5],?l6)],
+    assume(gr([?x|?l1]) & gr(?l2),
+     [gr(?l3) & gr(?l4) by lemma(split:ground),
+      gr(?l5),
+      gr(?l6)],
+     gr(?l6)),
+    gr([?x|?l1]) & gr(?l2) => gr(?l6))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3) & gr(?l1) & gr(?l2),
+  [gr(?l1) & gr(?l2) => gr(?l3),
+   gr(?l3)],
+  gr(?l3))]
+).
+
+:- lemma(quick_sort:3:termination,
+all n: succeeds nat(?n) => 
+ (all [l1,l2,l3]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n & 
+   gr(?l1) & gr(?l2) => terminates quick_sort(?l1,?l2,?l3)),
+induction(
+ [all n: succeeds nat(?n) => 
+   (all [l1,l2,l3]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n & 
+     gr(?l1) & gr(?l2) => terminates quick_sort(?l1,?l2,?l3))],
+ [step([],
+   [],
+   assume(succeeds nat_list(?l1) & succeeds lh(?l1) @< 0 & gr(?l1) & 
+    gr(?l2),
+    [fails lh(?l1) @< 0 by completion,
+     ff],
+    terminates quick_sort(?l1,?l2,?l3)),
+   all [l1,l2,l3]: succeeds nat_list(?l1) & succeeds lh(?l1) @< 0 & 
+    gr(?l1) & gr(?l2) => terminates quick_sort(?l1,?l2,?l3)),
+  step([n],
+   [all [l1,l2,l3]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n & 
+     gr(?l1) & gr(?l2) => terminates quick_sort(?l1,?l2,?l3),
+    succeeds nat(?n)],
+   assume(succeeds nat_list(?l1) & succeeds lh(?l1) @< s(?n) & gr(?l1) & 
+    gr(?l2),
+    [assume(?l1 = [?x|?l4],
+      [gr([?x|?l4]),
+       gr(?x),
+       gr(?l4),
+       def succeeds nat_list([?x|?l4]) by completion,
+       succeeds nat(?x) & succeeds nat_list(?l4),
+       succeeds list(?l4) by lemma(nat_list:list),
+       terminates split(?x,?l4,?l5,?l6) by lemma(split:termination),
+       succeeds split(?x,?l4,?l5,?l6) \/ fails split(?x,?l4,?l5,?l6),
+       cases(succeeds split(?x,?l4,?l5,?l6),
+        [gr(?l5) & gr(?l6) by lemma(split:ground),
+         succeeds nat_list(?l5) & succeeds nat_list(?l6) & 
+         lh(?l4) = lh(?l5) @+ lh(?l6) by lemma(split:nat_list:lh),
+         succeeds list(?l5) by lemma(nat_list:list),
+         succeeds nat(lh(?l5)) by corollary(lh:types),
+         succeeds list(?l6) by lemma(nat_list:list),
+         succeeds nat(lh(?l6)) by corollary(lh:types),
+         succeeds lh(?l5) @=< lh(?l5) @+ lh(?l6) by 
+          corollary(leq:plus:first),
+         succeeds lh(?l5) @=< lh(?l4),
+         lh([?x|?l4]) = s(lh(?l4)) by corollary(lh:cons),
+         lh(?l1) = s(lh(?l4)),
+         def succeeds s(lh(?l4)) @< s(?n) by completion,
+         succeeds lh(?l4) @< ?n,
+         succeeds lh(?l5) @< ?n by theorem(leq:less:transitive),
+         terminates quick_sort(?l5,?l2,?l7),
+         assume(succeeds quick_sort(?l5,?l2,?l7),
+          [succeeds lh(?l6) @=< lh(?l5) @+ lh(?l6) by 
+            corollary(leq:plus:second),
+           succeeds lh(?l6) @=< lh(?l4),
+           succeeds lh(?l6) @< ?n by theorem(leq:less:transitive),
+           gr(?l7) by lemma(quick_sort:3:ground),
+           terminates quick_sort(?l6,[?x|?l7],?l3)],
+          terminates quick_sort(?l6,[?x|?l7],?l3)),
+         terminates 
+         (quick_sort(?l5,?l2,?l7) & quick_sort(?l6,[?x|?l7],?l3)),
+         terminates 
+         (split(?x,?l4,?l5,?l6) & quick_sort(?l5,?l2,?l7) & 
+          quick_sort(?l6,[?x|?l7],?l3))],
+        fails split(?x,?l4,?l5,?l6),
+        [],
+        terminates 
+        (split(?x,?l4,?l5,?l6) & quick_sort(?l5,?l2,?l7) & 
+         quick_sort(?l6,[?x|?l7],?l3)))],
+      terminates 
+      (split(?x,?l4,?l5,?l6) & quick_sort(?l5,?l2,?l7) & 
+       quick_sort(?l6,[?x|?l7],?l3))),
+     all [x,l4,l5,l6,l7]: ?l1 = [?x|?l4] => 
+      terminates 
+      (split(?x,?l4,?l5,?l6) & quick_sort(?l5,?l2,?l7) & 
+       quick_sort(?l6,[?x|?l7],?l3)),
+     terminates quick_sort(?l1,?l2,?l3) by completion],
+    terminates quick_sort(?l1,?l2,?l3)),
+   all [l1,l2,l3]: succeeds nat_list(?l1) & succeeds lh(?l1) @< s(?n) & 
+    gr(?l1) & gr(?l2) => terminates quick_sort(?l1,?l2,?l3))])
+).
+
+:- theorem(quick_sort:3:termination,
+all [l1,l2,l3]: succeeds nat_list(?l1) & gr(?l1) & gr(?l2) => 
+ terminates quick_sort(?l1,?l2,?l3),
+assume(succeeds nat_list(?l1) & gr(?l1) & gr(?l2),
+ [succeeds list(?l1) by lemma(nat_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(s(lh(?l1))),
+  all [l4,l2,l3]: succeeds nat_list(?l4) & succeeds lh(?l4) @< s(lh(?l1))
+   & gr(?l4) & gr(?l2) => terminates quick_sort(?l4,?l2,?l3) by 
+   lemma(quick_sort:3:termination),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  terminates quick_sort(?l1,?l2,?l3)],
+ terminates quick_sort(?l1,?l2,?l3))
+).
+
+:- theorem(quick_sort:termination,
+all [l1,l2]: succeeds nat_list(?l1) & gr(?l1) => 
+ terminates quick_sort(?l1,?l2),
+assume(succeeds nat_list(?l1) & gr(?l1),
+ [terminates quick_sort(?l1,[],?l2) by 
+   theorem(quick_sort:3:termination),
+  terminates quick_sort(?l1,?l2) by completion],
+ terminates quick_sort(?l1,?l2))
+).
+
+:- lemma(split:list,
+all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => succeeds list(?l1) & 
+ succeeds list(?l2) & succeeds list(?l3),
+induction(
+ [all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => succeeds list(?l1) &
+   succeeds list(?l2) & succeeds list(?l3)],
+ [step([0],[],[],succeeds list([]) & succeeds list([]) & succeeds list([])),
+  step([x,y,l1,l2,l3,l4,l5],
+   [succeeds list(?l1) & succeeds list(?l4) & succeeds list(?l5),
+    succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ fails ?x @=< ?y & 
+    ?l2 = ?l4 & ?l3 = [?y|?l5],
+    succeeds split(?x,?l1,?l4,?l5)],
+   cases(succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5,
+    [succeeds list([?y|?l4]),
+     succeeds list(?l2)],
+    fails ?x @=< ?y & ?l2 = ?l4 & ?l3 = [?y|?l5],
+    [succeeds list([?y|?l5]),
+     succeeds list(?l3)],
+    succeeds list(?l2) & succeeds list(?l3)),
+   succeeds list([?y|?l1]) & succeeds list(?l2) & succeeds list(?l3))])
+).
+
+:- lemma(split:permutation,
+all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => 
+ succeeds permutation(?l3 ** ?l2,?l1),
+induction(
+ [all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => 
+   succeeds permutation(?l3 ** ?l2,?l1)],
+ [step([0],
+   [],
+   [[] ** [] = [] by corollary(app:nil),
+    succeeds permutation([],[]),
+    succeeds permutation([] ** [],[])],
+   succeeds permutation([] ** [],[])),
+  step([x,y,l1,l2,l3,l4,l5],
+   [succeeds permutation(?l5 ** ?l4,?l1),
+    succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ fails ?x @=< ?y & 
+    ?l2 = ?l4 & ?l3 = [?y|?l5],
+    succeeds split(?x,?l1,?l4,?l5)],
+   [succeeds list(?l1) & succeeds list(?l4) & succeeds list(?l5) by 
+     lemma(split:list),
+    cases(succeeds ?x @=< ?y & ?l2 = [?y|?l4] & ?l3 = ?l5,
+     [succeeds delete(?y,?l5 ** [?y|?l4],?l5 ** ?l4) by 
+       theorem(delete:app:1),
+      succeeds permutation(?l5 ** [?y|?l4],[?y|?l1]),
+      succeeds permutation(?l3 ** ?l2,[?y|?l1])],
+     fails ?x @=< ?y & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     [[?y|?l5] ** ?l4 = [?y|?l5 ** ?l4] by corollary(app:cons),
+      succeeds delete(?y,[?y|?l5 ** ?l4],?l5 ** ?l4),
+      succeeds delete(?y,[?y|?l5] ** ?l4,?l5 ** ?l4),
+      succeeds permutation([?y|?l5] ** ?l4,[?y|?l1]),
+      succeeds permutation(?l3 ** ?l2,[?y|?l1])],
+     succeeds permutation(?l3 ** ?l2,[?y|?l1]))],
+   succeeds permutation(?l3 ** ?l2,[?y|?l1]))])
+).
+
+:- lemma(quick_sort:3:permutation,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) & succeeds list(?l2) => 
+ succeeds permutation(?l3,?l1 ** ?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) => succeeds list(?l2) 
+    => succeeds permutation(?l3,?l1 ** ?l2)],
+  [step([l],
+    [],
+    assume(succeeds list(?l),
+     [[] ** ?l = ?l by corollary(app:nil),
+      succeeds permutation(?l,?l) by theorem(permutation:reflexive),
+      succeeds permutation(?l,[] ** ?l)],
+     succeeds permutation(?l,[] ** ?l)),
+    succeeds list(?l) => succeeds permutation(?l,[] ** ?l)),
+   step([x,l1,l2,l6,l3,l4,l5],
+    [succeeds list(?l2) => succeeds permutation(?l5,?l3 ** ?l2),
+     succeeds list([?x|?l5]) => succeeds permutation(?l6,?l4 ** [?x|?l5]),
+     succeeds split(?x,?l1,?l3,?l4),
+     succeeds quick_sort(?l3,?l2,?l5),
+     succeeds quick_sort(?l4,[?x|?l5],?l6)],
+    assume(succeeds list(?l2),
+     [succeeds permutation(?l5,?l3 ** ?l2),
+      succeeds list(?l5) & succeeds list(?l3 ** ?l2) by 
+       lemma(permutation:types),
+      succeeds list([?x|?l5]),
+      succeeds permutation(?l6,?l4 ** [?x|?l5]),
+      succeeds permutation(?l4 ** ?l3,?l1) by lemma(split:permutation),
+      succeeds list(?l1) & succeeds list(?l3) & succeeds list(?l4) by 
+       lemma(split:list),
+      succeeds permutation(?l4,?l4) by theorem(permutation:reflexive),
+      succeeds permutation(?l4 ** ?l5,?l4 ** (?l3 ** ?l2)) by 
+       theorem(permutation:app),
+      ?l4 ** ?l3 ** ?l2 = ?l4 ** (?l3 ** ?l2) by theorem(app:associative),
+      succeeds permutation(?l4 ** ?l5,?l4 ** ?l3 ** ?l2),
+      succeeds permutation(?l2,?l2) by theorem(permutation:reflexive),
+      succeeds permutation(?l4 ** ?l3 ** ?l2,?l1 ** ?l2) by 
+       theorem(permutation:app),
+      succeeds permutation(?l4 ** ?l5,?l1 ** ?l2) by 
+       theorem(permutation:transitive),
+      succeeds delete(?x,?l4 ** [?x|?l5],?l4 ** ?l5) by 
+       theorem(delete:app:1),
+      succeeds permutation(?l4 ** [?x|?l5],[?x|?l1 ** ?l2]),
+      [?x|?l1] ** ?l2 = [?x|?l1 ** ?l2] by corollary(app:cons),
+      succeeds permutation(?l4 ** [?x|?l5],[?x|?l1] ** ?l2),
+      succeeds permutation(?l6,[?x|?l1] ** ?l2) by 
+       theorem(permutation:transitive)],
+     succeeds permutation(?l6,[?x|?l1] ** ?l2)),
+    succeeds list(?l2) => succeeds permutation(?l6,[?x|?l1] ** ?l2))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3) & succeeds list(?l2),
+  [succeeds list(?l2) => succeeds permutation(?l3,?l1 ** ?l2),
+   succeeds permutation(?l3,?l1 ** ?l2)],
+  succeeds permutation(?l3,?l1 ** ?l2))]
+).
+
+:- lemma(quick_sort:3:list,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) => succeeds list(?l1),
+induction(
+ [all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) => succeeds list(?l1)],
+ [step([0],[],[],succeeds list([])),
+  step([x,l1,l2,l6,l3,l4,l5],
+   [succeeds list(?l3),
+    succeeds list(?l4),
+    succeeds split(?x,?l1,?l3,?l4),
+    succeeds quick_sort(?l3,?l2,?l5),
+    succeeds quick_sort(?l4,[?x|?l5],?l6)],
+   [succeeds list(?l1) & succeeds list(?l3) & succeeds list(?l4) by 
+     lemma(split:list),
+    succeeds list([?x|?l1])],
+   succeeds list([?x|?l1]))])
+).
+
+:- theorem(quick_sort:permutation,
+all [l1,l2]: succeeds quick_sort(?l1,?l2) => succeeds permutation(?l1,?l2),
+assume(succeeds quick_sort(?l1,?l2),
+ [def succeeds quick_sort(?l1,?l2) by completion,
+  succeeds quick_sort(?l1,[],?l2),
+  succeeds list([]),
+  succeeds permutation(?l2,?l1 ** []) by 
+   lemma(quick_sort:3:permutation),
+  succeeds list(?l1) by lemma(quick_sort:3:list),
+  ?l1 ** [] = ?l1 by lemma(app:nil),
+  succeeds permutation(?l2,?l1),
+  succeeds permutation(?l1,?l2) by theorem(permutation:symmetric)],
+ succeeds permutation(?l1,?l2))
+).
+
+:- lemma(split:leq,
+all [x,l1,l2,l3,y]: succeeds split(?x,?l1,?l2,?l3) & succeeds nat(?x) & 
+ succeeds nat_list(?l1) => (succeeds member(?y,?l2) => succeeds ?x @=< ?y)
+ & (succeeds member(?y,?l3) => succeeds ?y @=< ?x),
+[induction(
+  [all [x,l1,l2,l3]: succeeds split(?x,?l1,?l2,?l3) => 
+    (all y: succeeds nat(?x) & succeeds nat_list(?l1) => 
+      (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+      (succeeds member(?y,?l3) => succeeds ?y @=< ?x))],
+  [step([x],
+    [],
+    assume(succeeds nat(?x) & succeeds nat_list([]),
+     [assume(succeeds member(?y,[]),
+       [def succeeds member(?y,[]) by completion,
+        ff],
+       succeeds ?x @=< ?y),
+      assume(succeeds member(?y,[]),
+       [def succeeds member(?y,[]) by completion,
+        ff],
+       succeeds ?y @=< ?x)],
+     (succeeds member(?y,[]) => succeeds ?x @=< ?y) & 
+     (succeeds member(?y,[]) => succeeds ?y @=< ?x)),
+    all y: succeeds nat(?x) & succeeds nat_list([]) => 
+     (succeeds member(?y,[]) => succeeds ?x @=< ?y) & 
+     (succeeds member(?y,[]) => succeeds ?y @=< ?x)),
+   step([x,z,l1,l2,l3,l4,l5],
+    [all y: succeeds nat(?x) & succeeds nat_list(?l1) => 
+      (succeeds member(?y,?l4) => succeeds ?x @=< ?y) & 
+      (succeeds member(?y,?l5) => succeeds ?y @=< ?x),
+     succeeds ?x @=< ?z & ?l2 = [?z|?l4] & ?l3 = ?l5 \/ fails ?x @=< ?z &
+     ?l2 = ?l4 & ?l3 = [?z|?l5],
+     succeeds split(?x,?l1,?l4,?l5)],
+    assume(succeeds nat(?x) & succeeds nat_list([?z|?l1]),
+     [def succeeds nat_list([?z|?l1]) by completion,
+      succeeds nat(?z) & succeeds nat_list(?l1),
+      (succeeds member(?y,?l4) => succeeds ?x @=< ?y) & 
+      (succeeds member(?y,?l5) => succeeds ?y @=< ?x),
+      cases(succeeds ?x @=< ?z & ?l2 = [?z|?l4] & ?l3 = ?l5,
+       assume(succeeds member(?y,?l2),
+        [def succeeds member(?y,[?z|?l4]) by completion,
+         cases(?y = ?z,
+          [],
+          succeeds member(?y,?l4),
+          [],
+          succeeds ?x @=< ?y)],
+        succeeds ?x @=< ?y),
+       fails ?x @=< ?z & ?l2 = ?l4 & ?l3 = [?z|?l5],
+       assume(succeeds member(?y,?l3),
+        [def succeeds member(?y,[?z|?l5]) by completion,
+         cases(?y = ?z,
+          [succeeds ?z @=< ?x by corollary(leq:failure),
+           succeeds ?y @=< ?x],
+          succeeds member(?y,?l5),
+          [],
+          succeeds ?y @=< ?x)],
+        succeeds ?y @=< ?x),
+       (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+       (succeeds member(?y,?l3) => succeeds ?y @=< ?x))],
+     (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+     (succeeds member(?y,?l3) => succeeds ?y @=< ?x)),
+    all y: succeeds nat(?x) & succeeds nat_list([?z|?l1]) => 
+     (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+     (succeeds member(?y,?l3) => succeeds ?y @=< ?x))]),
+ assume(succeeds split(?x,?l1,?l2,?l3) & succeeds nat(?x) & 
+  succeeds nat_list(?l1),
+  [all y: succeeds nat(?x) & succeeds nat_list(?l1) => 
+    (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+    (succeeds member(?y,?l3) => succeeds ?y @=< ?x),
+   (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+   (succeeds member(?y,?l3) => succeeds ?y @=< ?x)],
+  (succeeds member(?y,?l2) => succeeds ?x @=< ?y) & 
+  (succeeds member(?y,?l3) => succeeds ?y @=< ?x))]
+).
+
+:- lemma(ordered:cons:min,
+all [x,l]: succeeds ordered(?l) & 
+ (all y: succeeds member(?y,?l) => succeeds ?x @=< ?y) => 
+ succeeds ordered([?x|?l]),
+[induction(
+  [all l: succeeds ordered(?l) => 
+    (all y: succeeds member(?y,?l) => succeeds ?x @=< ?y) => 
+    succeeds ordered([?x|?l])],
+  [step([],
+    [],
+    [],
+    (all y: succeeds member(?y,[]) => succeeds ?x @=< ?y) => 
+    succeeds ordered([?x])),
+   step([z],
+    [],
+    assume(all y: succeeds member(?y,[?z]) => succeeds ?x @=< ?y,
+     [succeeds member(?z,[?z]),
+      succeeds ?x @=< ?z,
+      succeeds ordered([?z]),
+      succeeds ordered([?x,?z])],
+     succeeds ordered([?x,?z])),
+    (all y: succeeds member(?y,[?z]) => succeeds ?x @=< ?y) => 
+    succeeds ordered([?x,?z])),
+   step([z1,z2,l],
+    [(all y: succeeds member(?y,[?z2|?l]) => succeeds ?x @=< ?y) => 
+     succeeds ordered([?x,?z2|?l]),
+     succeeds ?z1 @=< ?z2,
+     succeeds ordered([?z2|?l])],
+    assume(all y: succeeds member(?y,[?z1,?z2|?l]) => succeeds ?x @=< ?y,
+     [succeeds member(?z1,[?z1,?z2|?l]),
+      succeeds ?x @=< ?z1,
+      succeeds ordered([?z1,?z2|?l]),
+      succeeds ordered([?x,?z1,?z2|?l])],
+     succeeds ordered([?x,?z1,?z2|?l])),
+    (all y: succeeds member(?y,[?z1,?z2|?l]) => succeeds ?x @=< ?y) => 
+    succeeds ordered([?x,?z1,?z2|?l]))]),
+ assume(succeeds ordered(?l) & 
+  (all y: succeeds member(?y,?l) => succeeds ?x @=< ?y),
+  [(all y: succeeds member(?y,?l) => succeeds ?x @=< ?y) => 
+   succeeds ordered([?x|?l]),
+   succeeds ordered([?x|?l])],
+  succeeds ordered([?x|?l]))]
+).
+
+:- lemma(ordered:list,
+all l: succeeds ordered(?l) => succeeds list(?l),
+induction([all l: succeeds ordered(?l) => succeeds list(?l)],
+ [step([],[],[],succeeds list([])),
+  step([x],
+   [],
+   succeeds list([?x]) by lemma(list:1),
+   succeeds list([?x])),
+  step([x,y,l],
+   [succeeds list([?y|?l]),
+    succeeds ?x @=< ?y,
+    succeeds ordered([?y|?l])],
+   [],
+   succeeds list([?x,?y|?l]))])
+).
+
+:- lemma(quick_sort:3:ordered,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) & succeeds nat_list(?l1) 
+ & succeeds ordered(?l2) & 
+ (all [x1,x2]: succeeds member(?x1,?l1) & succeeds member(?x2,?l2) => 
+   succeeds ?x1 @=< ?x2) => succeeds ordered(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,?l3) => 
+    succeeds nat_list(?l1) & succeeds ordered(?l2) & 
+    (all [x1,x2]: succeeds member(?x1,?l1) & succeeds member(?x2,?l2) => 
+      succeeds ?x1 @=< ?x2) => succeeds ordered(?l3)],
+  [step([l],
+    [],
+    assume(succeeds nat_list([]) & succeeds ordered(?l) & 
+     (all [x1,x2]: succeeds member(?x1,[]) & succeeds member(?x2,?l) => 
+       succeeds ?x1 @=< ?x2),
+     [],
+     succeeds ordered(?l)),
+    succeeds nat_list([]) & succeeds ordered(?l) & 
+    (all [x1,x2]: succeeds member(?x1,[]) & succeeds member(?x2,?l) => 
+      succeeds ?x1 @=< ?x2) => succeeds ordered(?l)),
+   step([x,l1,l2,l6,l3,l4,l5],
+    [succeeds nat_list(?l3) & succeeds ordered(?l2) & 
+     (all [x1,x2]: succeeds member(?x1,?l3) & succeeds member(?x2,?l2) => 
+       succeeds ?x1 @=< ?x2) => succeeds ordered(?l5),
+     succeeds nat_list(?l4) & succeeds ordered([?x|?l5]) & 
+     (all [x1,x2]: succeeds member(?x1,?l4) & 
+       succeeds member(?x2,[?x|?l5]) => succeeds ?x1 @=< ?x2) => 
+     succeeds ordered(?l6),
+     succeeds split(?x,?l1,?l3,?l4),
+     succeeds quick_sort(?l3,?l2,?l5),
+     succeeds quick_sort(?l4,[?x|?l5],?l6)],
+    assume(succeeds nat_list([?x|?l1]) & succeeds ordered(?l2) & 
+     (all [x1,x2]: succeeds member(?x1,[?x|?l1]) & 
+       succeeds member(?x2,?l2) => succeeds ?x1 @=< ?x2),
+     [def succeeds nat_list([?x|?l1]) by completion,
+      succeeds nat(?x) & succeeds nat_list(?l1),
+      succeeds nat_list(?l3) & succeeds nat_list(?l4) & 
+      lh(?l1) = lh(?l3) @+ lh(?l4) by lemma(split:nat_list:lh),
+      succeeds permutation(?l4 ** ?l3,?l1) by lemma(split:permutation),
+      succeeds permutation(?l1,?l4 ** ?l3) by 
+       theorem(permutation:symmetric),
+      succeeds list(?l4) by lemma(nat_list:list),
+      succeeds list(?l3) by lemma(nat_list:list),
+      assume(succeeds member(?x1,?l3) & succeeds member(?x2,?l2),
+       [succeeds member(?x1,?l4 ** ?l3) by corollary(app:member:2),
+        succeeds member(?x1,?l1) by theorem(permutation:member),
+        succeeds member(?x1,[?x|?l1]),
+        succeeds ?x1 @=< ?x2],
+       succeeds ?x1 @=< ?x2),
+      all [x1,x2]: succeeds member(?x1,?l3) & succeeds member(?x2,?l2) => 
+       succeeds ?x1 @=< ?x2,
+      succeeds ordered(?l5),
+      assume(succeeds member(?y,?l5),
+       [succeeds list(?l2) by lemma(ordered:list),
+        succeeds permutation(?l5,?l3 ** ?l2) by 
+         lemma(quick_sort:3:permutation),
+        succeeds member(?y,?l3 ** ?l2) by theorem(permutation:member),
+        succeeds member(?y,?l3) \/ succeeds member(?y,?l2) by 
+         corollary(app:member:3),
+        cases(succeeds member(?y,?l3),
+         [(succeeds member(?y,?l3) => succeeds ?x @=< ?y) & 
+          (succeeds member(?y,?l4) => succeeds ?y @=< ?x) by 
+           lemma(split:leq),
+          succeeds ?x @=< ?y],
+         succeeds member(?y,?l2),
+         [],
+         succeeds ?x @=< ?y)],
+       succeeds ?x @=< ?y),
+      all y: succeeds member(?y,?l5) => succeeds ?x @=< ?y,
+      succeeds ordered([?x|?l5]) by lemma(ordered:cons:min),
+      assume(succeeds member(?x1,?l4) & succeeds member(?x2,[?x|?l5]),
+       [(succeeds member(?x1,?l3) => succeeds ?x @=< ?x1) & 
+        (succeeds member(?x1,?l4) => succeeds ?x1 @=< ?x) by 
+         lemma(split:leq),
+        succeeds ?x1 @=< ?x,
+        def succeeds member(?x2,[?x|?l5]) by completion,
+        cases(?x2 = ?x,
+         succeeds ?x1 @=< ?x2,
+         succeeds member(?x2,?l5),
+         [succeeds ?x @=< ?x2,
+          succeeds ?x1 @=< ?x2 by theorem(leq:transitive)],
+         succeeds ?x1 @=< ?x2)],
+       succeeds ?x1 @=< ?x2),
+      all [x1,x2]: succeeds member(?x1,?l4) & 
+       succeeds member(?x2,[?x|?l5]) => succeeds ?x1 @=< ?x2,
+      succeeds ordered(?l6)],
+     succeeds ordered(?l6)),
+    succeeds nat_list([?x|?l1]) & succeeds ordered(?l2) & 
+    (all [x1,x2]: succeeds member(?x1,[?x|?l1]) & succeeds member(?x2,?l2)
+      => succeeds ?x1 @=< ?x2) => succeeds ordered(?l6))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3) & succeeds nat_list(?l1) & 
+  succeeds ordered(?l2) & 
+  (all [x1,x2]: succeeds member(?x1,?l1) & succeeds member(?x2,?l2) => 
+    succeeds ?x1 @=< ?x2),
+  [succeeds nat_list(?l1) & succeeds ordered(?l2) & 
+   (all [x1,x2]: succeeds member(?x1,?l1) & succeeds member(?x2,?l2) => 
+     succeeds ?x1 @=< ?x2) => succeeds ordered(?l3),
+   succeeds ordered(?l3)],
+  succeeds ordered(?l3))]
+).
+
+:- theorem(quick_sort:ordered,
+all [l1,l2]: succeeds quick_sort(?l1,?l2) & succeeds nat_list(?l1) => 
+ succeeds ordered(?l2),
+assume(succeeds quick_sort(?l1,?l2) & succeeds nat_list(?l1),
+ [def succeeds quick_sort(?l1,?l2) by completion,
+  succeeds quick_sort(?l1,[],?l2),
+  succeeds ordered([]),
+  assume(succeeds member(?x1,?l1) & succeeds member(?x2,[]),
+   [def succeeds member(?x2,[]) by completion,
+    ff],
+   succeeds ?x1 @=< ?x2),
+  all [x1,x2]: succeeds member(?x1,?l1) & succeeds member(?x2,[]) => 
+   succeeds ?x1 @=< ?x2,
+  succeeds ordered(?l2) by lemma(quick_sort:3:ordered)],
+ succeeds ordered(?l2))
+).
+
+:- theorem(quick_sort:permutation_sort,
+all [l1,l2]: succeeds nat_list(?l1) & succeeds quick_sort(?l1,?l2) => 
+ succeeds permutation_sort(?l1,?l2),
+assume(succeeds nat_list(?l1) & succeeds quick_sort(?l1,?l2),
+ [succeeds permutation(?l1,?l2) by theorem(quick_sort:permutation),
+  succeeds ordered(?l2) by theorem(quick_sort:ordered),
+  succeeds permutation_sort(?l1,?l2)],
+ succeeds permutation_sort(?l1,?l2))
+).
+
+:- lemma(split:existence,
+all [x,l1]: succeeds nat_list(?l1) & succeeds nat(?x) => 
+ (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3)),
+[induction(
+  [all l1: succeeds nat_list(?l1) => 
+    (all x: succeeds nat(?x) => 
+      (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3)))],
+  [step([],
+    [],
+    assume(succeeds nat(?x),
+     [succeeds split(?x,[],[],[]),
+      ex [l2,l3]: succeeds split(?x,[],?l2,?l3)],
+     ex [l2,l3]: succeeds split(?x,[],?l2,?l3)),
+    all x: succeeds nat(?x) => 
+     (ex [l2,l3]: succeeds split(?x,[],?l2,?l3))),
+   step([y,l1],
+    [all x: succeeds nat(?x) => 
+      (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3)),
+     succeeds nat(?y),
+     succeeds nat_list(?l1)],
+    assume(succeeds nat(?x),
+     [ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3),
+      exist([l2,l3],
+       succeeds split(?x,?l1,?l2,?l3),
+       [terminates ?x @=< ?y by lemma(leq:termination:1),
+        succeeds ?x @=< ?y \/ fails ?x @=< ?y,
+        cases(succeeds ?x @=< ?y,
+         [[?y|?l2] = [?y|?l2],
+          ?l3 = ?l3,
+          succeeds split(?x,[?y|?l1],[?y|?l2],?l3) by sld,
+          ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3)],
+         fails ?x @=< ?y,
+         [?l2 = ?l2,
+          [?y|?l3] = [?y|?l3],
+          succeeds split(?x,[?y|?l1],?l2,[?y|?l3]) by sld,
+          ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3)],
+         ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3))],
+       ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3))],
+     ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3)),
+    all x: succeeds nat(?x) => 
+     (ex [l2,l3]: succeeds split(?x,[?y|?l1],?l2,?l3)))]),
+ assume(succeeds nat_list(?l1) & succeeds nat(?x),
+  [all x: succeeds nat(?x) => 
+    (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3)),
+   ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3)],
+  ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3))]
+).
+
+:- lemma(quick_sort:3:existence,
+all n: succeeds nat(?n) => 
+ (all [l1,l2]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n => 
+   (ex l3: succeeds quick_sort(?l1,?l2,?l3))),
+induction(
+ [all n: succeeds nat(?n) => 
+   (all [l1,l2]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n => 
+     (ex l3: succeeds quick_sort(?l1,?l2,?l3)))],
+ [step([],
+   [],
+   assume(succeeds nat_list(?l1) & succeeds lh(?l1) @< 0,
+    [fails lh(?l1) @< 0 by completion,
+     ff],
+    ex l3: succeeds quick_sort(?l1,?l2,?l3)),
+   all [l1,l2]: succeeds nat_list(?l1) & succeeds lh(?l1) @< 0 => 
+    (ex l3: succeeds quick_sort(?l1,?l2,?l3))),
+  step([n],
+   [all [l1,l2]: succeeds nat_list(?l1) & succeeds lh(?l1) @< ?n => 
+     (ex l3: succeeds quick_sort(?l1,?l2,?l3)),
+    succeeds nat(?n)],
+   assume(succeeds nat_list(?l1) & succeeds lh(?l1) @< s(?n),
+    [def succeeds nat_list(?l1) by completion,
+     cases(?l1 = [],
+      [succeeds quick_sort([],?l2,?l2),
+       succeeds quick_sort(?l1,?l2,?l2),
+       ex l3: succeeds quick_sort(?l1,?l2,?l3)],
+      ex [x,l4]: ?l1 = [?x|?l4] & succeeds nat(?x) & 
+       succeeds nat_list(?l4),
+      exist([x,l4],
+       ?l1 = [?x|?l4] & succeeds nat(?x) & succeeds nat_list(?l4),
+       [succeeds list(?l4) by lemma(nat_list:list),
+        ex [l5,l6]: succeeds split(?x,?l4,?l5,?l6) by 
+         lemma(split:existence),
+        exist([l5,l6],
+         succeeds split(?x,?l4,?l5,?l6),
+         [succeeds nat_list(?l5) & succeeds nat_list(?l6) & 
+          lh(?l4) = lh(?l5) @+ lh(?l6) by lemma(split:nat_list:lh),
+          succeeds list(?l5) by lemma(nat_list:list),
+          succeeds nat(lh(?l5)) by corollary(lh:types),
+          succeeds list(?l6) by lemma(nat_list:list),
+          succeeds nat(lh(?l6)) by corollary(lh:types),
+          succeeds lh(?l5) @=< lh(?l5) @+ lh(?l6) by 
+           corollary(leq:plus:first),
+          succeeds lh(?l5) @=< lh(?l4),
+          lh([?x|?l4]) = s(lh(?l4)) by corollary(lh:cons),
+          lh(?l1) = s(lh(?l4)),
+          def succeeds s(lh(?l4)) @< s(?n) by completion,
+          succeeds lh(?l4) @< ?n,
+          succeeds lh(?l5) @< ?n by theorem(leq:less:transitive),
+          succeeds lh(?l6) @=< lh(?l5) @+ lh(?l6) by 
+           corollary(leq:plus:second),
+          succeeds lh(?l6) @=< lh(?l4),
+          succeeds lh(?l6) @< ?n by theorem(leq:less:transitive),
+          ex l7: succeeds quick_sort(?l5,?l2,?l7),
+          exist(l7,
+           succeeds quick_sort(?l5,?l2,?l7),
+           [ex l3: succeeds quick_sort(?l6,[?x|?l7],?l3),
+            exist(l3,
+             succeeds quick_sort(?l6,[?x|?l7],?l3),
+             [succeeds quick_sort([?x|?l4],?l2,?l3),
+              succeeds quick_sort(?l1,?l2,?l3),
+              ex l3: succeeds quick_sort(?l1,?l2,?l3)],
+             ex l3: succeeds quick_sort(?l1,?l2,?l3))],
+           ex l3: succeeds quick_sort(?l1,?l2,?l3))],
+         ex l3: succeeds quick_sort(?l1,?l2,?l3))],
+       ex l3: succeeds quick_sort(?l1,?l2,?l3)),
+      ex l3: succeeds quick_sort(?l1,?l2,?l3))],
+    ex l3: succeeds quick_sort(?l1,?l2,?l3)),
+   all [l1,l2]: succeeds nat_list(?l1) & succeeds lh(?l1) @< s(?n) => 
+    (ex l3: succeeds quick_sort(?l1,?l2,?l3)))])
+).
+
+:- theorem(quick_sort:existence,
+all l1: succeeds nat_list(?l1) => (ex l2: succeeds quick_sort(?l1,?l2)),
+assume(succeeds nat_list(?l1),
+ [succeeds list(?l1) by lemma(nat_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(s(lh(?l1))),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  all [l4,l2]: succeeds nat_list(?l4) & succeeds lh(?l4) @< s(lh(?l1)) =>
+   (ex l3: succeeds quick_sort(?l4,?l2,?l3)) by 
+   lemma(quick_sort:3:existence),
+  ex l3: succeeds quick_sort(?l1,[],?l3),
+  exist(l3,
+   succeeds quick_sort(?l1,[],?l3),
+   [succeeds quick_sort(?l1,?l3),
+    ex l2: succeeds quick_sort(?l1,?l2)],
+   ex l2: succeeds quick_sort(?l1,?l2))],
+ ex l2: succeeds quick_sort(?l1,?l2))
+).
+
+:- theorem(permutation_sort:quick_sort,
+all [l1,l2]: succeeds nat_list(?l1) & succeeds permutation_sort(?l1,?l2) 
+ => succeeds quick_sort(?l1,?l2),
+assume(succeeds nat_list(?l1) & succeeds permutation_sort(?l1,?l2),
+ [ex l3: succeeds quick_sort(?l1,?l3) by theorem(quick_sort:existence),
+  exist(l3,
+   succeeds quick_sort(?l1,?l3),
+   [succeeds permutation_sort(?l1,?l3) by 
+     theorem(quick_sort:permutation_sort),
+    ?l2 = ?l3 by lemma(permutation_sort:uniqueness),
+    succeeds quick_sort(?l1,?l2)],
+   succeeds quick_sort(?l1,?l2))],
+ succeeds quick_sort(?l1,?l2))
+).
+
+:- bye(sort).
+

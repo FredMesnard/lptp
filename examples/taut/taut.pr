@@ -1,0 +1,1566 @@
+:- initialize.
+:- tex_file($(tmp)/taut).
+:- thm_file($(tmp)/taut).
+:- needs_gr($(examples)/taut/taut).
+
+:- definition_pred(sub,2,
+all [l1,l2]: sub(?l1,?l2) <=>
+ (all x: succeeds member(?x,?l1) => succeeds member(?x,?l2))
+).
+
+:- lemma(member:termination,
+all [x,l]: succeeds list(?l) => terminates member(?x,?l),
+induction([all l: succeeds list(?l) => terminates member(?x,?l)],
+ [step([],[],[],terminates member(?x,[])),
+  step([0,l],
+   [terminates member(?x,?l),
+    succeeds list(?l)],
+   [],
+   terminates member(?x,[?0|?l]))])
+).
+
+:- lemma(member:success:no,
+all [x,y,l]: succeeds member(?x,[?y|?l]) & ?x <> ?y => 
+ succeeds member(?x,?l),
+assume(succeeds member(?x,[?y|?l]) & ?x <> ?y,
+ [def succeeds member(?x,[?y|?l]) by completion,
+  cases(?x = ?y,
+   [],
+   succeeds member(?x,?l),
+   [],
+   succeeds member(?x,?l))],
+ succeeds member(?x,?l))
+).
+
+:- lemma(sub:cons,
+all [x,i]: sub(?i,[?x|?i]),
+[assume(succeeds member(?0,?i),
+  [],
+  succeeds member(?0,[?x|?i])),
+ sub(?i,[?x|?i]) by introduction(sub,2)]
+).
+
+:- lemma(sub:trans,
+all [i,j,k]: sub(?i,?j) & sub(?j,?k) => sub(?i,?k),
+assume(sub(?i,?j) & sub(?j,?k),
+ [assume(succeeds member(?x,?i),
+   [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+     elimination(sub,2),
+    all x: succeeds member(?x,?j) => succeeds member(?x,?k) by 
+     elimination(sub,2)],
+   succeeds member(?x,?k)),
+  sub(?i,?k) by introduction(sub,2)],
+ sub(?i,?k))
+).
+
+:- lemma(sub:nil,
+all l: sub([],?l),
+[assume(succeeds member(?x,[]),
+  def succeeds member(?x,[]) by completion,
+  succeeds member(?x,?l)),
+ sub([],?l) by introduction(sub,2)]
+).
+
+:- lemma(sub:member,
+all [x,i,j]: sub(?i,?j) & succeeds member(?x,?j) => sub([?x|?i],?j),
+assume(sub(?i,?j) & succeeds member(?x,?j),
+ [assume(succeeds member(?0,[?x|?i]),
+   [def succeeds member(?0,[?x|?i]) by completion,
+    cases(?0 = ?x,
+     [],
+     succeeds member(?0,?i),
+     all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+      elimination(sub,2),
+     succeeds member(?0,?j))],
+   succeeds member(?0,?j)),
+  sub([?x|?i],?j) by introduction(sub,2)],
+ sub([?x|?i],?j))
+).
+
+:- lemma(incon:termination,
+all i: succeeds list(?i) => terminates incon(?i),
+assume(succeeds list(?i),
+ [terminates member(p(?x),?i) by lemma(member:termination),
+  terminates member(neg(p(?x)),?i) by lemma(member:termination),
+  terminates (member(p(?x),?i) & member(neg(p(?x)),?i)),
+  terminates incon(?i) by completion],
+ terminates incon(?i))
+).
+
+:- lemma(literal_list:list,
+all i: succeeds literal_list(?i) => succeeds list(?i),
+induction([all i: succeeds literal_list(?i) => succeeds list(?i)],
+ [step([],[],[],succeeds list([])),
+  step([a,i],
+   [succeeds list(?i),
+    succeeds literal(?a),
+    succeeds literal_list(?i)],
+   [],
+   succeeds list([?a|?i]))])
+).
+
+:- lemma(interpretation:elimination,
+all i: succeeds interpretation(?i) => succeeds literal_list(?i) & 
+ ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i)),
+assume(succeeds interpretation(?i),
+ [def succeeds interpretation(?i) by completion,
+  succeeds literal_list(?i),
+  contra(ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+   exist(x,
+    succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+    [succeeds incon(?i) by sld,
+     ff],
+    ff))],
+ succeeds literal_list(?i) &
+ ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i)))
+).
+
+:- lemma(interpretation:introduction,
+all i: succeeds literal_list(?i) & 
+ ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i)) => 
+ succeeds interpretation(?i),
+assume(succeeds literal_list(?i) &
+ ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i)),
+ [succeeds list(?i) by lemma(literal_list:list),
+  terminates member(p(?x),?i) by lemma(member:termination),
+  succeeds member(p(?x),?i) \/ fails member(p(?x),?i),
+  cases(succeeds member(p(?x),?i),
+   [terminates member(neg(p(?x)),?i) by lemma(member:termination),
+    succeeds member(neg(p(?x)),?i) \/ fails member(neg(p(?x)),?i),
+    cases(succeeds member(neg(p(?x)),?i),
+     [ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+      ff],
+     fails member(neg(p(?x)),?i),
+     [],
+     fails member(p(?x),?i) \/ fails member(neg(p(?x)),?i))],
+   fails member(p(?x),?i),
+   [],
+   fails member(p(?x),?i) \/ fails member(neg(p(?x)),?i)),
+  fails incon(?i) by completion,
+  succeeds interpretation(?i) by sld],
+ succeeds interpretation(?i))
+).
+
+:- lemma(interpretation:pos:success,
+all [x,i]: succeeds interpretation(?i) & ~ succeeds member(neg(p(?x)),?i) => 
+ succeeds interpretation([p(?x)|?i]),
+assume(succeeds interpretation(?i) & ~ succeeds member(neg(p(?x)),?i),
+ [succeeds literal_list(?i) &
+  ~ (ex y: succeeds member(p(?y),?i) & succeeds member(neg(p(?y)),?i)) by 
+   lemma(interpretation:elimination),
+  contra(
+   ex y: succeeds member(p(?y),[p(?x)|?i]) &
+    succeeds member(neg(p(?y)),[p(?x)|?i]),
+   exist(y,
+    succeeds member(p(?y),[p(?x)|?i]) &
+    succeeds member(neg(p(?y)),[p(?x)|?i]),
+    [def succeeds member(p(?y),[p(?x)|?i]) by completion,
+     cases(?y = ?x,
+      [def succeeds member(neg(p(?x)),[p(?x)|?i]) by completion,
+       ff],
+      succeeds member(p(?y),?i),
+      [def succeeds member(neg(p(?y)),[p(?x)|?i]) by completion,
+       ex y: succeeds member(p(?y),?i) & succeeds member(neg(p(?y)),?i),
+       ff],
+      ff)],
+    ff)),
+  succeeds interpretation([p(?x)|?i]) by 
+   lemma(interpretation:introduction)],
+ succeeds interpretation([p(?x)|?i]))
+).
+
+:- corollary(interpretation:pos:failure,
+all [x,i]: succeeds interpretation(?i) & fails member(neg(p(?x)),?i) => 
+ succeeds interpretation([p(?x)|?i]),
+assume(succeeds interpretation(?i) & fails member(neg(p(?x)),?i),
+ [contra(succeeds member(neg(p(?x)),?i),[]),
+  succeeds interpretation([p(?x)|?i]) by 
+   lemma(interpretation:pos:success)],
+ succeeds interpretation([p(?x)|?i]))
+).
+
+:- lemma(interpretation:neg:success,
+all [x,i]: succeeds interpretation(?i) & ~ succeeds member(p(?x),?i) => 
+ succeeds interpretation([neg(p(?x))|?i]),
+assume(succeeds interpretation(?i) & ~ succeeds member(p(?x),?i),
+ [succeeds literal_list(?i) &
+  ~ (ex y: succeeds member(p(?y),?i) & succeeds member(neg(p(?y)),?i)) by 
+   lemma(interpretation:elimination),
+  contra(
+   ex y: succeeds member(p(?y),[neg(p(?x))|?i]) &
+    succeeds member(neg(p(?y)),[neg(p(?x))|?i]),
+   exist(y,
+    succeeds member(p(?y),[neg(p(?x))|?i]) &
+    succeeds member(neg(p(?y)),[neg(p(?x))|?i]),
+    [def succeeds member(neg(p(?y)),[neg(p(?x))|?i]) by completion,
+     cases(?y = ?x,
+      [def succeeds member(p(?x),[neg(p(?x))|?i]) by completion,
+       ff],
+      succeeds member(neg(p(?y)),?i),
+      [def succeeds member(p(?y),[neg(p(?x))|?i]) by completion,
+       ex y: succeeds member(p(?y),?i) & succeeds member(neg(p(?y)),?i),
+       ff],
+      ff)],
+    ff)),
+  succeeds literal_list([neg(p(?x))|?i]),
+  succeeds interpretation([neg(p(?x))|?i]) by 
+   lemma(interpretation:introduction)],
+ succeeds interpretation([neg(p(?x))|?i]))
+).
+
+:- corollary(interpretation:neg:failure,
+all [x,i]: succeeds interpretation(?i) & fails member(p(?x),?i) => 
+ succeeds interpretation([neg(p(?x))|?i]),
+assume(succeeds interpretation(?i) & fails member(p(?x),?i),
+ [contra(succeeds member(p(?x),?i),[]),
+  succeeds interpretation([neg(p(?x))|?i]) by 
+   lemma(interpretation:neg:success)],
+ succeeds interpretation([neg(p(?x))|?i]))
+).
+
+:- lemma(interpretation:nil,
+succeeds interpretation([]),
+[fails member(p(?x),[]) \/ fails member(neg(p(?x)),[]),
+ fails incon([]) by completion,
+ succeeds interpretation([]) by completion]
+).
+
+:- lemma(truefalse:interpretation:literal_list:sub,
+(all [a,i,j]: succeeds true(?a,?i,?j) => 
+  (succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)) & 
+(all [a,i,j]: succeeds false(?a,?i,?j) => 
+  (succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+induction(
+ [all [a,i,j]: succeeds true(?a,?i,?j) => 
+    (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+  all [a,i,j]: succeeds false(?a,?i,?j) => 
+    (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)],
+ [step([x,i],
+   [fails member(neg(p(?x)),?i)],
+   [assume(succeeds interpretation(?i),
+     succeeds interpretation([p(?x)|?i]) by 
+      corollary(interpretation:pos:failure),
+     succeeds interpretation([p(?x)|?i])),
+    assume(succeeds literal_list(?i),
+     [],
+     succeeds literal_list([p(?x)|?i])),
+    sub(?i,[p(?x)|?i]) by lemma(sub:cons)],
+   (succeeds interpretation(?i) => succeeds interpretation([p(?x)|?i])) &
+   (succeeds literal_list(?i) => succeeds literal_list([p(?x)|?i])) &
+   sub(?i,[p(?x)|?i])),
+  step([a,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds false(?a,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([a,b,i,k,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    (succeeds interpretation(?j) => succeeds interpretation(?k)) &
+    (succeeds literal_list(?j) => succeeds literal_list(?k)) & sub(?j,?k),
+    succeeds true(?a,?i,?j),
+    succeeds true(?b,?j,?k)],
+   [assume(succeeds interpretation(?i),[],succeeds interpretation(?k)),
+    assume(succeeds literal_list(?i),
+     [],
+     succeeds literal_list(?k)),
+    sub(?i,?k) by lemma(sub:trans)],
+   (succeeds interpretation(?i) => succeeds interpretation(?k)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?k)) & sub(?i,?k)),
+  step([a,b,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds true(?a,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([a,b,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds true(?b,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([x,i],
+   [fails member(p(?x),?i)],
+   [assume(succeeds interpretation(?i),
+     succeeds interpretation([neg(p(?x))|?i]) by 
+      corollary(interpretation:neg:failure),
+     succeeds interpretation([neg(p(?x))|?i])),
+    assume(succeeds literal_list(?i),
+     [],
+     succeeds literal_list([neg(p(?x))|?i])),
+    sub(?i,[neg(p(?x))|?i]) by lemma(sub:cons)],
+   (succeeds interpretation(?i) => succeeds interpretation([neg(p(?x))|?i])) &
+   (succeeds literal_list(?i) => succeeds literal_list([neg(p(?x))|?i])) &
+   sub(?i,[neg(p(?x))|?i])),
+  step([a,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds true(?a,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([a,b,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds false(?a,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([a,b,i,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    succeeds false(?b,?i,?j)],
+   [],
+   (succeeds interpretation(?i) => succeeds interpretation(?j)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j)),
+  step([a,b,i,k,j],
+   [(succeeds interpretation(?i) => succeeds interpretation(?j)) &
+    (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j),
+    (succeeds interpretation(?j) => succeeds interpretation(?k)) &
+    (succeeds literal_list(?j) => succeeds literal_list(?k)) & sub(?j,?k),
+    succeeds false(?a,?i,?j),
+    succeeds false(?b,?j,?k)],
+   [assume(succeeds interpretation(?i),[],succeeds interpretation(?k)),
+    assume(succeeds literal_list(?i),
+     [],
+     succeeds literal_list(?k)),
+    sub(?i,?k) by lemma(sub:trans)],
+   (succeeds interpretation(?i) => succeeds interpretation(?k)) &
+   (succeeds literal_list(?i) => succeeds literal_list(?k)) & sub(?i,?k))])
+).
+
+:- corollary(true:interpretation,
+all [a,i,j]: succeeds true(?a,?i,?j) & succeeds interpretation(?i) => 
+ succeeds interpretation(?j),
+assume(succeeds true(?a,?i,?j) & succeeds interpretation(?i),
+ [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+  lemma(truefalse:interpretation:literal_list:sub)],
+ succeeds interpretation(?j))
+).
+
+:- corollary(false:interpretation,
+all [a,i,j]: succeeds false(?a,?i,?j) & succeeds interpretation(?i) => 
+ succeeds interpretation(?j),
+assume(succeeds false(?a,?i,?j) & succeeds interpretation(?i),
+ [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+  lemma(truefalse:interpretation:literal_list:sub)],
+ succeeds interpretation(?j))
+).
+
+:- corollary(true:literal_list,
+all [a,i,j]: succeeds true(?a,?i,?j) & succeeds literal_list(?i) => 
+ succeeds literal_list(?j),
+assume(succeeds true(?a,?i,?j) & succeeds literal_list(?i),
+ [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+  lemma(truefalse:interpretation:literal_list:sub)],
+ succeeds literal_list(?j))
+).
+
+:- corollary(false:literal_list,
+all [a,i,j]: succeeds false(?a,?i,?j) & succeeds literal_list(?i) => 
+ succeeds literal_list(?j),
+assume(succeeds false(?a,?i,?j) & succeeds literal_list(?i),
+ [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+  (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+  lemma(truefalse:interpretation:literal_list:sub)],
+ succeeds literal_list(?j))
+).
+
+:- corollary(true:sub,
+all [a,i,j]: succeeds true(?a,?i,?j) => sub(?i,?j),
+[assume(succeeds true(?a,?i,?j),
+  [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+   lemma(truefalse:interpretation:literal_list:sub)],
+  sub(?i,?j))]
+).
+
+:- corollary(false:sub,
+all [a,i,j]: succeeds false(?a,?i,?j) => sub(?i,?j),
+[assume(succeeds false(?a,?i,?j),
+  [(succeeds interpretation(?i) => succeeds interpretation(?j)) & 
+   (succeeds literal_list(?i) => succeeds literal_list(?j)) & sub(?i,?j) by 
+   lemma(truefalse:interpretation:literal_list:sub)],
+  sub(?i,?j))]
+).
+
+:- lemma(true:false:gr,
+(all [a,i,j]: succeeds true(?a,?i,?j) => gr(?a) & gr(?i) => gr(?j)) &
+(all [a,i,j]: succeeds false(?a,?i,?j) => gr(?a) & gr(?i) => gr(?j)),
+induction(
+ [all [a,i,j]: succeeds true(?a,?i,?j) => gr(?a) & gr(?i) => gr(?j),
+  all [a,i,j]: succeeds false(?a,?i,?j) => gr(?a) & gr(?i) => gr(?j)],
+ [step([x,i],
+   [fails member(neg(p(?x)),?i)],
+   assume(gr(p(?x)) & gr(?i),
+    [],
+    gr([p(?x)|?i])),
+   gr(p(?x)) & gr(?i) => gr([p(?x)|?i])),
+  step([a,i,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    succeeds false(?a,?i,?j)],
+   assume(gr(neg(?a)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(neg(?a)) & gr(?i) => gr(?j)),
+  step([a,b,i,k,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    gr(?b) & gr(?j) => gr(?k),
+    succeeds true(?a,?i,?j),
+    succeeds true(?b,?j,?k)],
+   assume(gr(and(?a,?b)) & gr(?i),
+    [],
+    gr(?k)),
+   gr(and(?a,?b)) & gr(?i) => gr(?k)),
+  step([a,b,i,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    succeeds true(?a,?i,?j)],
+   assume(gr(or(?a,?b)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(or(?a,?b)) & gr(?i) => gr(?j)),
+  step([a,b,i,j],
+   [gr(?b) & gr(?i) => gr(?j),
+    succeeds true(?b,?i,?j)],
+   assume(gr(or(?a,?b)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(or(?a,?b)) & gr(?i) => gr(?j)),
+  step([x,i],
+   [fails member(p(?x),?i)],
+   assume(gr(p(?x)) & gr(?i),
+    [],
+    gr([neg(p(?x))|?i])),
+   gr(p(?x)) & gr(?i) => gr([neg(p(?x))|?i])),
+  step([a,i,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    succeeds true(?a,?i,?j)],
+   assume(gr(neg(?a)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(neg(?a)) & gr(?i) => gr(?j)),
+  step([a,b,i,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    succeeds false(?a,?i,?j)],
+   assume(gr(and(?a,?b)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(and(?a,?b)) & gr(?i) => gr(?j)),
+  step([a,b,i,j],
+   [gr(?b) & gr(?i) => gr(?j),
+    succeeds false(?b,?i,?j)],
+   assume(gr(and(?a,?b)) & gr(?i),
+    [],
+    gr(?j)),
+   gr(and(?a,?b)) & gr(?i) => gr(?j)),
+  step([a,b,i,k,j],
+   [gr(?a) & gr(?i) => gr(?j),
+    gr(?b) & gr(?j) => gr(?k),
+    succeeds false(?a,?i,?j),
+    succeeds false(?b,?j,?k)],
+   assume(gr(or(?a,?b)) & gr(?i),
+    [],
+    gr(?k)),
+   gr(or(?a,?b)) & gr(?i) => gr(?k))])
+).
+
+:- corollary(true:gr,
+all [a,i,j]: succeeds true(?a,?i,?j) & gr(?a) & gr(?i) => gr(?j),
+assume(succeeds true(?a,?i,?j) & gr(?a) & gr(?i),
+ [gr(?a) & gr(?i) => gr(?j) by lemma(true:false:gr),
+  gr(?j)],
+ gr(?j))
+).
+
+:- corollary(false:gr,
+all [a,i,j]: succeeds false(?a,?i,?j) & gr(?a) & gr(?i) => gr(?j),
+assume(succeeds false(?a,?i,?j) & gr(?a) & gr(?i),
+ [gr(?a) & gr(?i) => gr(?j) by lemma(true:false:gr),
+  gr(?j)],
+ gr(?j))
+).
+
+:- lemma(true:termination,
+all a: succeeds formula(?a) => 
+ (all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) =>
+    terminates true(?a,?i,?j) & terminates false(?a,?i,?j)),
+induction(
+ [all a: succeeds formula(?a) => 
+    (all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) => 
+       terminates true(?a,?i,?j) & terminates false(?a,?i,?j))],
+ [step([x],
+   [],
+   assume(gr(p(?x)) & succeeds literal_list(?i) & gr(?i),
+    [assume(?j = [p(?x)|?i],
+      [succeeds list(?i) by lemma(literal_list:list),
+       terminates member(neg(p(?x)),?i) by lemma(member:termination)],
+      terminates member(neg(p(?x)),?i) & gr(?x) & gr(?i)),
+     terminates true(p(?x),?i,?j) by completion,
+     assume(?j = [neg(p(?x))|?i],
+      [succeeds list(?i) by lemma(literal_list:list),
+       terminates member(p(?x),?i) by lemma(member:termination)],
+      terminates member(p(?x),?i) & gr(?x) & gr(?i)),
+     terminates false(p(?x),?i,?j) by completion],
+    terminates true(p(?x),?i,?j) & terminates false(p(?x),?i,?j)),
+   all [i,j]: gr(p(?x)) & succeeds literal_list(?i) & gr(?i) => 
+     terminates true(p(?x),?i,?j) & terminates false(p(?x),?i,?j)),
+  step([a],
+   [all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) => 
+      terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+    succeeds formula(?a)],
+   assume(gr(neg(?a)) & succeeds literal_list(?i) & gr(?i),
+    [terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+     terminates true(neg(?a),?i,?j) by completion,
+     terminates false(neg(?a),?i,?j) by completion],
+    terminates true(neg(?a),?i,?j) & terminates false(neg(?a),?i,?j)),
+   all [i,j]: gr(neg(?a)) & succeeds literal_list(?i) & gr(?i) => 
+     terminates true(neg(?a),?i,?j) & terminates false(neg(?a),?i,?j)),
+  step([a,b],
+   [all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) => 
+      terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+    all [i,j]: gr(?b) & succeeds literal_list(?i) & gr(?i) => 
+      terminates true(?b,?i,?j) & terminates false(?b,?i,?j),
+    succeeds formula(?a),
+    succeeds formula(?b)],
+   assume(gr(and(?a,?b)) & succeeds literal_list(?i) & gr(?i),
+    [terminates true(?a,?i,?k) & terminates false(?a,?i,?k),
+     assume(succeeds true(?a,?i,?k),
+      [succeeds literal_list(?k) by corollary(true:literal_list),
+       gr(?k) by corollary(true:gr),
+       terminates true(?b,?k,?j) & terminates false(?b,?k,?j)],
+      terminates true(?b,?k,?j)),
+     terminates (true(?a,?i,?k) & true(?b,?k,?j)),
+     terminates true(and(?a,?b),?i,?j) by completion,
+     terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+     terminates true(?b,?i,?j) & terminates false(?b,?i,?j),
+     terminates false(?a,?i,?j) & terminates false(?b,?i,?j),
+     terminates false(and(?a,?b),?i,?j) by completion],
+    terminates true(and(?a,?b),?i,?j) & terminates false(and(?a,?b),?i,?j)),
+   all [i,j]: gr(and(?a,?b)) & succeeds literal_list(?i) & gr(?i) => 
+     terminates true(and(?a,?b),?i,?j) & terminates false(and(?a,?b),?i,?j)),
+  step([a,b],
+   [all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) => 
+      terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+    all [i,j]: gr(?b) & succeeds literal_list(?i) & gr(?i) => 
+      terminates true(?b,?i,?j) & terminates false(?b,?i,?j),
+    succeeds formula(?a),
+    succeeds formula(?b)],
+   assume(gr(or(?a,?b)) & succeeds literal_list(?i) & gr(?i),
+    [terminates true(?a,?i,?j) & terminates false(?a,?i,?j),
+     terminates true(?b,?i,?j) & terminates false(?b,?i,?j),
+     terminates true(?a,?i,?j) & terminates true(?b,?i,?j),
+     terminates true(or(?a,?b),?i,?j) by completion,
+     terminates true(?a,?i,?k) & terminates false(?a,?i,?k),
+     assume(succeeds false(?a,?i,?k),
+      [succeeds literal_list(?k) by corollary(false:literal_list),
+       gr(?k) by corollary(false:gr),
+       terminates true(?b,?k,?j) & terminates false(?b,?k,?j)],
+      terminates false(?b,?k,?j)),
+     terminates (false(?a,?i,?k) & false(?b,?k,?j)),
+     terminates false(or(?a,?b),?i,?j) by completion],
+    terminates true(or(?a,?b),?i,?j) & terminates false(or(?a,?b),?i,?j)),
+   all [i,j]: gr(or(?a,?b)) & succeeds literal_list(?i) & gr(?i) => 
+     terminates true(or(?a,?b),?i,?j) & terminates false(or(?a,?b),?i,?j))])
+).
+
+:- corollary(satisfiable:termination,
+all a: succeeds formula(?a) & gr(?a) => terminates satisfiable(?a),
+assume(succeeds formula(?a) & gr(?a),
+ [all [i,j]: gr(?a) & succeeds literal_list(?i) & gr(?i) => 
+    terminates true(?a,?i,?j) & terminates false(?a,?i,?j) by 
+   lemma(true:termination),
+  terminates true(?a,[],?i) & terminates false(?a,[],?i),
+  all i: terminates true(?a,[],?i),
+  terminates satisfiable(?a) by completion],
+ terminates satisfiable(?a))
+).
+
+:- theorem(valid:termination,
+all a: succeeds formula(?a) & gr(?a) => terminates valid(?a),
+assume(succeeds formula(?a) & gr(?a),
+ [terminates satisfiable(neg(?a)) by corollary(satisfiable:termination),
+  terminates valid(?a) by completion],
+ terminates valid(?a))
+).
+
+:- lemma(eval:termination,
+all a: succeeds formula(?a) => 
+ (all [i,x]: succeeds list(?i) => terminates eval(?a,?i,?x)),
+induction(
+ [all a: succeeds formula(?a) => 
+    (all [i,x]: succeeds list(?i) => terminates eval(?a,?i,?x))],
+ [step([x],
+   [],
+   assume(succeeds list(?i),
+    [assume(?y = 1,
+      terminates member(p(?x),?i) by lemma(member:termination),
+      terminates member(p(?x),?i)),
+     assume(?y = 0,
+      terminates member(neg(p(?x)),?i) by lemma(member:termination),
+      terminates member(neg(p(?x)),?i)),
+     terminates eval(p(?x),?i,?y) by completion],
+    terminates eval(p(?x),?i,?y)),
+   all [i,y]: succeeds list(?i) => terminates eval(p(?x),?i,?y)),
+  step([a],
+   [all [i,x]: succeeds list(?i) => terminates eval(?a,?i,?x),
+    succeeds formula(?a)],
+   assume(succeeds list(?i),
+    [],
+    terminates eval(neg(?a),?i,?x)),
+   all [i,x]: succeeds list(?i) => terminates eval(neg(?a),?i,?x)),
+  step([a,b],
+   [all [i,x]: succeeds list(?i) => terminates eval(?a,?i,?x),
+    all [i,x]: succeeds list(?i) => terminates eval(?b,?i,?x),
+    succeeds formula(?a),
+    succeeds formula(?b)],
+   assume(succeeds list(?i),
+    [],
+    terminates eval(and(?a,?b),?i,?x)),
+   all [i,x]: succeeds list(?i) => terminates eval(and(?a,?b),?i,?x)),
+  step([a,b],
+   [all [i,x]: succeeds list(?i) => terminates eval(?a,?i,?x),
+    all [i,x]: succeeds list(?i) => terminates eval(?b,?i,?x),
+    succeeds formula(?a),
+    succeeds formula(?b)],
+   assume(succeeds list(?i),
+    [],
+    terminates eval(or(?a,?b),?i,?x)),
+   all [i,x]: succeeds list(?i) => terminates eval(or(?a,?b),?i,?x))])
+).
+
+:- lemma(eval:sub,
+all [a,i,x]: succeeds eval(?a,?i,?x) => 
+ (all j: sub(?i,?j) => succeeds eval(?a,?j,?x)),
+induction(
+ [all [a,i,x]: succeeds eval(?a,?i,?x) => 
+    (all j: sub(?i,?j) => succeeds eval(?a,?j,?x))],
+ [step([x,i],
+   [succeeds member(p(?x),?i)],
+   assume(sub(?i,?j),
+    [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+      elimination(sub,2),
+     succeeds eval(p(?x),?j,1) by completion],
+    succeeds eval(p(?x),?j,1)),
+   all j: sub(?i,?j) => succeeds eval(p(?x),?j,1)),
+  step([x,i],
+   [succeeds member(neg(p(?x)),?i)],
+   assume(sub(?i,?j),
+    [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+      elimination(sub,2),
+     succeeds eval(p(?x),?j,0) by completion],
+    succeeds eval(p(?x),?j,0)),
+   all j: sub(?i,?j) => succeeds eval(p(?x),?j,0)),
+  step([a,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,0),
+    succeeds eval(?a,?i,0)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(neg(?a),?j,1)),
+   all j: sub(?i,?j) => succeeds eval(neg(?a),?j,1)),
+  step([a,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,1),
+    succeeds eval(?a,?i,1)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(neg(?a),?j,0)),
+   all j: sub(?i,?j) => succeeds eval(neg(?a),?j,0)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,1),
+    all j: sub(?i,?j) => succeeds eval(?b,?j,1),
+    succeeds eval(?a,?i,1),
+    succeeds eval(?b,?i,1)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(and(?a,?b),?j,1)),
+   all j: sub(?i,?j) => succeeds eval(and(?a,?b),?j,1)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,0),
+    succeeds eval(?a,?i,0)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(and(?a,?b),?j,0)),
+   all j: sub(?i,?j) => succeeds eval(and(?a,?b),?j,0)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?b,?j,0),
+    succeeds eval(?b,?i,0)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(and(?a,?b),?j,0)),
+   all j: sub(?i,?j) => succeeds eval(and(?a,?b),?j,0)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,1),
+    succeeds eval(?a,?i,1)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(or(?a,?b),?j,1)),
+   all j: sub(?i,?j) => succeeds eval(or(?a,?b),?j,1)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?b,?j,1),
+    succeeds eval(?b,?i,1)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(or(?a,?b),?j,1)),
+   all j: sub(?i,?j) => succeeds eval(or(?a,?b),?j,1)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds eval(?a,?j,0),
+    all j: sub(?i,?j) => succeeds eval(?b,?j,0),
+    succeeds eval(?a,?i,0),
+    succeeds eval(?b,?i,0)],
+   assume(sub(?i,?j),
+    [],
+    succeeds eval(or(?a,?b),?j,0)),
+   all j: sub(?i,?j) => succeeds eval(or(?a,?b),?j,0))])
+).
+
+:- corollary(eval:sub,
+all [a,i,j,x]: succeeds eval(?a,?i,?x) & sub(?i,?j) => 
+ succeeds eval(?a,?j,?x),
+assume(succeeds eval(?a,?i,?x) & sub(?i,?j),
+ [all j: sub(?i,?j) => succeeds eval(?a,?j,?x) by lemma(eval:sub),
+  succeeds eval(?a,?j,?x)],
+ succeeds eval(?a,?j,?x))
+).
+
+:- lemma(truefalse:eval,
+(all [a,i,j]: succeeds true(?a,?i,?j) => succeeds eval(?a,?j,1)) & 
+(all [a,i,j]: succeeds false(?a,?i,?j) => succeeds eval(?a,?j,0)),
+induction(
+ [all [a,i,j]: succeeds true(?a,?i,?j) => succeeds eval(?a,?j,1),
+  all [a,i,j]: succeeds false(?a,?i,?j) => succeeds eval(?a,?j,0)],
+ [step([x,i],
+   [fails member(neg(p(?x)),?i)],
+   [],
+   succeeds eval(p(?x),[p(?x)|?i],1)),
+  step([a,i,j],
+   [succeeds eval(?a,?j,0),
+    succeeds false(?a,?i,?j)],
+   [],
+   succeeds eval(neg(?a),?j,1)),
+  step([a,b,i,k,j],
+   [succeeds eval(?a,?j,1),
+    succeeds eval(?b,?k,1),
+    succeeds true(?a,?i,?j),
+    succeeds true(?b,?j,?k)],
+   [sub(?j,?k) by corollary(true:sub),
+    succeeds eval(?a,?k,1) by corollary(eval:sub),
+    succeeds eval(and(?a,?b),?k,1) by sld],
+   succeeds eval(and(?a,?b),?k,1)),
+  step([a,b,i,j],
+   [succeeds eval(?a,?j,1),
+    succeeds true(?a,?i,?j)],
+   [],
+   succeeds eval(or(?a,?b),?j,1)),
+  step([a,b,i,j],
+   [succeeds eval(?b,?j,1),
+    succeeds true(?b,?i,?j)],
+   [],
+   succeeds eval(or(?a,?b),?j,1)),
+  step([x,i],
+   [fails member(p(?x),?i)],
+   [],
+   succeeds eval(p(?x),[neg(p(?x))|?i],0)),
+  step([a,i,j],
+   [succeeds eval(?a,?j,1),
+    succeeds true(?a,?i,?j)],
+   [],
+   succeeds eval(neg(?a),?j,0)),
+  step([a,b,i,j],
+   [succeeds eval(?a,?j,0),
+    succeeds false(?a,?i,?j)],
+   [],
+   succeeds eval(and(?a,?b),?j,0)),
+  step([a,b,i,j],
+   [succeeds eval(?b,?j,0),
+    succeeds false(?b,?i,?j)],
+   [],
+   succeeds eval(and(?a,?b),?j,0)),
+  step([a,b,i,k,j],
+   [succeeds eval(?a,?j,0),
+    succeeds eval(?b,?k,0),
+    succeeds false(?a,?i,?j),
+    succeeds false(?b,?j,?k)],
+   [sub(?j,?k) by corollary(false:sub),
+    succeeds eval(?a,?k,0) by corollary(eval:sub),
+    succeeds eval(or(?a,?b),?k,0) by sld],
+   succeeds eval(or(?a,?b),?k,0))])
+).
+
+:- lemma(eval:tnd,
+all [a,i]: succeeds defined(?a,?i) => succeeds eval(?a,?i,1) \/ 
+ succeeds eval(?a,?i,0),
+induction(
+ [all [a,i]: succeeds defined(?a,?i) => succeeds eval(?a,?i,1) \/
+    succeeds eval(?a,?i,0)],
+ [step([x,i],
+   [succeeds member(p(?x),?i)],
+   [],
+   succeeds eval(p(?x),?i,1) \/ succeeds eval(p(?x),?i,0)),
+  step([x,i],
+   [succeeds member(neg(p(?x)),?i)],
+   [],
+   succeeds eval(p(?x),?i,1) \/ succeeds eval(p(?x),?i,0)),
+  step([a,i],
+   [succeeds eval(?a,?i,1) \/ succeeds eval(?a,?i,0),
+    succeeds defined(?a,?i)],
+   cases(succeeds eval(?a,?i,1),
+    [],
+    succeeds eval(?a,?i,0),
+    [],
+    succeeds eval(neg(?a),?i,1) \/ succeeds eval(neg(?a),?i,0)),
+   succeeds eval(neg(?a),?i,1) \/ succeeds eval(neg(?a),?i,0)),
+  step([a,b,i],
+   [succeeds eval(?a,?i,1) \/ succeeds eval(?a,?i,0),
+    succeeds eval(?b,?i,1) \/ succeeds eval(?b,?i,0),
+    succeeds defined(?a,?i),
+    succeeds defined(?b,?i)],
+   cases(succeeds eval(?b,?i,1),
+    cases(succeeds eval(?a,?i,1),
+     [],
+     succeeds eval(?a,?i,0),
+     [],
+     succeeds eval(and(?a,?b),?i,1) \/ succeeds eval(and(?a,?b),?i,0)),
+    succeeds eval(?b,?i,0),
+    [],
+    succeeds eval(and(?a,?b),?i,1) \/ succeeds eval(and(?a,?b),?i,0)),
+   succeeds eval(and(?a,?b),?i,1) \/ succeeds eval(and(?a,?b),?i,0)),
+  step([a,b,i],
+   [succeeds eval(?a,?i,1) \/ succeeds eval(?a,?i,0),
+    succeeds eval(?b,?i,1) \/ succeeds eval(?b,?i,0),
+    succeeds defined(?a,?i),
+    succeeds defined(?b,?i)],
+   cases(succeeds eval(?b,?i,1),
+    [],
+    succeeds eval(?b,?i,0),
+    cases(succeeds eval(?a,?i,1),
+     [],
+     succeeds eval(?a,?i,0),
+     [],
+     succeeds eval(or(?a,?b),?i,1) \/ succeeds eval(or(?a,?b),?i,0)),
+    succeeds eval(or(?a,?b),?i,1) \/ succeeds eval(or(?a,?b),?i,0)),
+   succeeds eval(or(?a,?b),?i,1) \/ succeeds eval(or(?a,?b),?i,0))])
+).
+
+:- lemma(eval:function,
+all [a,i,x]: succeeds eval(?a,?i,?x) => succeeds interpretation(?i) => 
+ (all y: succeeds eval(?a,?i,?y) => ?x = ?y),
+induction(
+ [all [a,i,x]: succeeds eval(?a,?i,?x) => succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => ?x = ?y)],
+ [step([x,i],
+   [succeeds member(p(?x),?i)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(p(?x),?i,?y),
+     [def succeeds eval(p(?x),?i,?y) by completion,
+      cases(?y = 1 & succeeds member(p(?x),?i),
+       [],
+       ?y = 0 & succeeds member(neg(p(?x)),?i),
+       [succeeds literal_list(?i) &
+        ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i))
+	 by lemma(interpretation:elimination),
+	ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+	ff],
+       1 = ?y)],
+     1 = ?y),
+    all y: succeeds eval(p(?x),?i,?y) => 1 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(p(?x),?i,?y) => 1 = ?y)),
+  step([x,i],
+   [succeeds member(neg(p(?x)),?i)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(p(?x),?i,?y),
+     [def succeeds eval(p(?x),?i,?y) by completion,
+      cases(?y = 1 & succeeds member(p(?x),?i),
+       [succeeds literal_list(?i) &
+        ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i))
+	 by lemma(interpretation:elimination),
+	ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+	ff],
+       ?y = 0 & succeeds member(neg(p(?x)),?i),
+       [],
+       0 = ?y)],
+     0 = ?y),
+    all y: succeeds eval(p(?x),?i,?y) => 0 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(p(?x),?i,?y) => 0 = ?y)),
+  step([a,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 0 = ?y),
+    succeeds eval(?a,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(neg(?a),?i,?y),
+     [def succeeds eval(neg(?a),?i,?y) by completion,
+      cases(?y = 1 & succeeds eval(?a,?i,0),
+       [],
+       ?y = 0 & succeeds eval(?a,?i,1),
+       [all y: succeeds eval(?a,?i,?y) => 0 = ?y,
+	0 = 1],
+       1 = ?y)],
+     1 = ?y),
+    all y: succeeds eval(neg(?a),?i,?y) => 1 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(neg(?a),?i,?y) => 1 = ?y)),
+  step([a,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 1 = ?y),
+    succeeds eval(?a,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(neg(?a),?i,?y),
+     [def succeeds eval(neg(?a),?i,?y) by completion,
+      cases(?y = 1 & succeeds eval(?a,?i,0),
+       [all y: succeeds eval(?a,?i,?y) => 1 = ?y,
+	1 = 0],
+       ?y = 0 & succeeds eval(?a,?i,1),
+       [],
+       0 = ?y)],
+     0 = ?y),
+    all y: succeeds eval(neg(?a),?i,?y) => 0 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(neg(?a),?i,?y) => 0 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 1 = ?y),
+    succeeds interpretation(?i) => 
+     (all y: succeeds eval(?b,?i,?y) => 1 = ?y),
+    succeeds eval(?a,?i,1),
+    succeeds eval(?b,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(and(?a,?b),?i,?y),
+     [def succeeds eval(and(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1) & succeeds eval(?b,?i,1),[]),
+        case(?y = 0 & succeeds eval(?a,?i,0),
+         [all y: succeeds eval(?a,?i,?y) => 1 = ?y,
+	  1 = 0]),
+        case(?y = 0 & succeeds eval(?b,?i,0),
+         [all y: succeeds eval(?b,?i,?y) => 1 = ?y,
+	  1 = 0])],
+       1 = ?y)],
+     1 = ?y),
+    all y: succeeds eval(and(?a,?b),?i,?y) => 1 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(and(?a,?b),?i,?y) => 1 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 0 = ?y),
+    succeeds eval(?a,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(and(?a,?b),?i,?y),
+     [def succeeds eval(and(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1) & succeeds eval(?b,?i,1),
+         [all y: succeeds eval(?a,?i,?y) => 0 = ?y,
+	  0 = 1]),
+        case(?y = 0 & succeeds eval(?a,?i,0),
+         []),
+        case(?y = 0 & succeeds eval(?b,?i,0),
+         [])],
+       0 = ?y)],
+     0 = ?y),
+    all y: succeeds eval(and(?a,?b),?i,?y) => 0 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(and(?a,?b),?i,?y) => 0 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?b,?i,?y) => 0 = ?y),
+    succeeds eval(?b,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(and(?a,?b),?i,?y),
+     [def succeeds eval(and(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1) & succeeds eval(?b,?i,1),
+         [all y: succeeds eval(?b,?i,?y) => 0 = ?y,
+	  0 = 1]),
+        case(?y = 0 & succeeds eval(?a,?i,0),
+         []),
+        case(?y = 0 & succeeds eval(?b,?i,0),
+         [])],
+       0 = ?y)],
+     0 = ?y),
+    all y: succeeds eval(and(?a,?b),?i,?y) => 0 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(and(?a,?b),?i,?y) => 0 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 1 = ?y),
+    succeeds eval(?a,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(or(?a,?b),?i,?y),
+     [def succeeds eval(or(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1),[]),
+        case(?y = 1 & succeeds eval(?b,?i,1),
+         []),
+        case(?y = 0 & succeeds eval(?a,?i,0) & succeeds eval(?b,?i,0),
+         [all y: succeeds eval(?a,?i,?y) => 1 = ?y,
+	  1 = 0])],
+       1 = ?y)],
+     1 = ?y),
+    all y: succeeds eval(or(?a,?b),?i,?y) => 1 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(or(?a,?b),?i,?y) => 1 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?b,?i,?y) => 1 = ?y),
+    succeeds eval(?b,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(or(?a,?b),?i,?y),
+     [def succeeds eval(or(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1),[]),
+        case(?y = 1 & succeeds eval(?b,?i,1),
+         []),
+        case(?y = 0 & succeeds eval(?a,?i,0) & succeeds eval(?b,?i,0),
+         [all y: succeeds eval(?b,?i,?y) => 1 = ?y,
+	  1 = 0])],
+       1 = ?y)],
+     1 = ?y),
+    all y: succeeds eval(or(?a,?b),?i,?y) => 1 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(or(?a,?b),?i,?y) => 1 = ?y)),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all y: succeeds eval(?a,?i,?y) => 0 = ?y),
+    succeeds interpretation(?i) => 
+     (all y: succeeds eval(?b,?i,?y) => 0 = ?y),
+    succeeds eval(?a,?i,0),
+    succeeds eval(?b,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds eval(or(?a,?b),?i,?y),
+     [def succeeds eval(or(?a,?b),?i,?y) by completion,
+      cases(
+       [case(?y = 1 & succeeds eval(?a,?i,1),
+	 [all y: succeeds eval(?a,?i,?y) => 0 = ?y,
+	  0 = 1]),
+        case(?y = 1 & succeeds eval(?b,?i,1),
+         [all y: succeeds eval(?b,?i,?y) => 0 = ?y,
+	  0 = 1]),
+        case(?y = 0 & succeeds eval(?a,?i,0) & succeeds eval(?b,?i,0),
+         [])],
+       0 = ?y)],
+     0 = ?y),
+    all y: succeeds eval(or(?a,?b),?i,?y) => 0 = ?y),
+   succeeds interpretation(?i) => 
+    (all y: succeeds eval(or(?a,?b),?i,?y) => 0 = ?y))])
+).
+
+:- lemma(int:sub,
+all [a,i]: succeeds defined(?a,?i) => 
+ (all j: sub(?i,?j) => succeeds defined(?a,?j)),
+induction(
+ [all [a,i]: succeeds defined(?a,?i) => 
+    (all j: sub(?i,?j) => succeeds defined(?a,?j))],
+ [step([x,i],
+   [succeeds member(p(?x),?i)],
+   assume(sub(?i,?j),
+    [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+      elimination(sub,2),
+     succeeds defined(p(?x),?j) by completion],
+    succeeds defined(p(?x),?j)),
+   all j: sub(?i,?j) => succeeds defined(p(?x),?j)),
+  step([x,i],
+   [succeeds member(neg(p(?x)),?i)],
+   assume(sub(?i,?j),
+    [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+      elimination(sub,2),
+     succeeds defined(p(?x),?j) by completion],
+    succeeds defined(p(?x),?j)),
+   all j: sub(?i,?j) => succeeds defined(p(?x),?j)),
+  step([a,i],
+   [all j: sub(?i,?j) => succeeds defined(?a,?j),
+    succeeds defined(?a,?i)],
+   assume(sub(?i,?j),
+    [],
+    succeeds defined(neg(?a),?j)),
+   all j: sub(?i,?j) => succeeds defined(neg(?a),?j)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds defined(?a,?j),
+    all j: sub(?i,?j) => succeeds defined(?b,?j),
+    succeeds defined(?a,?i),
+    succeeds defined(?b,?i)],
+   assume(sub(?i,?j),
+    [],
+    succeeds defined(and(?a,?b),?j)),
+   all j: sub(?i,?j) => succeeds defined(and(?a,?b),?j)),
+  step([a,b,i],
+   [all j: sub(?i,?j) => succeeds defined(?a,?j),
+    all j: sub(?i,?j) => succeeds defined(?b,?j),
+    succeeds defined(?a,?i),
+    succeeds defined(?b,?i)],
+   assume(sub(?i,?j),
+    [],
+    succeeds defined(or(?a,?b),?j)),
+   all j: sub(?i,?j) => succeeds defined(or(?a,?b),?j))])
+).
+
+:- corollary(int:sub,
+all [a,i,j]: succeeds defined(?a,?i) & sub(?i,?j) => succeeds defined(?a,?j),
+assume(succeeds defined(?a,?i) & sub(?i,?j),
+ [all j: sub(?i,?j) => succeeds defined(?a,?j) by lemma(int:sub),
+  succeeds defined(?a,?j)],
+ succeeds defined(?a,?j))
+).
+
+:- theorem(valid:fail,
+all a: fails valid(?a) <=> (ex i: succeeds false(?a,[],?i)),
+[assume(fails valid(?a),
+  [def fails valid(?a) by completion,
+   succeeds satisfiable(neg(?a)),
+   def succeeds satisfiable(neg(?a)) by completion,
+   exist(i,
+    succeeds true(neg(?a),[],?i),
+    [def succeeds true(neg(?a),[],?i) by completion,
+     ex i: succeeds false(?a,[],?i)],
+    ex i: succeeds false(?a,[],?i))],
+  ex i: succeeds false(?a,[],?i)),
+ assume(ex i: succeeds false(?a,[],?i),
+  exist(i,
+   succeeds false(?a,[],?i),
+   [succeeds true(neg(?a),[],?i),
+    succeeds satisfiable(neg(?a)) by completion,
+    fails valid(?a) by completion],
+   fails valid(?a)),
+  fails valid(?a)),
+ fails valid(?a) <=> (ex i: succeeds false(?a,[],?i))]
+).
+
+:- theorem(valid:eval,
+all a: fails valid(?a) => 
+ (ex i: succeeds interpretation(?i) & succeeds eval(?a,?i,0)),
+assume(fails valid(?a),
+ [fails valid(?a) <=> (ex i: succeeds false(?a,[],?i)) by 
+   theorem(valid:fail),
+  ex i: succeeds false(?a,[],?i),
+  exist(i,
+   succeeds false(?a,[],?i),
+   [succeeds eval(?a,?i,0) by lemma(truefalse:eval),
+    succeeds interpretation([]) by lemma(interpretation:nil),
+    succeeds interpretation(?i) by corollary(false:interpretation),
+    ex i: succeeds interpretation(?i) & succeeds eval(?a,?i,0)],
+   ex i: succeeds interpretation(?i) & succeeds eval(?a,?i,0))],
+ ex i: succeeds interpretation(?i) & succeeds eval(?a,?i,0))
+).
+
+:- lemma(eval:truefalse,
+all [a,h,x]: succeeds eval(?a,?h,?x) => succeeds interpretation(?h) => 
+ (all i: succeeds literal_list(?i) & sub(?i,?h) => 
+   (?x = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) & 
+   (?x = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j)))),
+induction(
+ [all [a,h,x]: succeeds eval(?a,?h,?x) => succeeds interpretation(?h) => 
+     (all i: succeeds literal_list(?i) & sub(?i,?h) => 
+        (?x = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) &
+        (?x = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j))))],
+ [step([x,i],
+   [succeeds member(p(?x),?i)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(1 = 1,
+      [succeeds list(?h) by lemma(literal_list:list),
+       terminates member(neg(p(?x)),?h) by lemma(member:termination),
+       succeeds member(neg(p(?x)),?h) \/ fails member(neg(p(?x)),?h),
+       cases(succeeds member(neg(p(?x)),?h),
+	[all x: succeeds member(?x,?h) => succeeds member(?x,?i) by 
+	  elimination(sub,2),
+	 succeeds member(neg(p(?x)),?i),
+	 ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+	 succeeds literal_list(?i) &
+         ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i))
+	  by lemma(interpretation:elimination),
+	 ff],
+	fails member(neg(p(?x)),?h),
+	[succeeds true(p(?x),?h,[p(?x)|?h]),
+	 sub([p(?x)|?h],?i) by lemma(sub:member),
+	 ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j)],
+	ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))],
+      ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j)),
+     (1 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+     (1 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (1 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+      (1 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j))))),
+  step([x,i],
+   [succeeds member(neg(p(?x)),?i)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(0 = 0,
+      [succeeds list(?h) by lemma(literal_list:list),
+       terminates member(p(?x),?h) by lemma(member:termination),
+       succeeds member(p(?x),?h) \/ fails member(p(?x),?h),
+       cases(succeeds member(p(?x),?h),
+	[all x: succeeds member(?x,?h) => succeeds member(?x,?i) by 
+	  elimination(sub,2),
+	 succeeds member(p(?x),?i),
+	 ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i),
+	 succeeds literal_list(?i) &
+         ~ (ex x: succeeds member(p(?x),?i) & succeeds member(neg(p(?x)),?i))
+	  by lemma(interpretation:elimination),
+	 ff],
+	fails member(p(?x),?h),
+	[sub([neg(p(?x))|?h],?i) by lemma(sub:member),
+	 succeeds false(p(?x),?h,[neg(p(?x))|?h]),
+	 ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)],
+	ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j))],
+      ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)),
+     (0 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+     (0 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (0 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+      (0 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(p(?x),?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(p(?x),?h,?j))))),
+  step([a,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds eval(?a,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(1 = 1,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds false(?a,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds false(?a,?h,?j),
+        [succeeds true(neg(?a),?h,?j),
+	 ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j)],
+        ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))],
+      ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j)),
+     (1 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+     (1 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (1 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+      (1 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j))))),
+  step([a,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds eval(?a,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(0 = 0,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+	 (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+	 (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds true(?a,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds true(?a,?h,?j),
+        succeeds false(neg(?a),?h,?j),
+        ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j))],
+      ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j)),
+     (0 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+     (0 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (0 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+      (0 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(neg(?a),?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(neg(?a),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j)))),
+    succeeds eval(?a,?i,1),
+    succeeds eval(?b,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(1 = 1,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds true(?a,?h,?j),
+       exist(k,
+        sub(?k,?i) & succeeds true(?a,?h,?k),
+        [succeeds literal_list(?k) by corollary(true:literal_list),
+	 all h: succeeds literal_list(?h) & sub(?h,?i) => 
+	   (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+	   (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+	 (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?k,?j))) &
+	 (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?k,?j))),
+	 ex j: sub(?j,?i) & succeeds true(?b,?k,?j),
+	 exist(j,
+          sub(?j,?i) & succeeds true(?b,?k,?j),
+          succeeds true(and(?a,?b),?h,?j),
+          ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))],
+        ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j)),
+     (1 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+     (1 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (1 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+      (1 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds eval(?a,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(0 = 0,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds false(?a,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds false(?a,?h,?j),
+        succeeds false(and(?a,?b),?h,?j),
+        ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)),
+     (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+     (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+      (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j)))),
+    succeeds eval(?b,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(0 = 0,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+       ex j: sub(?j,?i) & succeeds false(?b,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds false(?b,?h,?j),
+        succeeds false(and(?a,?b),?h,?j),
+        ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)),
+     (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+     (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+      (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(and(?a,?b),?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(and(?a,?b),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds eval(?a,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(1 = 1,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds true(?a,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds true(?a,?h,?j),
+        succeeds true(or(?a,?b),?h,?j),
+        ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j)),
+     (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+     (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+      (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j)))),
+    succeeds eval(?b,?i,1)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(1 = 1,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+       ex j: sub(?j,?i) & succeeds true(?b,?h,?j),
+       exist(j,
+        sub(?j,?i) & succeeds true(?b,?h,?j),
+        succeeds true(or(?a,?b),?h,?j),
+        ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j)),
+     (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+     (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+      (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (1 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+       (1 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j))))),
+  step([a,b,i],
+   [succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j)))),
+    succeeds interpretation(?i) => 
+     (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j)))),
+    succeeds eval(?a,?i,0),
+    succeeds eval(?b,?i,0)],
+   assume(succeeds interpretation(?i),
+    assume(succeeds literal_list(?h) & sub(?h,?i),
+     assume(0 = 0,
+      [all h: succeeds literal_list(?h) & sub(?h,?i) => 
+        (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+        (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?a,?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?a,?h,?j))),
+       ex j: sub(?j,?i) & succeeds false(?a,?h,?j),
+       exist(k,
+        sub(?k,?i) & succeeds false(?a,?h,?k),
+        [succeeds literal_list(?k) by corollary(false:literal_list),
+	 all h: succeeds literal_list(?h) & sub(?h,?i) => 
+	   (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?h,?j))) &
+	   (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?h,?j))),
+	 (0 = 1 => (ex j: sub(?j,?i) & succeeds true(?b,?k,?j))) &
+	 (0 = 0 => (ex j: sub(?j,?i) & succeeds false(?b,?k,?j))),
+	 ex j: sub(?j,?i) & succeeds false(?b,?k,?j),
+	 exist(j,
+          sub(?j,?i) & succeeds false(?b,?k,?j),
+          succeeds false(or(?a,?b),?h,?j),
+          ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j))],
+        ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j))],
+      ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)),
+     (0 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+     (0 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+    all h: succeeds literal_list(?h) & sub(?h,?i) => 
+      (0 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+      (0 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))),
+   succeeds interpretation(?i) => 
+    (all h: succeeds literal_list(?h) & sub(?h,?i) => 
+       (0 = 1 => (ex j: sub(?j,?i) & succeeds true(or(?a,?b),?h,?j))) &
+       (0 = 0 => (ex j: sub(?j,?i) & succeeds false(or(?a,?b),?h,?j)))))])
+).
+
+:- corollary(eval:true,
+all [a,h]: succeeds eval(?a,?h,1) & succeeds interpretation(?h) => 
+ (ex j: sub(?j,?h) & succeeds true(?a,[],?j)),
+assume(succeeds eval(?a,?h,1) & succeeds interpretation(?h),
+ [succeeds interpretation(?h) => 
+  (all i: succeeds literal_list(?i) & sub(?i,?h) => 
+    (1 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) & 
+    (1 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j)))) by 
+  lemma(eval:truefalse),
+  all i: succeeds literal_list(?i) & sub(?i,?h) => 
+   (1 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) & 
+   (1 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j))),
+  succeeds literal_list([]),
+  sub([],?h) by lemma(sub:nil),
+  (1 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,[],?j))) & 
+  (1 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,[],?j))),1 = 1,
+  ex j: sub(?j,?h) & succeeds true(?a,[],?j)],
+ ex j: sub(?j,?h) & succeeds true(?a,[],?j))
+).
+
+:- corollary(eval:false,
+all [a,h]: succeeds eval(?a,?h,0) & succeeds interpretation(?h) => 
+ (ex j: sub(?j,?h) & succeeds false(?a,[],?j)),
+assume(succeeds eval(?a,?h,0) & succeeds interpretation(?h),
+ [succeeds interpretation(?h) => 
+  (all i: succeeds literal_list(?i) & sub(?i,?h) => 
+    (0 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) & 
+    (0 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j)))) by 
+    lemma(eval:truefalse),
+  all i: succeeds literal_list(?i) & sub(?i,?h) => 
+   (0 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,?i,?j))) & 
+   (0 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,?i,?j))),
+  succeeds literal_list([]),
+  sub([],?h) by lemma(sub:nil),
+  (0 = 1 => (ex j: sub(?j,?h) & succeeds true(?a,[],?j))) & 
+  (0 = 0 => (ex j: sub(?j,?h) & succeeds false(?a,[],?j))),
+  ex j: sub(?j,?h) & succeeds false(?a,[],?j)],
+ ex j: sub(?j,?h) & succeeds false(?a,[],?j))
+).
+
+:- lemma(eval:valid,
+all [a,i]: succeeds eval(?a,?i,0) & succeeds interpretation(?i) =>
+  fails valid(?a),
+assume(succeeds eval(?a,?i,0) & succeeds interpretation(?i),
+ [ex j: sub(?j,?i) & succeeds false(?a,[],?j) by corollary(eval:false),
+  exist(j,
+   sub(?j,?i) & succeeds false(?a,[],?j),
+   [fails valid(?a) <=> (ex i: succeeds false(?a,[],?i)) by 
+     theorem(valid:fail),
+    (ex i: succeeds false(?a,[],?i)) => 
+     fails valid(?a),
+    ex i: succeeds false(?a,[],?i),fails valid(?a)],
+   fails valid(?a))],
+ fails valid(?a))
+).
+
+:- theorem(valid:success,
+all a: succeeds valid(?a) => 
+  (all i: succeeds defined(?a,?i) & succeeds interpretation(?i) =>
+    succeeds eval(?a,?i,1)),
+assume(succeeds valid(?a),
+ assume(succeeds defined(?a,?i) & succeeds interpretation(?i),
+  [succeeds eval(?a,?i,1) \/ succeeds eval(?a,?i,0) by lemma(eval:tnd),
+   cases(succeeds eval(?a,?i,1),
+    [],
+    succeeds eval(?a,?i,0),
+    [fails valid(?a) by lemma(eval:valid),fails valid(?a),ff],
+    succeeds eval(?a,?i,1))],
+  succeeds eval(?a,?i,1)),
+ all i: succeeds defined(?a,?i) & succeeds interpretation(?i) =>
+   succeeds eval(?a,?i,1))
+).
+
+:- bye(taut).

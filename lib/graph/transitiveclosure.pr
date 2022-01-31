@@ -1,0 +1,563 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 6/17/95, 2:56 PM */
+/* Filename: transitiveclosure.pr */
+
+:- initialize.
+:- tex_file($(tmp)/transitiveclosure).
+:- thm_file($(tmp)/transitiveclosure).
+
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/graph/transitiveclosure).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/nat/nat).
+
+:- lemma(disjoint:nil,
+all l: succeeds disjoint([],?l),
+[fails member(?x,[]) by completion,
+ fails member(?x,[]) \/ fails member(?x,?l),
+ all x: fails member(?x,[]) \/ fails member(?x,?l),
+ fails not_disjoint([],?l) by completion,
+ succeeds disjoint([],?l)]
+).
+
+:- lemma(disjoint:member,
+all [x,l1,l2]: succeeds disjoint(?l1,?l2) & succeeds member(?x,?l1) => 
+ fails member(?x,?l2),
+assume(succeeds disjoint(?l1,?l2) & succeeds member(?x,?l1),
+ [def succeeds disjoint(?l1,?l2) by completion,
+  def fails not_disjoint(?l1,?l2) by completion,
+  fails member(?x,?l1) \/ fails member(?x,?l2),
+  cases(fails member(?x,?l1),
+   [],
+   fails member(?x,?l2),
+   [],
+   fails member(?x,?l2))],
+ fails member(?x,?l2))
+).
+
+:- lemma(disjoint:symmetric,
+all [l1,l2]: succeeds disjoint(?l1,?l2) => succeeds disjoint(?l2,?l1),
+assume(succeeds disjoint(?l1,?l2),
+ [def succeeds disjoint(?l1,?l2) by completion,
+  def fails not_disjoint(?l1,?l2) by completion,
+  fails member(?x,?l1) \/ fails member(?x,?l2),
+  fails member(?x,?l2) \/ fails member(?x,?l1),
+  all x: fails member(?x,?l2) \/ fails member(?x,?l1),
+  fails not_disjoint(?l2,?l1) by completion,
+  succeeds disjoint(?l2,?l1)],
+ succeeds disjoint(?l2,?l1))
+).
+
+:- lemma(disjoint:cons,
+all [x,l1,l2]: succeeds disjoint([?x|?l1],?l2) & fails member(?x,?l1) => 
+ succeeds disjoint(?l1,[?x|?l2]),
+assume(succeeds disjoint([?x|?l1],?l2) & fails member(?x,?l1),
+ [def succeeds disjoint([?x|?l1],?l2) by completion,
+  def fails not_disjoint([?x|?l1],?l2) by completion,
+  fails member(?y,[?x|?l1]) \/ fails member(?y,?l2),
+  cases(fails member(?y,[?x|?l1]),
+   [def fails member(?y,[?x|?l1]) by completion,
+    fails member(?y,?l1)],
+   fails member(?y,?l2),
+   [?y = ?x \/ ?y <> ?x,
+    cases(?y = ?x,
+     [],
+     ?y <> ?x,
+     [~ ?y = ?x & fails member(?y,?l2),
+      fails member(?y,[?x|?l2]) by completion],
+     fails member(?y,?l1) \/ fails member(?y,[?x|?l2]))],
+   fails member(?y,?l1) \/ fails member(?y,[?x|?l2])),
+  all y: fails member(?y,?l1) \/ fails member(?y,[?x|?l2]),
+  fails not_disjoint(?l1,[?x|?l2]) by completion,
+  succeeds disjoint(?l1,[?x|?l2])],
+ succeeds disjoint(?l1,[?x|?l2]))
+).
+
+:- lemma(disjoint:sub,
+all [l1,l2,l3]: succeeds list(?l1) & sub(?l1,?l2) & 
+ succeeds disjoint(?l2,?l3) => succeeds disjoint(?l1,?l3),
+assume(succeeds list(?l1) & sub(?l1,?l2) & succeeds disjoint(?l2,?l3),
+ [def succeeds disjoint(?l2,?l3) by completion,
+  def fails not_disjoint(?l2,?l3) by completion,
+  fails member(?x,?l2) \/ fails member(?x,?l3),
+  cases(fails member(?x,?l2),
+   [terminates member(?x,?l1) by lemma(member:termination),
+    succeeds member(?x,?l1) \/ fails member(?x,?l1),
+    cases(succeeds member(?x,?l1),
+     [all x: succeeds member(?x,?l1) => succeeds member(?x,?l2) by 
+       elimination(sub,2),
+      succeeds member(?x,?l2),
+      ff],
+     fails member(?x,?l1),
+     [],
+     fails member(?x,?l1))],
+   fails member(?x,?l3),
+   [],
+   fails member(?x,?l1) \/ fails member(?x,?l3)),
+  all x: fails member(?x,?l1) \/ fails member(?x,?l3),
+  fails not_disjoint(?l1,?l3) by completion,
+  succeeds disjoint(?l1,?l3)],
+ succeeds disjoint(?l1,?l3))
+).
+
+:- theorem(tc:path,
+all [x,y,e,w]: succeeds tc(?x,?y,?e,?w) => 
+ (ex p: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w)),
+induction(
+ [all [x,y,e,w]: succeeds tc(?x,?y,?e,?w) => 
+   (ex p: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w))],
+ [step([x,y,e,w],
+   [succeeds member(e(?x,?y),?e)],
+   [succeeds path(?x,[],?y,?e),
+    succeeds disjoint([],?w) by lemma(disjoint:nil),
+    succeeds path(?x,[],?y,?e) & succeeds disjoint([],?w),
+    ex p: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w)],
+   ex p: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w)),
+  step([x,z,e,w,y],
+   [ex p: succeeds path(?y,?p,?z,?e) & succeeds disjoint(?p,[?y|?w]),
+    succeeds member(e(?x,?y),?e),
+    fails member(?y,?w),
+    succeeds tc(?y,?z,?e,[?y|?w])],
+   exist(p,
+    succeeds path(?y,?p,?z,?e) & succeeds disjoint(?p,[?y|?w]),
+    [succeeds path(?x,[?y|?p],?z,?e),
+     succeeds disjoint([?y|?w],?p) by lemma(disjoint:symmetric),
+     succeeds disjoint(?w,[?y|?p]) by lemma(disjoint:cons),
+     succeeds disjoint([?y|?p],?w) by lemma(disjoint:symmetric),
+     succeeds path(?x,[?y|?p],?z,?e) & succeeds disjoint([?y|?p],?w),
+     ex p: succeeds path(?x,?p,?z,?e) & succeeds disjoint(?p,?w)],
+    ex p: succeeds path(?x,?p,?z,?e) & succeeds disjoint(?p,?w)),
+   ex p: succeeds path(?x,?p,?z,?e) & succeeds disjoint(?p,?w))])
+).
+
+:- definition_pred(vertices,3,
+ all [l1,l2,e]: vertices(?l1,?l2,?e) <=> 
+  (all [x,y]: succeeds member(e(?x,?y),?e) => succeeds member(?y,?l1) \/ 
+    succeeds member(?y,?l2))
+).
+
+:- lemma(tc:vertices:termination,
+all n: succeeds nat(?n) => 
+ (all [x,y,e,w,l]: succeeds list(?e) & succeeds list(?w) & 
+   succeeds list(?l) & vertices(?l,?w,?e) & succeeds lh(?l) @< ?n & gr(?e)
+   & gr(?w) & gr(?l) => terminates tc(?x,?y,?e,?w)),
+induction(
+ [all n: succeeds nat(?n) => 
+   (all [x,y,e,w,l]: succeeds list(?e) & succeeds list(?w) & 
+     succeeds list(?l) & vertices(?l,?w,?e) & succeeds lh(?l) @< ?n & 
+     gr(?e) & gr(?w) & gr(?l) => terminates tc(?x,?y,?e,?w))],
+ [step([],
+   [],
+   assume(succeeds list(?e) & succeeds list(?w) & succeeds list(?l) & 
+    vertices(?l,?w,?e) & succeeds lh(?l) @< 0 & gr(?e) & gr(?w) & gr(?l),
+    [fails lh(?l) @< 0 by completion,
+     ff],
+    terminates tc(?x,?y,?e,?w)),
+   all [x,y,e,w,l]: succeeds list(?e) & succeeds list(?w) & 
+    succeeds list(?l) & vertices(?l,?w,?e) & succeeds lh(?l) @< 0 & gr(?e)
+    & gr(?w) & gr(?l) => terminates tc(?x,?y,?e,?w)),
+  step([n],
+   [all [x,y,e,w,l]: succeeds list(?e) & succeeds list(?w) & 
+     succeeds list(?l) & vertices(?l,?w,?e) & succeeds lh(?l) @< ?n & 
+     gr(?e) & gr(?w) & gr(?l) => terminates tc(?x,?y,?e,?w),
+    succeeds nat(?n)],
+   assume(succeeds list(?e) & succeeds list(?w) & succeeds list(?l) & 
+    vertices(?l,?w,?e) & succeeds lh(?l) @< s(?n) & gr(?e) & gr(?w) & 
+    gr(?l),
+    [terminates member(e(?x,?y),?e) by lemma(member:termination),
+     terminates member(e(?x,?z),?e) by lemma(member:termination),
+     succeeds member(e(?x,?z),?e) \/ fails member(e(?x,?z),?e),
+     cases(succeeds member(e(?x,?z),?e),
+      [gr(e(?x,?z)) by lemma(member:ground),
+       gr(?z),
+       terminates member(?z,?w) by lemma(member:termination),
+       succeeds member(?z,?w) \/ fails member(?z,?w),
+       cases(fails member(?z,?w),
+        [all [x,y]: succeeds member(e(?x,?y),?e) => succeeds member(?y,?l)
+          \/ succeeds member(?y,?w) by elimination(vertices,3),
+         succeeds member(?z,?l) \/ succeeds member(?z,?w),
+         cases(succeeds member(?z,?l),
+          [ex [l1,l2]: succeeds append(?l1,[?z|?l2],?l) by 
+            lemma(member:append),
+           exist([l1,l2],
+            succeeds append(?l1,[?z|?l2],?l),
+            [gr(?l1) & gr([?z|?l2]) by lemma(append:ground:2),
+             succeeds list(?l1) by lemma(append:types:1),
+             succeeds list([?z|?l2]) by lemma(append:types:3),
+             succeeds list(?l2) by lemma(list:cons),
+             succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+             succeeds list([?z|?w]),
+             lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2) by theorem(app:lh),
+             lh(?l1) @+ lh([?z|?l2]) = lh(?l) by corollary(append:lh),
+             lh([?z|?l2]) = s(lh(?l2)) by corollary(lh:cons),
+             succeeds nat(lh(?l1)) by corollary(lh:types),
+             succeeds nat(lh(?l2)) by corollary(lh:types),
+             lh(?l1) @+ s(lh(?l2)) = s(lh(?l1)) @+ lh(?l2) by 
+              lemma(plus:successor),
+             s(lh(?l1)) @+ lh(?l2) = s(lh(?l1) @+ lh(?l2)) by 
+              corollary(plus:successor),
+             s(lh(?l1 ** ?l2)) = s(lh(?l1) @+ lh(?l2)) = s(lh(?l1)) @+ 
+             lh(?l2) = lh(?l1) @+ s(lh(?l2)) = lh(?l1) @+ lh([?z|?l2]) = 
+             lh(?l),
+             def succeeds s(lh(?l1 ** ?l2)) @< s(?n) by completion,
+             succeeds lh(?l1 ** ?l2) @< ?n,
+             assume(succeeds member(e(?x1,?y),?e),
+              [succeeds member(?y,?l) \/ succeeds member(?y,?w),
+               cases(succeeds member(?y,?l),
+                [succeeds member(?y,?l1) \/ succeeds member(?y,[?z|?l2]) by
+                  lemma(append:member:3),
+                 cases(succeeds member(?y,?l1),
+                  succeeds member(?y,?l1 ** ?l2) by 
+                   corollary(app:member:1),
+                  succeeds member(?y,[?z|?l2]),
+                  [def succeeds member(?y,[?z|?l2]) by completion,
+                   cases(?y = ?z,
+                    [succeeds member(?y,[?y|?w]),
+                     succeeds member(?y,[?z|?w])],
+                    succeeds member(?y,?l2),
+                    succeeds member(?y,?l1 ** ?l2) by 
+                     corollary(app:member:2),
+                    succeeds member(?y,?l1 ** ?l2) \/ 
+                    succeeds member(?y,[?z|?w]))],
+                  succeeds member(?y,?l1 ** ?l2) \/ 
+                  succeeds member(?y,[?z|?w]))],
+                succeeds member(?y,?w),
+                [],
+                succeeds member(?y,?l1 ** ?l2) \/ 
+                succeeds member(?y,[?z|?w]))],
+              succeeds member(?y,?l1 ** ?l2) \/ succeeds member(?y,[?z|?w])),
+             vertices(?l1 ** ?l2,[?z|?w],?e) by introduction(vertices,3),
+             gr(?l1 ** ?l2) by corollary(app:ground:1),
+             gr([?z|?w]),
+             terminates tc(?z,?y,?e,[?z|?w])],
+            terminates tc(?z,?y,?e,[?z|?w]))],
+          succeeds member(?z,?w),
+          [fails member(?z,?w),
+           ff],
+          terminates tc(?z,?y,?e,[?z|?w]))],
+        succeeds member(?z,?w),
+        [],
+        terminates 
+        (member(e(?x,?z),?e) & ~ member(?z,?w) & tc(?z,?y,?e,[?z|?w])))],
+      fails member(e(?x,?z),?e),
+      [],
+      terminates 
+      (member(e(?x,?z),?e) & ~ member(?z,?w) & tc(?z,?y,?e,[?z|?w]))),
+     terminates member(e(?x,?y),?e) & 
+     (all z: 
+       terminates 
+       (member(e(?x,?z),?e) & ~ member(?z,?w) & tc(?z,?y,?e,[?z|?w]))),
+     terminates tc(?x,?y,?e,?w) by completion],
+    terminates tc(?x,?y,?e,?w)),
+   all [x,y,e,w,l]: succeeds list(?e) & succeeds list(?w) & 
+    succeeds list(?l) & vertices(?l,?w,?e) & succeeds lh(?l) @< s(?n) & 
+    gr(?e) & gr(?w) & gr(?l) => terminates tc(?x,?y,?e,?w))])
+).
+
+:- lemma(vertices:existence,
+all [e,w]: succeeds list(?e) & succeeds list(?w) & gr(?e) & gr(?w) => 
+ (ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l)),
+[induction(
+  [all e: succeeds list(?e) => succeeds list(?w) & gr(?e) & gr(?w) => 
+    (ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l))],
+  [step([],
+    [],
+    assume(succeeds list(?w) & gr([]) & gr(?w),
+     [assume(succeeds member(e(?x,?y),[]),
+       [fails member(e(?x,?y),[]) by completion,
+        ff],
+       succeeds member(?y,[]) \/ succeeds member(?y,?w)),
+      vertices([],?w,[]) by introduction(vertices,3),
+      succeeds list([]) & vertices([],?w,[]) & gr([]),
+      ex l: succeeds list(?l) & vertices(?l,?w,[]) & gr(?l)],
+     ex l: succeeds list(?l) & vertices(?l,?w,[]) & gr(?l)),
+    succeeds list(?w) & gr([]) & gr(?w) => 
+    (ex l: succeeds list(?l) & vertices(?l,?w,[]) & gr(?l))),
+   step([z,e],
+    [succeeds list(?w) & gr(?e) & gr(?w) => 
+     (ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l)),
+     succeeds list(?e)],
+    assume(succeeds list(?w) & gr([?z|?e]) & gr(?w),
+     [ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l),
+      exist(l,
+       succeeds list(?l) & vertices(?l,?w,?e) & gr(?l),
+       [all [x,y]: succeeds member(e(?x,?y),?e) => succeeds member(?y,?l) 
+         \/ succeeds member(?y,?w) by elimination(vertices,3),
+        (ex [x1,y1]: ?z = e(?x1,?y1)) \/ ~ (ex [x1,y1]: ?z = e(?x1,?y1)),
+        cases(ex [x1,y1]: ?z = e(?x1,?y1),
+         exist([x1,y1],
+          ?z = e(?x1,?y1),
+          [gr(?z),
+           gr(e(?x1,?y1)),
+           assume(succeeds member(e(?x,?y),[?z|?e]),
+            [def succeeds member(e(?x,?y),[?z|?e]) by completion,
+             cases(?z = e(?x,?y),
+              [?y = ?y1,
+               succeeds member(?y,[?y|?l]),
+               succeeds member(?y,[?y1|?l]) \/ succeeds member(?y,?w)],
+              succeeds member(e(?x,?y),?e),
+              [succeeds member(?y,?l) \/ succeeds member(?y,?w),
+               cases(succeeds member(?y,?l),
+                [],
+                succeeds member(?y,?w),
+                [],
+                succeeds member(?y,[?y1|?l]) \/ succeeds member(?y,?w))],
+              succeeds member(?y,[?y1|?l]) \/ succeeds member(?y,?w))],
+            succeeds member(?y,[?y1|?l]) \/ succeeds member(?y,?w)),
+           vertices([?y1|?l],?w,[?z|?e]) by introduction(vertices,3),
+           succeeds list([?y1|?l]) & vertices([?y1|?l],?w,[?z|?e]) & 
+           gr([?y1|?l]),
+           ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l)],
+          ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l)),
+         ~ (ex [x1,y1]: ?z = e(?x1,?y1)),
+         [assume(succeeds member(e(?x,?y),[?z|?e]),
+           [def succeeds member(e(?x,?y),[?z|?e]) by completion,
+            cases(?z = e(?x,?y),
+             [ex [x1,y1]: ?z = e(?x1,?y1),
+              ff],
+             succeeds member(e(?x,?y),?e),
+             [],
+             succeeds member(?y,?l) \/ succeeds member(?y,?w))],
+           succeeds member(?y,?l) \/ succeeds member(?y,?w)),
+          vertices(?l,?w,[?z|?e]) by introduction(vertices,3),
+          succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l),
+          ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l)],
+         ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l))],
+       ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l))],
+     ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l)),
+    succeeds list(?w) & gr([?z|?e]) & gr(?w) => 
+    (ex l: succeeds list(?l) & vertices(?l,?w,[?z|?e]) & gr(?l)))]),
+ assume(succeeds list(?e) & succeeds list(?w) & gr(?e) & gr(?w),
+  [succeeds list(?w) & gr(?e) & gr(?w) => 
+   (ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l)),
+   ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l)],
+  ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l))]
+).
+
+:- theorem(tc:termination,
+all [x,y,e,w]: succeeds list(?e) & succeeds list(?w) & gr(?e) & gr(?w) => 
+ terminates tc(?x,?y,?e,?w),
+assume(succeeds list(?e) & succeeds list(?w) & gr(?e) & gr(?w),
+ [ex l: succeeds list(?l) & vertices(?l,?w,?e) & gr(?l) by 
+   lemma(vertices:existence),
+  exist(l,
+   succeeds list(?l) & vertices(?l,?w,?e) & gr(?l),
+   [succeeds nat(lh(?l)) by corollary(lh:types),
+    succeeds lh(?l) @< s(lh(?l)) by lemma(less:one),
+    succeeds nat(s(lh(?l))),
+    all [x,y,e,w,l1]: succeeds list(?e) & succeeds list(?w) & 
+     succeeds list(?l1) & vertices(?l1,?w,?e) & 
+     succeeds lh(?l1) @< s(lh(?l)) & gr(?e) & gr(?w) & gr(?l1) => 
+     terminates tc(?x,?y,?e,?w) by lemma(tc:vertices:termination),
+    terminates tc(?x,?y,?e,?w)],
+   terminates tc(?x,?y,?e,?w))],
+ terminates tc(?x,?y,?e,?w))
+).
+
+:- lemma(path:cycle_free:tc,
+all [x,p,y,e,w]: succeeds path(?x,?p,?y,?e) & succeeds cycle_free(?p) & 
+ succeeds disjoint(?p,?w) => succeeds tc(?x,?y,?e,?w),
+[induction(
+  [all [x,p,y,e]: succeeds path(?x,?p,?y,?e) => 
+    (all w: succeeds cycle_free(?p) & succeeds disjoint(?p,?w) => 
+      succeeds tc(?x,?y,?e,?w))],
+  [step([x,y,e],
+    [succeeds member(e(?x,?y),?e)],
+    succeeds cycle_free([]) & succeeds disjoint([],?w) => 
+    succeeds tc(?x,?y,?e,?w),
+    all w: succeeds cycle_free([]) & succeeds disjoint([],?w) => 
+     succeeds tc(?x,?y,?e,?w)),
+   step([x,y,p,z,e],
+    [all w: succeeds cycle_free(?p) & succeeds disjoint(?p,?w) => 
+      succeeds tc(?y,?z,?e,?w),
+     succeeds member(e(?x,?y),?e),
+     succeeds path(?y,?p,?z,?e)],
+    assume(succeeds cycle_free([?y|?p]) & succeeds disjoint([?y|?p],?w),
+     [def succeeds cycle_free([?y|?p]) by completion,
+      fails member(?y,?p) & succeeds cycle_free(?p),
+      succeeds disjoint(?p,[?y|?w]) by lemma(disjoint:cons),
+      succeeds tc(?y,?z,?e,[?y|?w]),
+      succeeds member(?y,[?y|?p]),
+      fails member(?y,?w) by lemma(disjoint:member),
+      succeeds tc(?x,?z,?e,?w)],
+     succeeds tc(?x,?z,?e,?w)),
+    all w: succeeds cycle_free([?y|?p]) & succeeds disjoint([?y|?p],?w) =>
+     succeeds tc(?x,?z,?e,?w))]),
+ assume(succeeds path(?x,?p,?y,?e) & succeeds cycle_free(?p) & 
+  succeeds disjoint(?p,?w),
+  [all w: succeeds cycle_free(?p) & succeeds disjoint(?p,?w) => 
+    succeeds tc(?x,?y,?e,?w),
+   succeeds tc(?x,?y,?e,?w)],
+  succeeds tc(?x,?y,?e,?w))]
+).
+
+:- lemma(path:list,
+all [x,p,y,e]: succeeds path(?x,?p,?y,?e) => succeeds list(?p),
+induction([all [x,p,y,e]: succeeds path(?x,?p,?y,?e) => succeeds list(?p)],
+ [step([x,y,e],[succeeds member(e(?x,?y),?e)],[],succeeds list([])),
+  step([x,y,p,z,e],
+   [succeeds list(?p),
+    succeeds member(e(?x,?y),?e),
+    succeeds path(?y,?p,?z,?e)],
+   [],
+   succeeds list([?y|?p]))])
+).
+
+:- lemma(path:cycle_free,
+all [x,p,y,e,x1]: succeeds path(?x,?p,?y,?e) & succeeds cycle_free(?p) & 
+ succeeds member(?x1,?p) => 
+ (ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+   fails member(?x1,?q) & sub(?q,?p)),
+[induction(
+  [all [x,p,y,e]: succeeds path(?x,?p,?y,?e) => 
+    (all x1: succeeds cycle_free(?p) & succeeds member(?x1,?p) => 
+      (ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+        fails member(?x1,?q) & sub(?q,?p)))],
+  [step([x,y,e],
+    [succeeds member(e(?x,?y),?e)],
+    assume(succeeds cycle_free([]) & succeeds member(?x1,[]),
+     [fails member(?x1,[]) by completion,
+      ff],
+     ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+      fails member(?x1,?q) & sub(?q,[])),
+    all x1: succeeds cycle_free([]) & succeeds member(?x1,[]) => 
+     (ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+       fails member(?x1,?q) & sub(?q,[]))),
+   step([x,y,p,z,e],
+    [all x1: succeeds cycle_free(?p) & succeeds member(?x1,?p) => 
+      (ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+        fails member(?x1,?q) & sub(?q,?p)),
+     succeeds member(e(?x,?y),?e),
+     succeeds path(?y,?p,?z,?e)],
+    assume(succeeds cycle_free([?y|?p]) & succeeds member(?x1,[?y|?p]),
+     [def succeeds cycle_free([?y|?p]) by completion,
+      fails member(?y,?p) & succeeds cycle_free(?p),
+      def succeeds member(?x1,[?y|?p]) by completion,
+      cases(?x1 = ?y,
+       [sub(?p,[?y|?p]) by lemma(sub:cons),
+        succeeds path(?x1,?p,?z,?e) & succeeds cycle_free(?p) & 
+        fails member(?x1,?p) & sub(?p,[?y|?p]),
+        ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+         fails member(?x1,?q) & sub(?q,[?y|?p])],
+       succeeds member(?x1,?p),
+       [ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+         fails member(?x1,?q) & sub(?q,?p),
+        exist(q,
+         succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+         fails member(?x1,?q) & sub(?q,?p),
+         [sub(?p,[?y|?p]) by lemma(sub:cons),
+          sub(?q,[?y|?p]) by lemma(sub:transitive),
+          succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+          fails member(?x1,?q) & sub(?q,[?y|?p])],
+         ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+          fails member(?x1,?q) & sub(?q,[?y|?p]))],
+       ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+        fails member(?x1,?q) & sub(?q,[?y|?p]))],
+     ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+      fails member(?x1,?q) & sub(?q,[?y|?p])),
+    all x1: succeeds cycle_free([?y|?p]) & succeeds member(?x1,[?y|?p]) =>
+     (ex q: succeeds path(?x1,?q,?z,?e) & succeeds cycle_free(?q) & 
+       fails member(?x1,?q) & sub(?q,[?y|?p])))]),
+ assume(succeeds path(?x,?p,?y,?e) & succeeds cycle_free(?p) & 
+  succeeds member(?x1,?p),
+  [all x1: succeeds cycle_free(?p) & succeeds member(?x1,?p) => 
+    (ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+      fails member(?x1,?q) & sub(?q,?p)),
+   ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+    fails member(?x1,?q) & sub(?q,?p)],
+  ex q: succeeds path(?x1,?q,?y,?e) & succeeds cycle_free(?q) & 
+   fails member(?x1,?q) & sub(?q,?p))]
+).
+
+:- theorem(path:cycle_free,
+all [x,p,y,e,w]: succeeds path(?x,?p,?y,?e) => 
+ (ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & sub(?q,?p)),
+induction(
+ [all [x,p,y,e]: succeeds path(?x,?p,?y,?e) => 
+   (ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & 
+     sub(?q,?p))],
+ [step([x,y,e],
+   [succeeds member(e(?x,?y),?e)],
+   [sub([],[]) by lemma(sub:reflexive),
+    succeeds cycle_free([]) & succeeds path(?x,[],?y,?e) & sub([],[]),
+    ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & 
+     sub(?q,[])],
+   ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & sub(?q,[])),
+  step([x,y,p,z,e],
+   [ex q: succeeds cycle_free(?q) & succeeds path(?y,?q,?z,?e) & 
+     sub(?q,?p),
+    succeeds member(e(?x,?y),?e),
+    succeeds path(?y,?p,?z,?e)],
+   exist(q,
+    succeeds cycle_free(?q) & succeeds path(?y,?q,?z,?e) & sub(?q,?p),
+    [succeeds list(?q) by lemma(path:list),
+     terminates member(?y,?q) by lemma(member:termination),
+     succeeds member(?y,?q) \/ fails member(?y,?q),
+     cases(succeeds member(?y,?q),
+      [ex q1: succeeds path(?y,?q1,?z,?e) & succeeds cycle_free(?q1) & 
+        fails member(?y,?q1) & sub(?q1,?q) by lemma(path:cycle_free),
+       exist(q1,
+        succeeds path(?y,?q1,?z,?e) & succeeds cycle_free(?q1) & 
+        fails member(?y,?q1) & sub(?q1,?q),
+        [sub(?q1,?p) by lemma(sub:transitive),
+         sub([?y|?q1],[?y|?p]) by lemma(sub:cons:both),
+         succeeds cycle_free([?y|?q1]) & succeeds path(?x,[?y|?q1],?z,?e) &
+         sub([?y|?q1],[?y|?p]),
+         ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+          sub(?q,[?y|?p])],
+        ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+         sub(?q,[?y|?p]))],
+      fails member(?y,?q),
+      [sub([?y|?q],[?y|?p]) by lemma(sub:cons:both),
+       succeeds cycle_free([?y|?q]) & succeeds path(?x,[?y|?q],?z,?e) & 
+       sub([?y|?q],[?y|?p]),
+       ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+        sub(?q,[?y|?p])],
+      ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+       sub(?q,[?y|?p]))],
+    ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+     sub(?q,[?y|?p])),
+   ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?z,?e) & 
+    sub(?q,[?y|?p]))])
+).
+
+:- theorem(path:tc,
+all [x,p,y,e,w]: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w) => 
+ succeeds tc(?x,?y,?e,?w),
+assume(succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,?w),
+ [ex q: succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & sub(?q,?p) 
+  by theorem(path:cycle_free),
+  exist(q,
+   succeeds cycle_free(?q) & succeeds path(?x,?q,?y,?e) & sub(?q,?p),
+   [succeeds list(?q) by lemma(path:list),
+    succeeds disjoint(?q,?w) by lemma(disjoint:sub),
+    succeeds tc(?x,?y,?e,?w) by lemma(path:cycle_free:tc)],
+   succeeds tc(?x,?y,?e,?w))],
+ succeeds tc(?x,?y,?e,?w))
+).
+
+:- theorem(tc:nil:path,
+all [x,y,e]: succeeds tc(?x,?y,?e,[]) <=> 
+ (ex p: succeeds path(?x,?p,?y,?e)),
+[assume(succeeds tc(?x,?y,?e,[]),
+  [ex p: succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,[]) by 
+    theorem(tc:path),
+   exist(p,
+    succeeds path(?x,?p,?y,?e) & succeeds disjoint(?p,[]),
+    [],
+    ex p: succeeds path(?x,?p,?y,?e))],
+  ex p: succeeds path(?x,?p,?y,?e)),
+ assume(ex p: succeeds path(?x,?p,?y,?e),
+  exist(p,
+   succeeds path(?x,?p,?y,?e),
+   [succeeds disjoint([],?p) by lemma(disjoint:nil),
+    succeeds disjoint(?p,[]) by lemma(disjoint:symmetric),
+    succeeds tc(?x,?y,?e,[]) by theorem(path:tc)],
+   succeeds tc(?x,?y,?e,[])),
+  succeeds tc(?x,?y,?e,[])),
+ succeeds tc(?x,?y,?e,[]) <=> (ex p: succeeds path(?x,?p,?y,?e))]
+).
+
+:- bye(transitiveclosure).

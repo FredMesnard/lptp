@@ -1,0 +1,45 @@
+
+:- assert_clauses(n(append,3),[
+ clause([n(append,3),[n([],0)],$(l),$(l)],
+  [&],
+  [l]/0),
+ clause([n(append,3),[n('.',2),$(x),$(l1)],$(l2),[n('.',2),$(x),$(l3)]],
+  [n(append,3),$(l1),$(l2),$(l3)],
+  [x,l1,l2,l3]/0)
+]).
+
+:- assert_clauses(n(delete,3),[
+ clause([n(delete,3),$(x),[n('.',2),$(x),$(l)],$(l)],
+  [&],
+  [x,l]/0),
+ clause([n(delete,3),$(x),[n('.',2),$(y),$(l1)],[n('.',2),$(y),$(l2)]],
+  [n(delete,3),$(x),$(l1),$(l2)],
+  [x,y,l1,l2]/0)
+]).
+
+:- assert_clauses(n(length,2),[
+ clause([n(length,2),[n([],0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(length,2),[n('.',2),$(x),$(l)],[n(s,1),$(n)]],
+  [n(length,2),$(l),$(n)],
+  [x,l,n]/0)
+]).
+
+:- assert_clauses(n(list,1),[
+ clause([n(list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(list,1),[n('.',2),$(x),$(l)]],
+  [n(list,1),$(l)],
+  [x,l]/0)
+]).
+
+:- assert_clauses(n(member,2),[
+ clause([n(member,2),$(x),[n('.',2),$(x),$(l)]],
+  [&],
+  [x,l]/0),
+ clause([n(member,2),$(x),[n('.',2),$(y),$(l)]],
+  [n(member,2),$(x),$(l)],
+  [x,y,l]/0)
+]).

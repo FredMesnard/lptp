@@ -1,0 +1,162 @@
+
+:- assert_clauses(n(defined,2),[
+ clause([n(defined,2),[n(p,1),$(x)],$(i)],
+  [n(member,2),[n(p,1),$(x)],$(i)],
+  [x,i]/0),
+ clause([n(defined,2),[n(p,1),$(x)],$(i)],
+  [n(member,2),[n(neg,1),[n(p,1),$(x)]],$(i)],
+  [x,i]/0),
+ clause([n(defined,2),[n(neg,1),$(a)],$(i)],
+  [n(defined,2),$(a),$(i)],
+  [a,i]/0),
+ clause([n(defined,2),[n(and,2),$(a),$(b)],$(i)],
+  [&,[n(defined,2),$(a),$(i)],[n(defined,2),$(b),$(i)]],
+  [a,b,i]/0),
+ clause([n(defined,2),[n(or,2),$(a),$(b)],$(i)],
+  [&,[n(defined,2),$(a),$(i)],[n(defined,2),$(b),$(i)]],
+  [a,b,i]/0)
+]).
+
+:- assert_clauses(n(eval,3),[
+ clause([n(eval,3),[n(p,1),$(x)],$(i),[n(1,0)]],
+  [n(member,2),[n(p,1),$(x)],$(i)],
+  [x,i]/0),
+ clause([n(eval,3),[n(p,1),$(x)],$(i),[n(0,0)]],
+  [n(member,2),[n(neg,1),[n(p,1),$(x)]],$(i)],
+  [x,i]/0),
+ clause([n(eval,3),[n(neg,1),$(a)],$(i),[n(1,0)]],
+  [n(eval,3),$(a),$(i),[n(0,0)]],
+  [a,i]/0),
+ clause([n(eval,3),[n(neg,1),$(a)],$(i),[n(0,0)]],
+  [n(eval,3),$(a),$(i),[n(1,0)]],
+  [a,i]/0),
+ clause([n(eval,3),[n(and,2),$(a),$(b)],$(i),[n(1,0)]],
+  [&,[n(eval,3),$(a),$(i),[n(1,0)]],[n(eval,3),$(b),$(i),[n(1,0)]]],
+  [a,b,i]/0),
+ clause([n(eval,3),[n(and,2),$(a),$(b)],$(i),[n(0,0)]],
+  [n(eval,3),$(a),$(i),[n(0,0)]],
+  [a,b,i]/0),
+ clause([n(eval,3),[n(and,2),$(a),$(b)],$(i),[n(0,0)]],
+  [n(eval,3),$(b),$(i),[n(0,0)]],
+  [a,b,i]/0),
+ clause([n(eval,3),[n(or,2),$(a),$(b)],$(i),[n(1,0)]],
+  [n(eval,3),$(a),$(i),[n(1,0)]],
+  [a,b,i]/0),
+ clause([n(eval,3),[n(or,2),$(a),$(b)],$(i),[n(1,0)]],
+  [n(eval,3),$(b),$(i),[n(1,0)]],
+  [a,b,i]/0),
+ clause([n(eval,3),[n(or,2),$(a),$(b)],$(i),[n(0,0)]],
+  [&,[n(eval,3),$(a),$(i),[n(0,0)]],[n(eval,3),$(b),$(i),[n(0,0)]]],
+  [a,b,i]/0)
+]).
+
+:- assert_clauses(n(false,3),[
+ clause([n(false,3),[n(p,1),$(x)],$(i),[n('.',2),[n(neg,1),[n(p,1),$(x)]],$(i)]],
+  [~,[n(member,2),[n(p,1),$(x)],$(i)]],
+  [x,i]/0),
+ clause([n(false,3),[n(neg,1),$(a)],$(i),$(j)],
+  [n(true,3),$(a),$(i),$(j)],
+  [a,i,j]/0),
+ clause([n(false,3),[n(and,2),$(a),$(b)],$(i),$(j)],
+  [n(false,3),$(a),$(i),$(j)],
+  [a,b,i,j]/0),
+ clause([n(false,3),[n(and,2),$(a),$(b)],$(i),$(j)],
+  [n(false,3),$(b),$(i),$(j)],
+  [a,b,i,j]/0),
+ clause([n(false,3),[n(or,2),$(a),$(b)],$(i),$(k)],
+  [&,[n(false,3),$(a),$(i),$(j)],[n(false,3),$(b),$(j),$(k)]],
+  [a,b,i,k,j]/0)
+]).
+
+:- assert_clauses(n(formula,1),[
+ clause([n(formula,1),[n(p,1),$(x)]],
+  [&],
+  [x]/0),
+ clause([n(formula,1),[n(neg,1),$(a)]],
+  [n(formula,1),$(a)],
+  [a]/0),
+ clause([n(formula,1),[n(and,2),$(a),$(b)]],
+  [&,[n(formula,1),$(a)],[n(formula,1),$(b)]],
+  [a,b]/0),
+ clause([n(formula,1),[n(or,2),$(a),$(b)]],
+  [&,[n(formula,1),$(a)],[n(formula,1),$(b)]],
+  [a,b]/0)
+]).
+
+:- assert_clauses(n(incon,1),[
+ clause([n(incon,1),$(i)],
+  [&,[n(member,2),[n(p,1),$(x)],$(i)],[n(member,2),[n(neg,1),[n(p,1),$(x)]],$(i)]],
+  [i,x]/0)
+]).
+
+:- assert_clauses(n(interpretation,1),[
+ clause([n(interpretation,1),$(i)],
+  [&,[n(literal_list,1),$(i)],[~,[n(incon,1),$(i)]]],
+  [i]/0)
+]).
+
+:- assert_clauses(n(list,1),[
+ clause([n(list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(list,1),[n('.',2),$(x),$(l)]],
+  [n(list,1),$(l)],
+  [x,l]/0)
+]).
+
+:- assert_clauses(n(literal,1),[
+ clause([n(literal,1),[n(p,1),$(x)]],
+  [&],
+  [x]/0),
+ clause([n(literal,1),[n(neg,1),[n(p,1),$(x)]]],
+  [&],
+  [x]/0)
+]).
+
+:- assert_clauses(n(literal_list,1),[
+ clause([n(literal_list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(literal_list,1),[n('.',2),$(a),$(i)]],
+  [&,[n(literal,1),$(a)],[n(literal_list,1),$(i)]],
+  [a,i]/0)
+]).
+
+:- assert_clauses(n(member,2),[
+ clause([n(member,2),$(x),[n('.',2),$(x),$(l)]],
+  [&],
+  [x,l]/0),
+ clause([n(member,2),$(x),[n('.',2),$(y),$(l)]],
+  [n(member,2),$(x),$(l)],
+  [x,y,l]/0)
+]).
+
+:- assert_clauses(n(satisfiable,1),[
+ clause([n(satisfiable,1),$(a)],
+  [n(true,3),$(a),[n([],0)],$(i)],
+  [a,i]/0)
+]).
+
+:- assert_clauses(n(true,3),[
+ clause([n(true,3),[n(p,1),$(x)],$(i),[n('.',2),[n(p,1),$(x)],$(i)]],
+  [~,[n(member,2),[n(neg,1),[n(p,1),$(x)]],$(i)]],
+  [x,i]/0),
+ clause([n(true,3),[n(neg,1),$(a)],$(i),$(j)],
+  [n(false,3),$(a),$(i),$(j)],
+  [a,i,j]/0),
+ clause([n(true,3),[n(and,2),$(a),$(b)],$(i),$(k)],
+  [&,[n(true,3),$(a),$(i),$(j)],[n(true,3),$(b),$(j),$(k)]],
+  [a,b,i,k,j]/0),
+ clause([n(true,3),[n(or,2),$(a),$(b)],$(i),$(j)],
+  [n(true,3),$(a),$(i),$(j)],
+  [a,b,i,j]/0),
+ clause([n(true,3),[n(or,2),$(a),$(b)],$(i),$(j)],
+  [n(true,3),$(b),$(i),$(j)],
+  [a,b,i,j]/0)
+]).
+
+:- assert_clauses(n(valid,1),[
+ clause([n(valid,1),$(a)],
+  [~,[n(satisfiable,1),[n(neg,1),$(a)]]],
+  [a]/0)
+]).

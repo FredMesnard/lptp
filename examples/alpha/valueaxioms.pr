@@ -1,0 +1,213 @@
+:- initialize.
+:- thm_file($(tmp)/valueaxioms).
+:- tex_file($(tmp)/valueaxioms).
+
+/** The following predicates are generic predicates and are characterized
+by axioms:
+
+<UL>
+<LI> <TT>val(X)</TT>: <TT>X</TT> is a value.
+<LI> <TT>U #=< V</TT>: value <TT>U</TT> is less than or equal to <TT>V</TT>.
+<LI> <TT>bot</TT>: The constant <TT>bot</TT> is the least value.
+<LI> <TT>top</TT>: The constant <TT>top</TT> is the greatest value.
+<LI> <TT>pos(X)</TT>: <TT>X</TT> is a position.
+<LI> <TT>and_pos(X)</TT>: <TT>X</TT> is an <TT>and</TT>-position.
+<LI> <TT>or_pos(X)</TT>: <TT>X</TT> is an <TT>or</TT>-position.
+<LI> <TT>static_value(X,V)</TT>: <TT>V</TT> is the static value of 
+     position <TT>X</TT>.
+<LI> <TT>moves(X,L)</TT>: <TT>L</TT> is the list of all possible moves in 
+      position <TT>X</TT>.
+</UL>
+*/
+
+/** Axioms for the predicate <TT>val/1</TT>. */
+
+:- axiom(value:ground,
+all v: succeeds val(?v) => gr(?v)
+).
+
+:- axiom(value:termination,
+all v: succeeds val(?v) => terminates val(?v)
+).
+
+/** Minimal possible value <TT>bot</TT>. */
+
+:- axiom(value:bot,
+succeeds val(bot)
+).
+
+/** Maximal possible value <TT>top</TT>. */
+
+:- axiom(value:top,
+succeeds val(top)
+).
+
+/** There is a partial ordering on <TT>val/1</TT> with bottom
+element <TT>bot</TT> and top element <TT>top</TT>. */
+
+:- axiom(value:leq:termination,
+all [v,w]: succeeds val(?v) & succeeds val(?w) => 
+  terminates ?v #=< ?w
+).
+
+/** Two values v and w can have following relations:
+<TT>v =< w \/ w =< v</TT>. */
+
+:- axiom(value:leq:total,
+all [v,w]: succeeds val(?v) & succeeds val(?w) =>
+  succeeds ?v #=< ?w \/ succeeds ?w #=< ?v
+).
+
+/** The less or equal relation obeys the transitivity rule. */
+
+:- axiom(value:leq:transitive,
+all [u,v,w]: succeeds val(?u) & succeeds val(?v) & succeeds val(?w) &
+ succeeds ?u #=< ?v & succeeds ?v #=< ?w => succeeds ?u #=< ?w
+).
+
+/** If both possible relations are true, then we have equality. */
+
+:- axiom(value:leq:antisymmetric,
+all [v,w]: succeeds val(?v) & succeeds val(?w) &
+ succeeds ?v #=< ?w & succeeds ?w #=< ?v => ?v = ?w
+).
+
+/** The value <TT>bot</TT> is for any other value the infimum. */
+
+:- axiom(value:leq:bot,
+all v: succeeds val(?v) => succeeds bot #=< ?v
+).
+
+/** The value <TT>top</TT> is for any other value the supremum. */
+
+:- axiom(value:leq:top,
+all v: succeeds val(?v) => succeeds ?v #=< top
+).
+
+/** Axioms for <TT>pos/1</TT>, <TT>and_pos/1</TT> and <TT>or_pos/1</TT>. */
+
+:- axiom(pos:ground,
+all x: succeeds pos(?x) => gr(?x)
+).
+
+/** Distinction of an AND node and an OR node in the search tree. */
+
+:- axiom(pos:total,
+all x: succeeds pos(?x) => succeeds and_pos(?x) \/ succeeds or_pos(?x)
+).
+
+/** Negation of <TT>axiom(pos:total)</TT>. */
+
+:- axiom(pos:disjoint,
+all x: succeeds pos(?x) => ~(succeeds and_pos(?x) & succeeds or_pos(?x))
+).
+
+/** The question if the actual node is an AND node terminates. */
+
+:- axiom(and_pos:termination,
+all x: succeeds pos(?x) => terminates and_pos(?x)
+).
+
+/** The question if the actual node is an OR node terminates. */
+
+:- axiom(or_pos:termination,
+all x: succeeds pos(?x) => terminates or_pos(?x)
+).
+
+/** Axioms for <TT>static_value/2</TT>. */
+
+/** Return type of the function <TT>static_value/2</TT> is value. */
+
+:- axiom(static_value:types,
+all [x,v]: succeeds pos(?x) & succeeds static_value(?x,?v)  =>
+  succeeds val(?v)
+).
+
+/** Existence of a value returned by <TT>static_vallue/2</TT>. */
+
+:- axiom(static_value:existence,
+all x: succeeds pos(?x) => (ex v: succeeds static_value(?x,?v))
+).
+
+/** Uniqueness of the value returned by <TT>static_value/2</TT>. */
+
+:- axiom(static_value:uniqueness,
+all [x,v1,v2]: succeeds pos(?x) & succeeds static_value(?x,?v1) &
+ succeeds static_value(?x,?v2) => ?v1 = ?v2
+).
+
+/** The function <TT>static_value/2</TT> terminates in any case. */
+
+:- axiom(static_value:termination,
+all [x,v]: succeeds pos(?x) => terminates static_value(?x,?v)
+).
+
+/** The predicate <TT>static_value/2</TT> defines the graph of a function.
+Therfore we can introduce a unary function symbol <TT>sv/1</TT>. */
+
+:- definition_fun(sv,1,
+all [p,v]: succeeds pos(?p) =>
+  (sv(?p) = ?v <=> succeeds static_value(?p,?v)),
+existence by axiom(static_value:existence),
+uniqueness by axiom(static_value:uniqueness)
+).
+
+/** Proof of <TT>axiom(static_value:types)</TT> for the 
+function symbol <TT>sv/1</TT>. */
+
+:- lemma(sv:types,
+all p: succeeds pos(?p) => succeeds val(sv(?p)),
+assume(succeeds pos(?p),
+ [succeeds static_value(?p,sv(?p)) by existence(sv,1),
+  succeeds val(sv(?p)) by axiom(static_value:types)],
+ succeeds val(sv(?p)))
+).
+
+/** Axioms for <TT>moves/2</TT>. */
+
+/** The return type of the function moves/2 is a position list. */
+
+:- axiom(moves:list:types,
+all [x,l]: succeeds pos(?x) & succeeds moves(?x,?l) =>
+  succeeds pos_list(?l)
+).
+
+/** The position list exist always. */
+
+:- axiom(moves:existence,
+all x: succeeds pos(?x) => (ex l: succeeds moves(?x,?l))
+).
+
+/** And the position list computed by <TT>moves/2</TT> is unique. */
+
+:- axiom(moves:uniqueness,
+all [x,l1,l2]: succeeds pos(?x) & succeeds moves(?x,?l1) &
+ succeeds moves(?x,?l2) => ?l1 = ?l2
+).
+
+:- axiom(moves:termination,
+all [x,l]: succeeds pos(?x) => terminates moves(?x,?l)
+).
+
+/** The predicate <TT>moves/2</TT> defines the graph of a function.
+Therefore we can introduce a unary function symbol <TT>ms/1</TT>. */
+
+:- definition_fun(ms,1,
+all [p,l]: succeeds pos(?p) =>
+  (ms(?p) = ?l <=> succeeds moves(?p,?l)),
+existence by axiom(moves:existence),
+uniqueness by axiom(moves:uniqueness)
+).
+
+/** Proof of <TT>axiom(moves:types)</TT> for <TT>ms/1</TT>. */
+
+:- lemma(ms:types,
+all p: succeeds pos(?p) => succeeds pos_list(ms(?p)),
+assume(succeeds pos(?p),
+ [succeeds moves(?p,ms(?p)) by existence(ms,1),
+  succeeds pos_list(ms(?p)) by axiom(moves:list:types)],
+ succeeds pos_list(ms(?p)))
+).
+
+:- bye(valueaxioms).
+

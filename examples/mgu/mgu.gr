@@ -1,0 +1,357 @@
+
+:- assert_clauses(n(apply,3),[
+ clause([n(apply,3),[n($,1),$(x)],$(s),$(t)],
+  [n(assoc,3),$(x),$(s),$(t)],
+  [x,s,t]/0),
+ clause([n(apply,3),[n('.',2),$(x),$(t1L)],$(s),[n('.',2),$(x),$(t2L)]],
+  [n(applyL,3),$(t1L),$(s),$(t2L)],
+  [x,t1L,s,t2L]/0)
+]).
+
+:- assert_clauses(n(applyL,3),[
+ clause([n(applyL,3),[n([],0)],$(0),[n([],0)]],
+  [&],
+  [0]/1),
+ clause([n(applyL,3),[n('.',2),$(t1),$(t1L)],$(s),[n('.',2),$(t2),$(t2L)]],
+  [&,[n(apply,3),$(t1),$(s),$(t2)],[n(applyL,3),$(t1L),$(s),$(t2L)]],
+  [t1,t1L,s,t2,t2L]/0)
+]).
+
+:- assert_clauses(n(assoc,3),[
+ clause([n(assoc,3),$(x),[n([],0)],[n($,1),$(x)]],
+  [&],
+  [x]/0),
+ clause([n(assoc,3),$(x),[n('.',2),[n(bind,2),$(x),$(t)],$(0)],$(t)],
+  [&],
+  [x,t,0]/1),
+ clause([n(assoc,3),$(x),[n('.',2),[n(bind,2),$(y),$(0)],$(s)],$(t)],
+  [&,[~,[=,$(x),$(y)]],[n(assoc,3),$(x),$(s),$(t)]],
+  [x,y,0,s,t]/1)
+]).
+
+:- assert_clauses(n(class,1),[
+ clause([n(class,1),[n(cl,2),$(t),$(p)]],
+  [&,[n(term,1),$(t)],[n(partition,1),$(p)],[~,[n(partition_member,2),$(t),$(p)]],[~,[n(not_var_class,2),$(t),$(p)]]],
+  [t,p]/0)
+]).
+
+:- assert_clauses(n(class_member,2),[
+ clause([n(class_member,2),$(t),[n(cl,2),$(t),$(0)]],
+  [&],
+  [t,0]/1),
+ clause([n(class_member,2),$(t),[n(cl,2),$(0),$(p)]],
+  [n(partition_member,2),$(t),$(p)],
+  [t,0,p]/1)
+]).
+
+:- assert_clauses(n(class_solution,2),[
+ clause([n(class_solution,2),$(c),$(s)],
+  [~,[n(not_class_solution,2),$(c),$(s)]],
+  [c,s]/0)
+]).
+
+:- assert_clauses(n(class_sub,4),[
+ clause([n(class_sub,4),[n(cl,2),[n($,1),$(x)],$(p1)],$(p2),$(s1),$(s2)],
+  [&,[n(partition_term,3),[n($,1),$(x)],$(p2),$(t)],[n(partition_sub,4),$(p1),$(p2),[n('.',2),[n(bind,2),$(x),$(t)],$(s1)],$(s2)]],
+  [x,p1,p2,s1,s2,t]/0),
+ clause([n(class_sub,4),[n(cl,2),[n('.',2),$(0),$(1)],$(p1)],$(p2),$(s1),$(s2)],
+  [n(partition_sub,4),$(p1),$(p2),$(s1),$(s2)],
+  [0,1,p1,p2,s1,s2]/2)
+]).
+
+:- assert_clauses(n(cycle_free,1),[
+ clause([n(cycle_free,1),$(p)],
+  [&,[n(roots,2),$(p),$(tL)],[n(cycle_freeL,5),$(tL),$(p),[n([],0)],[n([],0)],$(0)]],
+  [p,tL,0]/1)
+]).
+
+:- assert_clauses(n(cycle_freeL,5),[
+ clause([n(cycle_freeL,5),[n([],0)],$(0),$(1),$(wF),$(wF)],
+  [&],
+  [0,1,wF]/2),
+ clause([n(cycle_freeL,5),[n('.',2),$(t1),$(t1L)],$(p),$(c),$(wF1),$(wF3)],
+  [&,[n(find,3),$(p),$(t1),$(t2)],[\/,[&,[n(member_check,2),$(t2),$(c)],[\/]],[&,[~,[n(member_check,2),$(t2),$(c)]],[\/,[&,[n(member_check,2),$(t2),$(wF1)],[n(cycle_freeL,5),$(t1L),$(p),$(c),$(wF1),$(wF3)]],[&,[~,[n(member_check,2),$(t2),$(wF1)]],[\/,[&,[n(var_form,1),$(t2)],[n(cycle_freeL,5),$(t1L),$(p),$(c),[n('.',2),$(t2),$(wF1)],$(wF3)]],[&,[~,[n(var_form,1),$(t2)]],[=,$(t2),[n('.',2),$(0),$(t2L)]],[n(cycle_freeL,5),$(t2L),$(p),[n('.',2),$(t2),$(c)],$(wF1),$(wF2)],[n(cycle_freeL,5),$(t1L),$(p),$(c),[n('.',2),$(t2),$(wF2)],$(wF3)]]]]]]]],
+  [t1,t1L,p,c,wF1,wF3,t2,0,t2L,wF2]/1)
+]).
+
+:- assert_clauses(n(disjoint,2),[
+ clause([n(disjoint,2),$(c),$(p)],
+  [~,[n(not_disjoint,2),$(c),$(p)]],
+  [c,p]/0)
+]).
+
+:- assert_clauses(n(domain,2),[
+ clause([n(domain,2),$(x),$(s)],
+  [n(member,2),[n(bind,2),$(x),$(0)],$(s)],
+  [x,s,0]/1)
+]).
+
+:- assert_clauses(n(equivalent,3),[
+ clause([n(equivalent,3),$(t1),$(t2),$(p)],
+  [&,[n(find,3),$(p),$(t1),$(t)],[n(find,3),$(p),$(t2),$(t)]],
+  [t1,t2,p,t]/0)
+]).
+
+:- assert_clauses(n(equivalentL,3),[
+ clause([n(equivalentL,3),[n([],0)],[n([],0)],$(0)],
+  [&],
+  [0]/1),
+ clause([n(equivalentL,3),[n('.',2),$(t1),$(t1L)],[n('.',2),$(t2),$(t2L)],$(p)],
+  [&,[n(equivalent,3),$(t1),$(t2),$(p)],[n(equivalentL,3),$(t1L),$(t2L),$(p)]],
+  [t1,t1L,t2,t2L,p]/0)
+]).
+
+:- assert_clauses(n(find,3),[
+ clause([n(find,3),[n([],0)],$(t),$(t)],
+  [&],
+  [t]/0),
+ clause([n(find,3),[n('.',2),$(c),$(p)],$(t1),$(t2)],
+  [\/,[&,[n(class_member,2),$(t1),$(c)],[=,$(c),[n(cl,2),$(t2),$(0)]]],[&,[~,[n(class_member,2),$(t1),$(c)]],[n(find,3),$(p),$(t1),$(t2)]]],
+  [c,p,t1,t2,0]/1)
+]).
+
+:- assert_clauses(n(find_delete,4),[
+ clause([n(find_delete,4),[n([],0)],$(t),[n([],0)],[n(cl,2),$(t),[n([],0)]]],
+  [&],
+  [t]/0),
+ clause([n(find_delete,4),[n('.',2),$(c1),$(p1)],$(t),$(p3),$(c2)],
+  [\/,[&,[n(class_member,2),$(t),$(c1)],[=,$(c2),$(c1)],[=,$(p3),$(p1)]],[&,[~,[n(class_member,2),$(t),$(c1)]],[n(find_delete,4),$(p1),$(t),$(p2),$(c2)],[=,$(p3),[n('.',2),$(c1),$(p2)]]]],
+  [c1,p1,t,p3,c2,p2]/0)
+]).
+
+:- assert_clauses(n(member_check,2),[
+ clause([n(member_check,2),$(x),[n('.',2),$(y),$(l)]],
+  [\/,[&,[=,$(x),$(y)]],[&,[~,[=,$(x),$(y)]],[n(member_check,2),$(x),$(l)]]],
+  [x,y,l]/0)
+]).
+
+:- assert_clauses(n(not_class_solution,2),[
+ clause([n(not_class_solution,2),$(c),$(s)],
+  [&,[n(class_member,2),$(t1),$(c)],[n(class_member,2),$(t2),$(c)],[n(apply,3),$(t1),$(s),$(t3)],[n(apply,3),$(t2),$(s),$(t4)],[~,[=,$(t3),$(t4)]]],
+  [c,s,t1,t2,t3,t4]/0)
+]).
+
+:- assert_clauses(n(not_disjoint,2),[
+ clause([n(not_disjoint,2),$(c),$(p)],
+  [&,[n(class_member,2),$(t),$(c)],[n(partition_member,2),$(t),$(p)]],
+  [c,p,t]/0)
+]).
+
+:- assert_clauses(n(not_solved,1),[
+ clause([n(not_solved,1),$(p)],
+  [&,[n(member,2),[n(cl,2),[n('.',2),$(x1),$(t1L)],$(p1)],$(p)],[n(partition_member,2),[n('.',2),$(x2),$(t2L)],$(p1)],[\/,[~,[=,$(x1),$(x2)]],[~,[n(equivalentL,3),$(t1L),$(t2L),$(p)]]]],
+  [p,x1,t1L,p1,x2,t2L]/0)
+]).
+
+:- assert_clauses(n(not_var_class,2),[
+ clause([n(not_var_class,2),[n($,1),$(0)],$(p)],
+  [&,[n(partition_member,2),$(t),$(p)],[~,[n(var_form,1),$(t)]]],
+  [0,p,t]/1)
+]).
+
+:- assert_clauses(n(parent,2),[
+ clause([n(parent,2),$(c),[n(cl,2),$(0),$(p)]],
+  [n(member,2),$(c),$(p)],
+  [c,0,p]/1)
+]).
+
+:- assert_clauses(n(parent_partition,2),[
+ clause([n(parent_partition,2),$(c1),$(p)],
+  [&,[n(member,2),$(c2),$(p)],[n(parent_star,2),$(c1),$(c2)]],
+  [c1,p,c2]/0)
+]).
+
+:- assert_clauses(n(parent_star,2),[
+ clause([n(parent_star,2),$(c),$(c)],
+  [&],
+  [c]/0),
+ clause([n(parent_star,2),$(c1),$(c3)],
+  [&,[n(parent_star,2),$(c1),$(c2)],[n(parent,2),$(c2),$(c3)]],
+  [c1,c3,c2]/0)
+]).
+
+:- assert_clauses(n(parent_terms,3),[
+ clause([n(parent_terms,3),$(t1),$(t2),$(p)],
+  [&,[n(parent_partition,2),[n(cl,2),$(t2),$(q)],$(p)],[n(member,2),[n(cl,2),$(t1),$(0)],$(q)]],
+  [t1,t2,p,q,0]/1)
+]).
+
+:- assert_clauses(n(partition,1),[
+ clause([n(partition,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(partition,1),[n('.',2),$(c),$(p)]],
+  [&,[n(class,1),$(c)],[n(partition,1),$(p)],[n(disjoint,2),$(c),$(p)]],
+  [c,p]/0)
+]).
+
+:- assert_clauses(n(partition_member,2),[
+ clause([n(partition_member,2),$(t),[n('.',2),$(c),$(0)]],
+  [n(class_member,2),$(t),$(c)],
+  [t,c,0]/1),
+ clause([n(partition_member,2),$(t),[n('.',2),$(0),$(p)]],
+  [n(partition_member,2),$(t),$(p)],
+  [t,0,p]/1)
+]).
+
+:- assert_clauses(n(partition_solution,2),[
+ clause([n(partition_solution,2),[n([],0)],$(0)],
+  [&],
+  [0]/1),
+ clause([n(partition_solution,2),[n('.',2),$(c),$(p)],$(s)],
+  [&,[n(class_solution,2),$(c),$(s)],[n(partition_solution,2),$(p),$(s)]],
+  [c,p,s]/0)
+]).
+
+:- assert_clauses(n(partition_sub,4),[
+ clause([n(partition_sub,4),[n([],0)],$(0),$(s),$(s)],
+  [&],
+  [0,s]/1),
+ clause([n(partition_sub,4),[n('.',2),$(c),$(p1)],$(p2),$(s1),$(s3)],
+  [&,[n(class_sub,4),$(c),$(p2),$(s1),$(s2)],[n(partition_sub,4),$(p1),$(p2),$(s2),$(s3)]],
+  [c,p1,p2,s1,s3,s2]/0)
+]).
+
+:- assert_clauses(n(partition_term,3),[
+ clause([n(partition_term,3),$(t1),$(p),$(t3)],
+  [&,[n(find,3),$(p),$(t1),$(t2)],[\/,[&,[n(var_form,1),$(t2)],[=,$(t3),$(t2)]],[&,[~,[n(var_form,1),$(t2)]],[=,$(t2),[n('.',2),$(tag),$(t1L)]],[n(partition_termL,3),$(t1L),$(p),$(t2L)],[=,$(t3),[n('.',2),$(tag),$(t2L)]]]]],
+  [t1,p,t3,t2,tag,t1L,t2L]/0)
+]).
+
+:- assert_clauses(n(partition_termL,3),[
+ clause([n(partition_termL,3),[n([],0)],$(0),[n([],0)]],
+  [&],
+  [0]/1),
+ clause([n(partition_termL,3),[n('.',2),$(t1),$(t1L)],$(p),[n('.',2),$(t2),$(t2L)]],
+  [&,[n(partition_term,3),$(t1),$(p),$(t2)],[n(partition_termL,3),$(t1L),$(p),$(t2L)]],
+  [t1,t1L,p,t2,t2L]/0)
+]).
+
+:- assert_clauses(n(roots,2),[
+ clause([n(roots,2),[n([],0)],[n([],0)]],
+  [&],
+  []/0),
+ clause([n(roots,2),[n('.',2),[n(cl,2),$(t),$(0)],$(p)],[n('.',2),$(t),$(tL)]],
+  [n(roots,2),$(p),$(tL)],
+  [t,0,p,tL]/1)
+]).
+
+:- assert_clauses(n(size,2),[
+ clause([n(size,2),[n($,1),$(0)],[n(s,1),[n(0,0)]]],
+  [&],
+  [0]/1),
+ clause([n(size,2),[n('.',2),$(0),$(tL)],[n(s,1),$(n)]],
+  [n(sizeL,2),$(tL),$(n)],
+  [0,tL,n]/1)
+]).
+
+:- assert_clauses(n(sizeL,2),[
+ clause([n(sizeL,2),[n([],0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(sizeL,2),[n('.',2),$(t),$(tL)],$(n3)],
+  [&,[n(size,2),$(t),$(n1)],[n(sizeL,2),$(tL),$(n2)],[n(plus,3),$(n1),$(n2),$(n3)]],
+  [t,tL,n3,n1,n2]/0)
+]).
+
+:- assert_clauses(n(solved,1),[
+ clause([n(solved,1),$(p)],
+  [~,[n(not_solved,1),$(p)]],
+  [p]/0)
+]).
+
+:- assert_clauses(n(substitution,1),[
+ clause([n(substitution,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(substitution,1),[n('.',2),[n(bind,2),$(x),$(t)],$(s)]],
+  [&,[n(atomic,1),$(x)],[n(term,1),$(t)],[n(substitution,1),$(s)],[~,[n(domain,2),$(x),$(s)]]],
+  [x,t,s]/0)
+]).
+
+:- assert_clauses(n(subterm,2),[
+ clause([n(subterm,2),$(t),$(t)],
+  [&],
+  [t]/0),
+ clause([n(subterm,2),$(t),[n('.',2),$(0),$(tL)]],
+  [n(subtermL,2),$(t),$(tL)],
+  [t,0,tL]/1)
+]).
+
+:- assert_clauses(n(subtermL,2),[
+ clause([n(subtermL,2),$(t1),$(tL)],
+  [&,[n(member,2),$(t2),$(tL)],[n(subterm,2),$(t1),$(t2)]],
+  [t1,tL,t2]/0)
+]).
+
+:- assert_clauses(n(term,1),[
+ clause([n(term,1),[n($,1),$(x)]],
+  [n(atomic,1),$(x)],
+  [x]/0),
+ clause([n(term,1),[n('.',2),$(x),$(tL)]],
+  [&,[n(atomic,1),$(x)],[n(termL,1),$(tL)]],
+  [x,tL]/0)
+]).
+
+:- assert_clauses(n(termL,1),[
+ clause([n(termL,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(termL,1),[n('.',2),$(t),$(tL)]],
+  [&,[n(term,1),$(t)],[n(termL,1),$(tL)]],
+  [t,tL]/0)
+]).
+
+:- assert_clauses(n(unifiable_terms,2),[
+ clause([n(unifiable_terms,2),$(t1),$(t2)],
+  [n(unify_terms_part,3),$(t1),$(t2),$(0)],
+  [t1,t2,0]/1)
+]).
+
+:- assert_clauses(n(unifier,3),[
+ clause([n(unifier,3),$(t1),$(t2),$(s)],
+  [&,[n(apply,3),$(t1),$(s),$(t3)],[n(apply,3),$(t2),$(s),$(t3)]],
+  [t1,t2,s,t3]/0)
+]).
+
+:- assert_clauses(n(unifierL,3),[
+ clause([n(unifierL,3),[n([],0)],[n([],0)],$(0)],
+  [&],
+  [0]/1),
+ clause([n(unifierL,3),[n('.',2),$(t1),$(tL1)],[n('.',2),$(t2),$(tL2)],$(s)],
+  [&,[n(unifier,3),$(t1),$(t2),$(s)],[n(unifierL,3),$(tL1),$(tL2),$(s)]],
+  [t1,tL1,t2,tL2,s]/0)
+]).
+
+:- assert_clauses(n(unify_terms_part,3),[
+ clause([n(unify_terms_part,3),$(t1),$(t2),$(p)],
+  [&,[n(union_find,4),$(t1),$(t2),[n([],0)],$(p)],[n(cycle_free,1),$(p)]],
+  [t1,t2,p]/0)
+]).
+
+:- assert_clauses(n(unify_terms_sub,3),[
+ clause([n(unify_terms_sub,3),$(t1),$(t2),$(s)],
+  [&,[n(unify_terms_part,3),$(t1),$(t2),$(p)],[n(partition_sub,4),$(p),$(p),[n([],0)],$(s)]],
+  [t1,t2,s,p]/0)
+]).
+
+:- assert_clauses(n(union_find,4),[
+ clause([n(union_find,4),$(t1),$(t2),$(p1),$(p4)],
+  [&,[n(find_delete,4),$(p1),$(t1),$(p2),$(c1)],[\/,[&,[n(class_member,2),$(t2),$(c1)],[=,$(p4),$(p1)]],[&,[~,[n(class_member,2),$(t2),$(c1)]],[n(find_delete,4),$(p2),$(t2),$(p3),$(c2)],[=,$(c1),[n(cl,2),$(t3),$(q1)]],[=,$(c2),[n(cl,2),$(t4),$(q2)]],[\/,[&,[n(var_form,1),$(t3)],[=,$(p4),[n('.',2),[n(cl,2),$(t4),[n('.',2),$(c1),$(q2)]],$(p3)]]],[&,[~,[n(var_form,1),$(t3)]],[\/,[&,[n(var_form,1),$(t4)],[=,$(p4),[n('.',2),[n(cl,2),$(t3),[n('.',2),$(c2),$(q1)]],$(p3)]]],[&,[~,[n(var_form,1),$(t4)]],[=,$(t3),[n('.',2),$(tag),$(t1L)]],[=,$(t4),[n('.',2),$(tag),$(t2L)]],[n(union_findL,4),$(t1L),$(t2L),[n('.',2),[n(cl,2),$(t4),[n('.',2),$(c1),$(q2)]],$(p3)],$(p4)]]]]]]]],
+  [t1,t2,p1,p4,p2,c1,p3,c2,t3,q1,t4,q2,tag,t1L,t2L]/0)
+]).
+
+:- assert_clauses(n(union_findL,4),[
+ clause([n(union_findL,4),[n([],0)],[n([],0)],$(p),$(p)],
+  [&],
+  [p]/0),
+ clause([n(union_findL,4),[n('.',2),$(t1),$(t1L)],[n('.',2),$(t2),$(t2L)],$(p1),$(p3)],
+  [&,[n(union_find,4),$(t1),$(t2),$(p1),$(p2)],[n(union_findL,4),$(t1L),$(t2L),$(p2),$(p3)]],
+  [t1,t1L,t2,t2L,p1,p3,p2]/0)
+]).
+
+:- assert_clauses(n(var_form,1),[
+ clause([n(var_form,1),[n($,1),$(0)]],
+  [&],
+  [0]/1)
+]).

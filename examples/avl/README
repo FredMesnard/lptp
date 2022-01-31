@@ -1,0 +1,18 @@
+AVL trees
+=========
+
+Authors: Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+	 Rene Lehmann  <rene.lehmann@unifr.ch>
+	 
+Files:
+
+	all.pl		Check all proofs.
+	avl.pl		Specification and implementation of AVL trees.
+	axioms.pr	Axioms for a total ordering.
+	ordered.pr	After insertion of an element the tree is ordered.
+	set.pr		AVL trees considered as sets.
+	termination.pr  The insertion algorithm terminates.
+	balanced.pr	After insertion of an element the tree is balanced.
+	existence.pr	The insertion algorithm never fails.
+	avl.pr		The main theorems.
+

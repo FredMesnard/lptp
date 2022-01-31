@@ -1,0 +1,15 @@
+
+:- assert_clauses(n(member,2),[
+ clause([n(member,2),var(x),[n('.',2),var(x),var(0)]],
+  [&],
+  [x,0]/1),
+ clause([n(member,2),var(x),[n('.',2),var(0),var(l)]],
+  [n(member,2),var(x),var(l)],
+  [x,0,l]/1)
+]).
+
+:- assert_clauses(n(member_check,2),[
+ clause([n(member_check,2),var(x),[n('.',2),var(y),var(l)]],
+  [\/,[&,[=,var(x),var(y)]],[&,[~,[=,var(x),var(y)]],[n(member_check,2),var(x),var(l)]]],
+  [x,y,l]/0)
+]).

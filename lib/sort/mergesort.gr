@@ -1,0 +1,54 @@
+
+:- assert_clauses(n(int_list,1),[
+ clause([n(int_list,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(int_list,1),[n('.',2),$(x),$(l)]],
+  [&,[n(integer,1),$(x)],[n(int_list,1),$(l)]],
+  [x,l]/0)
+]).
+
+:- assert_clauses(n(int_ordered,1),[
+ clause([n(int_ordered,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(int_ordered,1),[n('.',2),$(x),[n([],0)]]],
+  [&],
+  [x]/0),
+ clause([n(int_ordered,1),[n('.',2),$(x),[n('.',2),$(y),$(l)]]],
+  [&,[n(=<,2),$(x),$(y)],[n(int_ordered,1),[n('.',2),$(y),$(l)]]],
+  [x,y,l]/0)
+]).
+
+:- assert_clauses(n(merge,3),[
+ clause([n(merge,3),[n([],0)],$(xs),$(xs)],
+  [&],
+  [xs]/0),
+ clause([n(merge,3),$(xs),[n([],0)],$(xs)],
+  [&],
+  [xs]/0),
+ clause([n(merge,3),[n('.',2),$(x),$(xs)],[n('.',2),$(y),$(ys)],[n('.',2),$(z),$(zs)]],
+  [\/,[&,[n(=<,2),$(x),$(y)],[=,$(z),$(x)],[n(merge,3),$(xs),[n('.',2),$(y),$(ys)],$(zs)]],[&,[~,[n(=<,2),$(x),$(y)]],[=,$(z),$(y)],[n(merge,3),[n('.',2),$(x),$(xs)],$(ys),$(zs)]]],
+  [x,xs,y,ys,z,zs]/0)
+]).
+
+:- assert_clauses(n(mergesort,2),[
+ clause([n(mergesort,2),[n([],0)],[n([],0)]],
+  [&],
+  []/0),
+ clause([n(mergesort,2),[n('.',2),$(x),[n([],0)]],[n('.',2),$(x),[n([],0)]]],
+  [&],
+  [x]/0),
+ clause([n(mergesort,2),[n('.',2),$(x),[n('.',2),$(y),$(xs)]],$(ys)],
+  [&,[n(split,3),[n('.',2),$(x),[n('.',2),$(y),$(xs)]],$(xs1),$(xs2)],[n(mergesort,2),$(xs1),$(ys1)],[n(mergesort,2),$(xs2),$(ys2)],[n(merge,3),$(ys1),$(ys2),$(ys)]],
+  [x,y,xs,ys,xs1,xs2,ys1,ys2]/0)
+]).
+
+:- assert_clauses(n(split,3),[
+ clause([n(split,3),[n([],0)],[n([],0)],[n([],0)]],
+  [&],
+  []/0),
+ clause([n(split,3),[n('.',2),$(x),$(xs)],[n('.',2),$(x),$(ys)],$(zs)],
+  [n(split,3),$(xs),$(zs),$(ys)],
+  [x,xs,ys,zs]/0)
+]).

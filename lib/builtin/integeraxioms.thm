@@ -1,0 +1,5 @@
+:- assert_fact(axiom,integer:ground,@(all,[x],[=>,[succeeds,[n(integer,1),$(x)]],[gr,$(x)]])).
+:- assert_fact(axiom,integer:less:termination,@(all,[x,y],[=>,[&,[succeeds,[n(integer,1),$(x)]],[succeeds,[n(integer,1),$(y)]]],[terminates,[n(<,2),$(x),$(y)]]])).
+:- assert_fact(axiom,integer:less:total,@(all,[x,y],[=>,[&,[succeeds,[n(integer,1),$(x)]],[succeeds,[n(integer,1),$(y)]]],[\/,[succeeds,[n(<,2),$(x),$(y)]],[=,$(x),$(y)],[succeeds,[n(<,2),$(y),$(x)]]]])).
+:- assert_fact(axiom,integer:leq:termination,@(all,[x,y],[=>,[&,[succeeds,[n(integer,1),$(x)]],[succeeds,[n(integer,1),$(y)]]],[terminates,[n(=<,2),$(x),$(y)]]])).
+:- assert_fact(axiom,integer:leq:total,@(all,[x,y],[=>,[&,[succeeds,[n(integer,1),$(x)]],[succeeds,[n(integer,1),$(y)]]],[\/,[succeeds,[n(=<,2),$(x),$(y)]],[succeeds,[n(=<,2),$(y),$(x)]]]])).

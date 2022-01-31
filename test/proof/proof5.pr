@@ -1,0 +1,119 @@
+:- initialize.
+:- tex_file($(tmp)/proof5).
+:- thm_file($(tmp)/proof5).
+:- io__open_user($(tmp)/proof5).
+
+:- \+ lemma(1,
+(ex x: r(?x)) => (all x: r(?x)),
+assume(ex x: r(?x),exist(u,r(?u),r(?u),all x: r(?x)),all x: r(?x))
+).
+
+:- \+ lemma(2,
+(ex x: q(?x)) & (ex x: r(?x)) => (ex x: q(?x) & r(?x)),
+assume((ex x: q(?x)) & (ex x: r(?x)),
+ exist(u,
+  q(?u),
+  exist(u,
+   r(?u),
+   q(?u) & r(?u),
+   ex x: q(?x) & r(?x)),
+  ex x: q(?x) & r(?x)),
+ ex x: q(?x) & r(?x))
+).
+
+:- \+ lemma(2:a,
+a => b,
+assume(a,b,b)
+).
+
+:- \+ lemma(3,
+(all x: r(?x,?y)) => (all [x,y]: r(?x,?y)),
+assume(all x: r(?x,?y),[],all [x,y]: r(?x,?y))
+).
+
+:- \+ lemma(4,
+(all x: r(?x,?x)) => (all [x,y]: r(?x,?y)),
+assume(all x: r(?x,?x),[],all [x,y]: r(?x,?y))
+).
+
+:- \+ lemma(5,
+r(c0,c1) => (ex x: r(?x,?x)),
+assume(r(c0,c1),[],ex x: r(?x,?x))
+).
+
+:- \+ lemma(6,
+(ex [x,y]: r(?x,?y)) => (ex z: r(?z,?z)),
+assume(ex [x,y]: r(?x,?y),[],ex z: r(?z,?z))
+).
+
+:- \+ lemma(7,
+(all x: r(?x,?y)) & (all [x,y]: r(?x,?y) => q(?x,?y)) => 
+ (all [x,y]: q(?x,?y)),
+assume((all x: r(?x,?y)) & (all [x,y]: r(?x,?y) => q(?x,?y)),
+ [all x: r(?x,?y),
+  r(?x,?y),
+  all [x,y]: r(?x,?y) => q(?x,?y),
+  r(?x,?y) => q(?x,?y),
+  q(?x,?y),
+  all [x,y]: q(?x,?y)],
+ all [x,y]: q(?x,?y))
+).
+
+:- \+ lemma(8,
+?x = ?y,
+[?x = ?y]
+).
+
+:- \+ lemma(9,
+?x <> ?y,
+[?x <> ?y]
+).
+
+:- \+ lemma(10,
+?x <> ?x,
+[?x <> ?x]
+).
+
+:- \+ lemma(11,
+f(?x) = f(g(?y)) & (all z: r(?z,?x)) => (all y: r(?y,g(?y))),
+assume(f(?x) = f(g(?y)) & (all z: r(?z,?x)),
+ [f(?x) = f(g(?y)),
+  all z: r(?z,?x),
+  all y: r(?y,g(?y))],
+ all y: r(?y,g(?y)))
+).
+
+:- \+ lemma(12,
+ff,
+[ff]
+).
+
+:- \+ lemma(13,
+fails [],
+[fails []]
+).
+
+:- \+ lemma(14,
+(all x: ex y: r(?x,?y)) => (ex y: all x: r(?x,?y)),
+assume(all x: ex y: r(?x,?y),
+ [ex y: r(?x,?y),
+  exist(y,
+   r(?x,?y),
+   [all x: r(?x,?y),
+    ex y: all x: r(?x,?y)],
+   ex y: all x: r(?x,?y))],
+ ex y: all x: r(?x,?y))
+).
+
+:- \+ lemma(15,
+tt,
+[a => a by gap,a]
+).
+
+:- \+ lemma(16,
+tt,
+[all x: r(?x) => r(?x) by gap,r(f(0))]
+).
+
+:- io__close_user.
+:- bye(proof5).

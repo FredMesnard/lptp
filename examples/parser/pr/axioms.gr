@@ -1,0 +1,42 @@
+
+:- assert_clauses(n(arithmetic,1),[
+ clause([n(arithmetic,1),$(x)],
+  [n(integer,1),$(x)],
+  [x]/0),
+ clause([n(arithmetic,1),[n(+,2),$(x),$(y)]],
+  [&,[n(arithmetic,1),$(x)],[n(arithmetic,1),$(y)]],
+  [x,y]/0),
+ clause([n(arithmetic,1),[n(-,2),$(x),$(y)]],
+  [&,[n(arithmetic,1),$(x)],[n(arithmetic,1),$(y)]],
+  [x,y]/0),
+ clause([n(arithmetic,1),[n(*,2),$(x),$(y)]],
+  [&,[n(arithmetic,1),$(x)],[n(arithmetic,1),$(y)]],
+  [x,y]/0),
+ clause([n(arithmetic,1),[n(/,2),$(x),$(y)]],
+  [&,[n(arithmetic,1),$(x)],[n(arithmetic,1),$(y)]],
+  [x,y]/0),
+ clause([n(arithmetic,1),[n(-,1),$(x)]],
+  [n(arithmetic,1),$(x)],
+  [x]/0)
+]).
+
+:- assert_clauses(n(numeric,1),[
+ clause([n(numeric,1),$(x)],
+  [n(number,1),$(x)],
+  [x]/0),
+ clause([n(numeric,1),[n(+,2),$(x),$(y)]],
+  [&,[n(numeric,1),$(x)],[n(numeric,1),$(y)]],
+  [x,y]/0),
+ clause([n(numeric,1),[n(-,2),$(x),$(y)]],
+  [&,[n(numeric,1),$(x)],[n(numeric,1),$(y)]],
+  [x,y]/0),
+ clause([n(numeric,1),[n(*,2),$(x),$(y)]],
+  [&,[n(numeric,1),$(x)],[n(numeric,1),$(y)]],
+  [x,y]/0),
+ clause([n(numeric,1),[n(/,2),$(x),$(y)]],
+  [&,[n(numeric,1),$(x)],[n(numeric,1),$(y)]],
+  [x,y]/0),
+ clause([n(numeric,1),[n(-,1),$(x)]],
+  [n(numeric,1),$(x)],
+  [x]/0)
+]).

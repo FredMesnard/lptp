@@ -1,0 +1,1002 @@
+:- initialize.
+
+:- tex_file($(tmp)/mergesort).
+:- thm_file($(tmp)/mergesort).
+
+:- needs_gr($(lib)/sort/mergesort).
+
+:- needs_thm($(lib)/list/list).
+:- needs_gr($(lib)/list/list).
+:- needs_thm($(lib)/nat/nat).
+:- needs_gr($(lib)/nat/nat).
+:- needs_thm($(lib)/list/permutation).
+:- needs_gr($(lib)/list/permutation).
+
+:- axiom(leq:termination,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+  terminates ?x =< ?y
+).
+
+:- axiom(integer:gr,
+all x: succeeds integer(?x) => gr(?x)
+).
+
+:- axiom(leq:total,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) &
+ fails ?x =< ?y => succeeds ?y =< ?x
+).
+
+:- lemma(int_list:list,
+all l: succeeds int_list(?l) => succeeds list(?l),
+induction([all l: succeeds int_list(?l) => succeeds list(?l)],
+ [step([],[],[],succeeds list([])),
+  step([x,l],
+   [succeeds list(?l),
+    succeeds integer(?x),
+    succeeds int_list(?l)],
+   [],
+   succeeds list([?x|?l]))])
+).
+
+:- lemma(split:types,
+all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => succeeds list(?l1) &
+  succeeds list(?l2) & succeeds list(?l3),
+induction(
+ [all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => succeeds list(?l1) &
+    succeeds list(?l2) & succeeds list(?l3)],
+ [step([],[],[],succeeds list([]) & succeeds list([]) & succeeds list([])),
+  step([x,xs,ys,zs],
+   [succeeds list(?xs) & succeeds list(?zs) & succeeds list(?ys),
+    succeeds split(?xs,?zs,?ys)],
+   [],
+   succeeds list([?x|?xs]) & succeeds list([?x|?ys]) & succeeds list(?zs))])
+).
+
+:- lemma(split:length,
+all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => lh(?l1) = lh(?l2) @+ lh(?l3),
+induction(
+ [all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => 
+    lh(?l1) = lh(?l2) @+ lh(?l3)],
+ [step([],[],
+   [lh([]) = 0 by corollary(lh:nil),
+    0 @+ 0 = 0 by lemma(plus:zero),
+    0 = 0 @+ 0,
+    lh([]) = lh([]) @+ lh([])],
+   lh([]) = lh([]) @+ lh([])),
+  step([x,xs,ys,zs],
+   [lh(?xs) = lh(?zs) @+ lh(?ys),
+    succeeds split(?xs,?zs,?ys)],
+   [succeeds list(?xs) & succeeds list(?zs) & succeeds list(?ys) by 
+     lemma(split:types),
+    lh([?x|?xs]) = s(lh(?xs)) by corollary(lh:cons),
+    lh([?x|?ys]) = s(lh(?ys)) by corollary(lh:cons),
+    succeeds nat(lh(?ys)) by corollary(lh:types),
+    succeeds nat(lh(?zs)) by corollary(lh:types),
+    lh(?zs) @+ lh(?ys) = lh(?ys) @+ lh(?zs) by theorem(plus:commutative),
+    lh(?xs) = lh(?ys) @+ lh(?zs),
+    s(lh(?ys)) @+ lh(?zs) = s(lh(?ys) @+ lh(?zs)) by 
+     corollary(plus:successor),
+    lh([?x|?xs]) = s(lh(?xs)) = s(lh(?ys) @+ lh(?zs)) =
+    s(lh(?ys)) @+ lh(?zs) = lh([?x|?ys]) @+ lh(?zs) ,
+    lh([?x|?xs]) = lh([?x|?ys]) @+ lh(?zs)],
+   lh([?x|?xs]) = lh([?x|?ys]) @+ lh(?zs))])
+).
+
+:- lemma(split:termination,
+all [l1,l2,l3]: succeeds list(?l1) => terminates split(?l1,?l2,?l3),
+[induction(
+  [all l1: succeeds list(?l1) => 
+     (all [l2,l3]: terminates split(?l1,?l2,?l3))],
+  [step([],
+    [],
+    terminates split([],?l2,?l3),
+    all [l2,l3]: terminates split([],?l2,?l3)),
+   step([x,l],
+    [all [l2,l3]: terminates split(?l,?l2,?l3),
+     succeeds list(?l)],
+    [terminates split(?l,?l3,?l2),
+     ?l2 = [?x|?ys] => terminates split(?l,?l3,?ys),
+     all ys: ?l2 = [?x|?ys] => terminates split(?l,?l3,?ys),
+     terminates split([?x|?l],?l2,?l3) by completion],
+    all [l2,l3]: terminates split([?x|?l],?l2,?l3))]),
+ assume(succeeds list(?l1),
+  [all [l2,l3]: terminates split(?l1,?l2,?l3),
+   terminates split(?l1,?l2,?l3)],
+  terminates split(?l1,?l2,?l3))]
+).
+
+:- lemma(merge:types,
+all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) & succeeds int_list(?l1) &
+ succeeds int_list(?l2) => succeeds int_list(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) => succeeds int_list(?l1) &
+     succeeds int_list(?l2) => succeeds int_list(?l3)],
+  [step([xs],
+    [],
+    assume(succeeds int_list([]) & succeeds int_list(?xs),
+     [],
+     succeeds int_list(?xs)),
+    succeeds int_list([]) & succeeds int_list(?xs) => 
+     succeeds int_list(?xs)),
+   step([xs],
+    [],
+    assume(succeeds int_list(?xs) & succeeds int_list([]),
+     [],
+     succeeds int_list(?xs)),
+    succeeds int_list(?xs) & succeeds int_list([]) => 
+     succeeds int_list(?xs)),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list(?xs) & succeeds int_list([?y|?ys]) => 
+      succeeds int_list(?zs),
+     succeeds ?x =< ?y,
+     ?z = ?x,
+     succeeds merge(?xs,[?y|?ys],?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]),
+     [def succeeds int_list([?x|?xs]) by completion,
+      succeeds int_list([?z|?zs])],
+     succeeds int_list([?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) => 
+     succeeds int_list([?z|?zs])),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list([?x|?xs]) & succeeds int_list(?ys) => 
+      succeeds int_list(?zs),
+     fails ?x =< ?y,
+     ?z = ?y,
+     succeeds merge([?x|?xs],?ys,?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]),
+     [def succeeds int_list([?y|?ys]) by completion,
+      succeeds int_list([?z|?zs]) by completion],
+     succeeds int_list([?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) => 
+     succeeds int_list([?z|?zs]))]),
+ assume(succeeds merge(?l1,?l2,?l3) & succeeds int_list(?l1) &
+  succeeds int_list(?l2),
+  [succeeds int_list(?l1) & succeeds int_list(?l2) => 
+    succeeds int_list(?l3),
+   succeeds int_list(?l1) & succeeds int_list(?l2) => 
+    succeeds int_list(?l3),
+   succeeds int_list(?l3)],
+  succeeds int_list(?l3))]
+).
+
+:- lemma(split:types:2,
+all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) & succeeds int_list(?l1) =>
+  succeeds int_list(?l2) & succeeds int_list(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => succeeds int_list(?l1) =>
+      succeeds int_list(?l2) & succeeds int_list(?l3)],
+  [step([],
+    [],
+    [],
+    succeeds int_list([]) => succeeds int_list([]) & succeeds int_list([])),
+   step([x,xs,ys,zs],
+    [succeeds int_list(?xs) => succeeds int_list(?zs) &
+      succeeds int_list(?ys),
+     succeeds split(?xs,?zs,?ys)],
+    assume(succeeds int_list([?x|?xs]),
+     [def succeeds int_list([?x|?xs]) by completion,
+      succeeds int_list(?zs) &
+      succeeds int_list(?ys),
+      succeeds int_list([?x|?ys]),
+      succeeds int_list(?zs)],
+     succeeds int_list([?x|?ys]) & succeeds int_list(?zs)),
+    succeeds int_list([?x|?xs]) => succeeds int_list([?x|?ys]) &
+     succeeds int_list(?zs))]),
+ assume(succeeds split(?l1,?l2,?l3) & succeeds int_list(?l1),
+  [succeeds int_list(?l1) => succeeds int_list(?l2) & 
+    succeeds int_list(?l3),
+   succeeds int_list(?l1) => succeeds int_list(?l2) & 
+    succeeds int_list(?l3),
+   succeeds int_list(?l2) & succeeds int_list(?l3)],
+  succeeds int_list(?l2) & succeeds int_list(?l3))]
+).
+
+:- lemma(mergesort:types,
+all [l1,l2]: succeeds mergesort(?l1,?l2) & succeeds int_list(?l1) =>
+  succeeds int_list(?l2),
+[induction(
+  [all [l1,l2]: succeeds mergesort(?l1,?l2) => succeeds int_list(?l1) => 
+      succeeds int_list(?l2)],
+  [step([],[],[],succeeds int_list([]) => succeeds int_list([])),
+   step([x],
+    [],
+    [],
+    succeeds int_list([?x]) => succeeds int_list([?x])),
+   step([x,y,xs,ys,xs1,xs2,ys1,ys2],
+    [succeeds int_list(?xs1) => succeeds int_list(?ys1),
+     succeeds int_list(?xs2) => succeeds int_list(?ys2),
+     succeeds split([?x,?y|?xs],?xs1,?xs2),
+     succeeds mergesort(?xs1,?ys1),
+     succeeds mergesort(?xs2,?ys2),
+     succeeds merge(?ys1,?ys2,?ys)],
+    assume(succeeds int_list([?x,?y|?xs]),
+     [succeeds int_list(?xs1) & succeeds int_list(?xs2) by 
+       lemma(split:types:2),
+      succeeds int_list(?ys1),
+      succeeds int_list(?ys2),
+      succeeds int_list(?ys) by lemma(merge:types)],
+     succeeds int_list(?ys)),
+    succeeds int_list([?x,?y|?xs]) => succeeds int_list(?ys))]),
+ assume(succeeds mergesort(?l1,?l2) & succeeds int_list(?l1),
+  [succeeds int_list(?l1) => succeeds int_list(?l2),
+   succeeds int_list(?l1) => succeeds int_list(?l2),
+   succeeds int_list(?l2)],
+  succeeds int_list(?l2))]
+).
+
+:- lemma(merge:termination,
+all n: succeeds nat(?n) =>
+  (all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< ?n => terminates merge(?l1,?l2,?l3)),
+induction(
+ [all n: succeeds nat(?n) => 
+    (all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+      succeeds lh(?l1) @+ lh(?l2) @< ?n => terminates merge(?l1,?l2,?l3))],
+ [step([],
+   [],
+   assume(succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< 0,
+    [def succeeds lh(?l1) @+ lh(?l2) @< 0 by completion,
+     terminates merge(?l1,?l2,?l3)],
+    terminates merge(?l1,?l2,?l3)),
+   all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< 0 => terminates merge(?l1,?l2,?l3)),
+  step([n],
+   [all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+     succeeds lh(?l1) @+ lh(?l2) @< ?n => terminates merge(?l1,?l2,?l3),
+    succeeds nat(?n)],
+   assume(succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< s(?n),
+    [assume(?l1 = [?x|?xs] & ?l2 = [?y|?ys] & ?l3 = [?z|?zs],
+      [def succeeds int_list([?x|?xs]) by completion,
+       def succeeds int_list([?y|?ys]) by completion,
+       terminates ?x =< ?y by axiom(leq:termination),
+       succeeds list(?xs) by lemma(int_list:list),
+       succeeds list(?l1),
+       succeeds list(?ys) by lemma(int_list:list),
+       succeeds list(?l2),
+       succeeds lh([?x|?xs]) @+ lh([?y|?ys]) @< s(?n),
+       succeeds lh(?xs) @+ lh([?y|?ys]) @< ?n by lemma(lh:cons:first),
+       terminates merge(?xs,[?y|?ys],?zs),
+       terminates (?x =< ?y & ?z = ?x & merge(?xs,[?y|?ys],?zs)),
+       gr(?x) by axiom(integer:gr),
+       gr(?y) by axiom(integer:gr),
+       succeeds list(?ys) by lemma(int_list:list),
+       succeeds lh(?l1) @+ lh(?ys) @< ?n by lemma(lh:cons:second),
+       succeeds lh([?x|?xs]) @+ lh(?ys) @< ?n,
+       terminates merge([?x|?xs],?ys,?zs),
+       terminates (~ ?x =< ?y & ?z = ?y & merge([?x|?xs],?ys,?zs))],
+      terminates (?x =< ?y & ?z = ?x & merge(?xs,[?y|?ys],?zs)) &
+      terminates (~ ?x =< ?y & ?z = ?y & merge([?x|?xs],?ys,?zs))),
+     all [x,xs,y,ys,z,zs]: ?l1 = [?x|?xs] & ?l2 = [?y|?ys] & ?l3 = [?z|?zs] =>
+       terminates (?x =< ?y & ?z = ?x & merge(?xs,[?y|?ys],?zs)) &
+       terminates (~ ?x =< ?y & ?z = ?y & merge([?x|?xs],?ys,?zs)),
+     terminates merge(?l1,?l2,?l3) by completion],
+    terminates merge(?l1,?l2,?l3)),
+   all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< s(?n) => terminates merge(?l1,?l2,?l3))])
+).
+
+:- theorem(merge:termination,
+all [l1,l2,l3]: succeeds int_list(?l1) & succeeds int_list(?l2) =>
+  terminates merge(?l1,?l2,?l3),
+assume(succeeds int_list(?l1) & succeeds int_list(?l2),
+ [succeeds list(?l1) by lemma(int_list:list),
+  succeeds list(?l2) by lemma(int_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds nat(lh(?l1) @+ lh(?l2)) by corollary(plus:types),
+  succeeds lh(?l1) @+ lh(?l2) @< s(lh(?l1) @+ lh(?l2)) by lemma(less:one),
+  succeeds nat(s(lh(?l1) @+ lh(?l2))),
+  all [m1,m2,m3]: succeeds int_list(?m1) & succeeds int_list(?m2) &
+   succeeds lh(?m1) @+ lh(?m2) @< s(lh(?l1) @+ lh(?l2)) => 
+    terminates merge(?m1,?m2,?m3) by lemma(merge:termination), 
+  terminates merge(?l1,?l2,?l3) ],
+ terminates merge(?l1,?l2,?l3))
+).
+
+:- lemma(split:length:less,
+all [x,y,l1,l2,l3]: succeeds split([?x,?y|?l1],?l2,?l3) =>
+  succeeds lh(?l2) @< lh([?x,?y|?l1]) &
+  succeeds lh(?l3) @< lh([?x,?y|?l1]),
+assume(succeeds split([?x,?y|?l1],?l2,?l3),
+ [def succeeds split([?x,?y|?l1],?l2,?l3) by completion,
+  exist(xs,
+   ?l2 = [?x|?xs] & succeeds split([?y|?l1],?l3,?xs),
+   [def succeeds split([?y|?l1],?l3,?xs) by completion,
+    exist(ys,
+     ?l3 = [?y|?ys] & succeeds split(?l1,?xs,?ys),
+     [lh(?l1) = lh(?xs) @+ lh(?ys) by lemma(split:length),
+      succeeds list(?l1) & succeeds list(?xs) & succeeds list(?ys) by 
+       lemma(split:types),
+      succeeds nat(lh(?xs)) by corollary(lh:types),
+      succeeds nat(lh(?ys)) by corollary(lh:types),
+      succeeds nat(lh(?l1)) by corollary(lh:types),
+      succeeds lh(?xs) @=< lh(?xs) @+ lh(?ys) by 
+       corollary(leq:plus:first),
+      succeeds lh(?ys) @=< lh(?xs) @+ lh(?ys) by 
+       corollary(leq:plus:second),
+      succeeds lh(?xs) @=< lh(?l1),
+      succeeds lh(?ys) @=< lh(?l1),
+      succeeds s(lh(?xs)) @=< s(lh(?l1)) by sld,
+      succeeds s(lh(?ys)) @=< s(lh(?l1)) by sld,
+      lh([?x|?xs]) = s(lh(?xs)) by corollary(lh:cons),
+      lh([?y|?ys]) = s(lh(?ys)) by corollary(lh:cons),
+      lh(?l2) = s(lh(?xs)),
+      lh(?l3) = s(lh(?ys)),
+      lh([?y|?l1]) = s(lh(?l1)) by corollary(lh:cons),
+      succeeds lh(?l2) @=< lh([?y|?l1]),
+      succeeds lh(?l3) @=< lh([?y|?l1]),
+      lh([?x,?y|?l1]) = s(lh([?y|?l1])) by corollary(lh:cons),
+      succeeds lh([?y|?l1]) @< s(lh([?y|?l1])) by lemma(less:one),
+      succeeds lh([?y|?l1]) @< lh([?x,?y|?l1]),
+      succeeds lh(?l2) @< lh([?x,?y|?l1]) by 
+       theorem(leq:less:transitive),
+      succeeds lh(?l3) @< lh([?x,?y|?l1]) by 
+       theorem(leq:less:transitive)],
+     succeeds lh(?l2) @< lh([?x,?y|?l1]) &
+     succeeds lh(?l3) @< lh([?x,?y|?l1]))],
+   succeeds lh(?l2) @< lh([?x,?y|?l1]) & 
+   succeeds lh(?l3) @< lh([?x,?y|?l1]))],
+ succeeds lh(?l2) @< lh([?x,?y|?l1]) & succeeds lh(?l3) @< lh([?x,?y|?l1]))
+).
+
+:- lemma(mergesort:termination,
+all n: succeeds nat(?n) =>
+  (all [l1,l2]: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n =>
+     terminates mergesort(?l1,?l2)),
+induction(
+ [all n: succeeds nat(?n) => 
+    (all [l1,l2]: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n => 
+       terminates mergesort(?l1,?l2))],
+ [step([],
+   [],
+   assume(succeeds int_list(?l1) & succeeds lh(?l1) @< 0,
+    [def succeeds lh(?l1) @< 0 by completion,
+     terminates mergesort(?l1,?l2)],
+    terminates mergesort(?l1,?l2)),
+   all [l1,l2]: succeeds int_list(?l1) & succeeds lh(?l1) @< 0 => 
+     terminates mergesort(?l1,?l2)),
+  step([n],
+   [all [l1,l2]: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n => 
+      terminates mergesort(?l1,?l2),
+    succeeds nat(?n)],
+   assume(succeeds int_list(?l1) & succeeds lh(?l1) @< s(?n),
+    [assume(?l1 = [?x,?y|?xs],
+      [succeeds list(?l1) by lemma(int_list:list),
+       terminates split([?x,?y|?xs],?xs1,?xs2) by 
+        lemma(split:termination),
+       assume(succeeds split([?x,?y|?xs],?xs1,?xs2),
+	[succeeds int_list(?xs1) & succeeds int_list(?xs2) by 
+          lemma(split:types:2),
+	 succeeds lh(?xs1) @< lh([?x,?y|?xs]) &
+         succeeds lh(?xs2) @< lh([?x,?y|?xs]) by 
+          lemma(split:length:less),
+	 succeeds lh(?xs1) @< lh(?l1),
+	 succeeds lh(?xs2) @< lh(?l1),
+	 succeeds nat(lh(?xs1)) by lemma(less:types),
+	 succeeds nat(lh(?xs2)) by lemma(less:types),
+	 succeeds nat(lh(?l1)) by lemma(less:types),
+	 succeeds lh(?xs1) @< ?n by lemma(less:transitive:successor),
+	 succeeds lh(?xs2) @< ?n by lemma(less:transitive:successor),
+	 terminates mergesort(?xs1,?ys1),
+	 terminates mergesort(?xs2,?ys2),
+	 assume(succeeds mergesort(?xs1,?ys1),
+	  [assume(succeeds mergesort(?xs2,?ys2),
+            [succeeds int_list(?ys1) by lemma(mergesort:types),
+	     succeeds int_list(?ys2) by lemma(mergesort:types),
+	     terminates merge(?ys1,?ys2,?l2) by 
+              theorem(merge:termination)],
+            terminates merge(?ys1,?ys2,?l2)),
+           terminates (mergesort(?xs2,?ys2) & merge(?ys1,?ys2,?l2))],
+	  terminates (mergesort(?xs2,?ys2) & merge(?ys1,?ys2,?l2))),
+	 terminates 
+	 (mergesort(?xs1,?ys1) & mergesort(?xs2,?ys2) &
+	  merge(?ys1,?ys2,?l2))],
+	terminates 
+	(mergesort(?xs1,?ys1) & mergesort(?xs2,?ys2) & 
+	 merge(?ys1,?ys2,?l2))),
+       terminates 
+       (split([?x,?y|?xs],?xs1,?xs2) & mergesort(?xs1,?ys1) &
+	mergesort(?xs2,?ys2) & merge(?ys1,?ys2,?l2))],
+      terminates 
+      (split([?x,?y|?xs],?xs1,?xs2) & mergesort(?xs1,?ys1) &
+       mergesort(?xs2,?ys2) & merge(?ys1,?ys2,?l2))),
+     all [x,y,xs,xs1,xs2,ys1,ys2]: ?l1 = [?x,?y|?xs] => 
+       terminates 
+       (split([?x,?y|?xs],?xs1,?xs2) & mergesort(?xs1,?ys1) &
+        mergesort(?xs2,?ys2) & merge(?ys1,?ys2,?l2)),
+     terminates mergesort(?l1,?l2) by completion],
+    terminates mergesort(?l1,?l2)),
+   all [l1,l2]: succeeds int_list(?l1) & succeeds lh(?l1) @< s(?n) => 
+     terminates mergesort(?l1,?l2))])
+).
+
+:- theorem(mergesort:termiation,
+all [l1,l2]: succeeds int_list(?l1) => terminates mergesort(?l1,?l2),
+assume(succeeds int_list(?l1),
+ [succeeds list(?l1) by lemma(int_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  all [m1,m2]: succeeds int_list(?m1) & succeeds lh(?m1) @< s(lh(?l1)) => 
+    terminates mergesort(?m1,?m2) by lemma(mergesort:termination),
+  terminates mergesort(?l1,?l2) ],
+ terminates mergesort(?l1,?l2))
+).
+
+:- lemma(split:existence,
+all l1: succeeds list(?l1) => (ex [l2,l3]: succeeds split(?l1,?l2,?l3)),
+induction(
+ [all l1: succeeds list(?l1) => (ex [l2,l3]: succeeds split(?l1,?l2,?l3))],
+ [step([],
+   [],
+   [succeeds split([],[],[]) by sld,
+    ex [l2,l3]: succeeds split([],?l2,?l3)],
+   ex [l2,l3]: succeeds split([],?l2,?l3)),
+  step([x,l],
+   [ex [l2,l3]: succeeds split(?l,?l2,?l3),
+    succeeds list(?l)],
+   exist([l2,l3],
+    succeeds split(?l,?l2,?l3),
+    [succeeds split([?x|?l],[?x|?l3],?l2) by sld,
+     ex [l2,l3]: succeeds split([?x|?l],?l2,?l3)],
+    ex [l2,l3]: succeeds split([?x|?l],?l2,?l3)),
+   ex [l2,l3]: succeeds split([?x|?l],?l2,?l3))])
+).
+
+:- lemma(merge:existence,
+all n: succeeds nat(?n) =>
+  (all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< ?n =>
+     (ex l3: succeeds merge(?l1,?l2,?l3))),
+induction(
+ [all n: succeeds nat(?n) => 
+    (all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+      succeeds lh(?l1) @+ lh(?l2) @< ?n => 
+       (ex l3: succeeds merge(?l1,?l2,?l3)))],
+ [step([],
+   [],
+   assume(succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< 0,
+    [def succeeds lh(?l1) @+ lh(?l2) @< 0 by completion,
+     ex l3: succeeds merge(?l1,?l2,?l3)],
+    ex l3: succeeds merge(?l1,?l2,?l3)),
+   all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< 0 => 
+     (ex l3: succeeds merge(?l1,?l2,?l3))),
+  step([n],
+   [all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+     succeeds lh(?l1) @+ lh(?l2) @< ?n => 
+      (ex l3: succeeds merge(?l1,?l2,?l3)),
+    succeeds nat(?n)],
+   assume(succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< s(?n),
+    [def succeeds int_list(?l1)  by completion,
+     cases(?l1 = [],
+      [succeeds merge([],?l2,?l2) by sld,
+       succeeds merge(?l1,?l2,?l2),
+       ex l3: succeeds merge(?l1,?l2,?l3)],
+      ex [x,xs]: ?l1 = [?x|?xs] & succeeds integer(?x) & 
+       succeeds int_list(?xs),
+      exist([x,xs],
+       ?l1 = [?x|?xs] & succeeds integer(?x) & succeeds int_list(?xs),
+       [def succeeds int_list(?l2) by completion,
+	cases(?l2 = [],
+         [succeeds merge(?l1,[],?l1) by sld,
+	  succeeds merge(?l1,?l2,?l1),
+	  ex l3: succeeds merge(?l1,?l2,?l3)],
+         ex [y,ys]: ?l2 = [?y|?ys] & succeeds integer(?y) &
+          succeeds int_list(?ys),
+         exist([y,ys],
+          ?l2 = [?y|?ys] & succeeds integer(?y) & succeeds int_list(?ys),
+          [terminates ?x =< ?y by axiom(leq:termination),
+	   succeeds ?x =< ?y \/ fails ?x =< ?y,
+	   cases(succeeds ?x =< ?y,
+	    [succeeds list(?xs) by lemma(int_list:list),
+	     succeeds list(?l2) by lemma(int_list:list),
+	     succeeds lh([?x|?xs]) @+ lh(?l2) @< s(?n),
+	     succeeds lh(?xs) @+ lh(?l2) @< ?n by lemma(lh:cons:first),
+	     ex l3: succeeds merge(?xs,?l2,?l3),
+	     exist(l3,
+              succeeds merge(?xs,?l2,?l3),
+              [succeeds merge(?xs,[?y|?ys],?l3),
+	       ?x = ?x,
+	       succeeds merge([?x|?xs],[?y|?ys],[?x|?l3]) by sld,
+	       succeeds merge(?l1,?l2,[?x|?l3]),
+	       ex l3: succeeds merge(?l1,?l2,?l3)],
+              ex l3: succeeds merge(?l1,?l2,?l3))],
+	    fails ?x =< ?y,
+	    [succeeds list(?l1) by lemma(int_list:list),
+	     succeeds list(?ys) by lemma(int_list:list),
+	     succeeds lh(?l1) @+ lh([?y|?ys]) @< s(?n),
+	     succeeds lh(?l1) @+ lh(?ys) @< ?n by lemma(lh:cons:second),
+	     ex l3: succeeds merge(?l1,?ys,?l3),
+	     exist(l3,
+              succeeds merge(?l1,?ys,?l3),
+              [succeeds merge([?x|?xs],?ys,?l3),
+	       ?y = ?y,
+	       succeeds merge([?x|?xs],[?y|?ys],[?y|?l3]) by sld,
+	       succeeds merge(?l1,?l2,[?y|?l3]),
+	       ex l3: succeeds merge(?l1,?l2,?l3)],
+              ex l3: succeeds merge(?l1,?l2,?l3))],
+	    ex l3: succeeds merge(?l1,?l2,?l3))],
+          ex l3: succeeds merge(?l1,?l2,?l3)),
+         ex l3: succeeds merge(?l1,?l2,?l3))],
+       ex l3: succeeds merge(?l1,?l2,?l3)),
+      ex l3: succeeds merge(?l1,?l2,?l3))],
+    ex l3: succeeds merge(?l1,?l2,?l3)),
+   all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) &
+    succeeds lh(?l1) @+ lh(?l2) @< s(?n) => 
+     (ex l3: succeeds merge(?l1,?l2,?l3)))])
+).
+
+:- theorem(merge:existence,
+all [l1,l2]: succeeds int_list(?l1) & succeeds int_list(?l2) =>
+  (ex l3: succeeds merge(?l1,?l2,?l3)),
+assume(succeeds int_list(?l1) & succeeds int_list(?l2),
+ [succeeds list(?l1) by lemma(int_list:list),
+  succeeds list(?l2) by lemma(int_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds nat(lh(?l1) @+ lh(?l2)) by corollary(plus:types),
+  succeeds lh(?l1) @+ lh(?l2) @< s(lh(?l1) @+ lh(?l2)) by lemma(less:one),
+  succeeds nat(s(lh(?l1) @+ lh(?l2))),
+  all [m1,m2]: succeeds int_list(?m1) & succeeds int_list(?m2) &
+   succeeds lh(?m1) @+ lh(?m2) @< s(lh(?l1) @+ lh(?l2)) => 
+    (ex l3: succeeds merge(?m1,?m2,?l3)) by lemma(merge:existence),
+  ex l3: succeeds merge(?l1,?l2,?l3)],
+ ex l3: succeeds merge(?l1,?l2,?l3))
+).
+
+:- lemma(mergesort:existence,
+all n: succeeds nat(?n) =>
+  (all l1: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n =>
+     (ex l2: succeeds mergesort(?l1,?l2))),
+induction(
+ [all n: succeeds nat(?n) => 
+    (all l1: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n => 
+       (ex l2: succeeds mergesort(?l1,?l2)))],
+ [step([],
+   [],
+   assume(succeeds int_list(?l1) & succeeds lh(?l1) @< 0,
+    [def succeeds lh(?l1) @< 0 by completion,
+     ex l2: succeeds mergesort(?l1,?l2)],
+    ex l2: succeeds mergesort(?l1,?l2)),
+   all l1: succeeds int_list(?l1) & succeeds lh(?l1) @< 0 => 
+     (ex l2: succeeds mergesort(?l1,?l2))),
+  step([n],
+   [all l1: succeeds int_list(?l1) & succeeds lh(?l1) @< ?n => 
+      (ex l2: succeeds mergesort(?l1,?l2)),
+    succeeds nat(?n)],
+   assume(succeeds int_list(?l1) & succeeds lh(?l1) @< s(?n),
+    [def succeeds int_list(?l1) by completion,
+     cases(?l1 = [],
+      [succeeds mergesort([],[]) by sld,
+       succeeds mergesort(?l1,[]),
+       ex l2: succeeds mergesort(?l1,?l2)],
+      ex [x,l]: ?l1 = [?x|?l] & succeeds integer(?x) & 
+       succeeds int_list(?l),
+      exist([x,l],
+       ?l1 = [?x|?l] & succeeds integer(?x) & succeeds int_list(?l),
+       [def succeeds int_list(?l) by completion,
+        cases(?l = [],
+         [?l1 = [?x],
+	  succeeds mergesort([?x],[?x]) by sld,
+	  succeeds mergesort(?l1,[?x]),
+	  ex l2: succeeds mergesort(?l1,?l2)],
+         ex [x,xs]: ?l = [?x|?xs] & succeeds integer(?x) &
+          succeeds int_list(?xs),
+         exist([y,xs],
+          ?l = [?y|?xs] & succeeds integer(?y) & succeeds int_list(?xs),
+          [?l1 = [?x,?y|?xs],
+	   succeeds list(?l1) by lemma(int_list:list),
+	   ex [xs1,xs2]: succeeds split([?x,?y|?xs],?xs1,?xs2) by 
+            lemma(split:existence),
+	   exist([xs1,xs2],
+            succeeds split([?x,?y|?xs],?xs1,?xs2),
+            [succeeds int_list(?xs1) & succeeds int_list(?xs2) by 
+	      lemma(split:types:2),
+	     succeeds lh(?xs1) @< lh([?x,?y|?xs]) &
+	     succeeds lh(?xs2) @< lh([?x,?y|?xs]) by 
+	      lemma(split:length:less),
+	     succeeds lh(?xs1) @< lh(?l1),
+	     succeeds lh(?xs2) @< lh(?l1),
+	     succeeds nat(lh(?xs1)) by lemma(less:types),
+	     succeeds nat(lh(?xs2)) by lemma(less:types),
+	     succeeds nat(lh(?l1)) by lemma(less:types),
+	     succeeds lh(?xs1) @< ?n by lemma(less:transitive:successor),
+	     succeeds lh(?xs2) @< ?n by lemma(less:transitive:successor),
+	     ex ys1: succeeds mergesort(?xs1,?ys1),
+	     exist(ys1,
+              succeeds mergesort(?xs1,?ys1),
+              [ex ys2: succeeds mergesort(?xs2,?ys2),
+	       exist(ys2,
+                succeeds mergesort(?xs2,?ys2),
+                [succeeds int_list(?ys1) by lemma(mergesort:types),
+		 succeeds int_list(?ys2) by lemma(mergesort:types),
+		 ex ys: succeeds merge(?ys1,?ys2,?ys) by 
+                  theorem(merge:existence),
+		 exist(ys,
+                  succeeds merge(?ys1,?ys2,?ys),
+                  [succeeds mergesort([?x,?y|?xs],?ys) by sld,
+		   succeeds mergesort(?l1,?ys),
+		   ex l2: succeeds mergesort(?l1,?l2)],
+                  ex l2: succeeds mergesort(?l1,?l2))],
+                ex l2: succeeds mergesort(?l1,?l2))],
+              ex l2: succeeds mergesort(?l1,?l2))],
+            ex l2: succeeds mergesort(?l1,?l2))],
+          ex l2: succeeds mergesort(?l1,?l2)),
+         ex l2: succeeds mergesort(?l1,?l2))],
+       ex l2: succeeds mergesort(?l1,?l2)),
+      ex l2: succeeds mergesort(?l1,?l2))],
+    ex l2: succeeds mergesort(?l1,?l2)),
+   all l1: succeeds int_list(?l1) & succeeds lh(?l1) @< s(?n) => 
+     (ex l2: succeeds mergesort(?l1,?l2)))]) 
+).
+
+:- theorem(mergesort:existence,
+all l1: succeeds int_list(?l1) => (ex l2: succeeds mergesort(?l1,?l2)),
+assume(succeeds int_list(?l1),
+ [succeeds list(?l1) by lemma(int_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  all m1: succeeds int_list(?m1) & succeeds lh(?m1) @< s(lh(?l1)) => 
+    (ex l2: succeeds mergesort(?m1,?l2)) by lemma(mergesort:existence),
+  ex l2: succeeds mergesort(?l1,?l2)],
+ ex l2: succeeds mergesort(?l1,?l2))
+).
+
+:- lemma(split:permutation,
+all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) =>
+  succeeds permutation(?l1,?l2 ** ?l3),
+induction(
+ [all [l1,l2,l3]: succeeds split(?l1,?l2,?l3) => 
+    succeeds permutation(?l1,?l2 ** ?l3)],
+ [step([],
+   [],
+   [[] ** [] = [] by lemma(app:nil),
+    succeeds permutation([],[]),
+    succeeds permutation([],[] ** [])],
+   succeeds permutation([],[] ** [])),
+  step([x,xs,ys,zs],
+   [succeeds permutation(?xs,?zs ** ?ys),
+    succeeds split(?xs,?zs,?ys)],
+   [succeeds list(?xs) & succeeds list(?zs) & succeeds list(?ys) by 
+     lemma(split:types),
+    [?x|?ys] ** ?zs = [?x|?ys ** ?zs] by corollary(app:cons),
+    succeeds delete(?x,[?x|?xs],?xs) by sld,
+    succeeds permutation(?zs ** ?ys,?ys ** ?zs) by 
+     theorem(permutation:app:commutative),
+    succeeds permutation(?xs,?ys ** ?zs) by 
+     theorem(permutation:transitive),
+    succeeds permutation([?x|?xs],[?x|?ys ** ?zs]) by sld,
+    succeeds permutation([?x|?xs],[?x|?ys] ** ?zs)],
+   succeeds permutation([?x|?xs],[?x|?ys] ** ?zs))])
+).
+
+:- lemma(merge:permutation,
+all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) &
+ succeeds int_list(?l1) & succeeds int_list(?l2) =>
+  succeeds permutation(?l1 ** ?l2,?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) => succeeds int_list(?l1) &
+     succeeds int_list(?l2) => succeeds permutation(?l1 ** ?l2,?l3)],
+  [step([xs],
+    [],
+    assume(succeeds int_list([]) & succeeds int_list(?xs),
+     [succeeds list(?xs) by lemma(int_list:list),
+      [] ** ?xs = ?xs by corollary(app:nil),
+      succeeds permutation(?xs,?xs) by theorem(permutation:reflexive),
+      succeeds permutation([] ** ?xs,?xs)],
+     succeeds permutation([] ** ?xs,?xs)),
+    succeeds int_list([]) & succeeds int_list(?xs) => 
+     succeeds permutation([] ** ?xs,?xs)),
+   step([xs],
+    [],
+    assume(succeeds int_list(?xs) & succeeds int_list([]),
+     [succeeds list(?xs) by lemma(int_list:list),
+      ?xs ** [] = ?xs by lemma(app:nil),
+      succeeds permutation(?xs,?xs) by theorem(permutation:reflexive),
+      succeeds permutation(?xs ** [],?xs)],
+     succeeds permutation(?xs ** [],?xs)),
+    succeeds int_list(?xs) & succeeds int_list([]) => 
+     succeeds permutation(?xs ** [],?xs)),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list(?xs) & succeeds int_list([?y|?ys]) => 
+      succeeds permutation(?xs ** [?y|?ys],?zs),
+     succeeds ?x =< ?y,
+     ?z = ?x,
+     succeeds merge(?xs,[?y|?ys],?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]),
+     [succeeds list([?x|?xs]) by lemma(int_list:list),
+      succeeds list([?y|?ys]) by lemma(int_list:list),
+      def succeeds list([?x|?xs]) by completion,
+      [?x|?xs] ** [?y|?ys] = [?x|?xs ** [?y|?ys]] by corollary(app:cons),
+      succeeds delete(?x,[?x|?xs ** [?y|?ys]],?xs ** [?y|?ys]) by sld,
+      def succeeds int_list([?x|?xs]) by completion,
+      succeeds permutation(?xs ** [?y|?ys],?zs),
+      succeeds permutation([?x|?xs ** [?y|?ys]],[?x|?zs]) by sld,
+      succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs])],
+     succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) => 
+     succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs])),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list([?x|?xs]) & succeeds int_list(?ys) => 
+      succeeds permutation([?x|?xs] ** ?ys,?zs),
+     fails ?x =< ?y,
+     ?z = ?y,
+     succeeds merge([?x|?xs],?ys,?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]),
+     [def succeeds int_list([?y|?ys]) by completion,
+      succeeds permutation([?x|?xs] ** ?ys,?zs),
+      succeeds list([?x|?xs]) by lemma(int_list:list),
+      succeeds list([?y|?ys]) by lemma(int_list:list),
+      succeeds list(?xs) by lemma(list:cons),
+      succeeds delete(?y,[?x|?xs] ** [?y|?ys],[?x|?xs] ** ?ys) by 
+       theorem(delete:app:1),
+      succeeds permutation([?x|?xs] ** [?y|?ys],[?y|?zs]) by sld,
+      succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs])],
+     succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) => 
+     succeeds permutation([?x|?xs] ** [?y|?ys],[?z|?zs]))]),
+ assume(succeeds merge(?l1,?l2,?l3) & succeeds int_list(?l1) &
+  succeeds int_list(?l2),
+  [succeeds int_list(?l1) & succeeds int_list(?l2) => 
+    succeeds permutation(?l1 ** ?l2,?l3),
+   succeeds int_list(?l1) & succeeds int_list(?l2) => 
+    succeeds permutation(?l1 ** ?l2,?l3),
+   succeeds permutation(?l1 ** ?l2,?l3)],
+  succeeds permutation(?l1 ** ?l2,?l3))]
+).
+
+:- theorem(mergesort:permutation,
+all [l1,l2]: succeeds mergesort(?l1,?l2) & succeeds int_list(?l1) =>
+  succeeds permutation(?l1,?l2),
+[induction(
+  [all [l1,l2]: succeeds mergesort(?l1,?l2) => succeeds int_list(?l1) => 
+      succeeds permutation(?l1,?l2)],
+  [step([],[],[],succeeds int_list([]) => succeeds permutation([],[])),
+   step([x],
+    [],
+    assume(succeeds int_list([?x]),
+     succeeds permutation([?x],[?x]) by theorem(permutation:reflexive),
+     succeeds permutation([?x],[?x])),
+    succeeds int_list([?x]) => succeeds permutation([?x],[?x])),
+   step([x,y,xs,ys,xs1,xs2,ys1,ys2],
+    [succeeds int_list(?xs1) => succeeds permutation(?xs1,?ys1),
+     succeeds int_list(?xs2) => succeeds permutation(?xs2,?ys2),
+     succeeds split([?x,?y|?xs],?xs1,?xs2),
+     succeeds mergesort(?xs1,?ys1),
+     succeeds mergesort(?xs2,?ys2),
+     succeeds merge(?ys1,?ys2,?ys)],
+    assume(succeeds int_list([?x,?y|?xs]),
+     [succeeds int_list(?xs1) & succeeds int_list(?xs2) by 
+       lemma(split:types:2),
+      succeeds permutation(?xs1,?ys1),
+      succeeds permutation(?xs2,?ys2),
+      succeeds permutation([?x,?y|?xs],?xs1 ** ?xs2) by 
+       lemma(split:permutation),
+      succeeds permutation(?xs1 ** ?xs2,?ys1 ** ?ys2) by 
+       theorem(permutation:app),
+      succeeds permutation([?x,?y|?xs],?ys1 ** ?ys2) by 
+       theorem(permutation:transitive),
+      succeeds int_list(?ys1) by lemma(mergesort:types),
+      succeeds int_list(?ys2) by lemma(mergesort:types),
+      succeeds permutation(?ys1 ** ?ys2,?ys) by lemma(merge:permutation),
+      succeeds permutation([?x,?y|?xs],?ys) by 
+       theorem(permutation:transitive)],
+     succeeds permutation([?x,?y|?xs],?ys)),
+    succeeds int_list([?x,?y|?xs]) => succeeds permutation([?x,?y|?xs],?ys))]),
+ assume(succeeds mergesort(?l1,?l2) & succeeds int_list(?l1),
+  [succeeds int_list(?l1) => succeeds permutation(?l1,?l2),
+   succeeds int_list(?l1) => succeeds permutation(?l1,?l2),
+   succeeds permutation(?l1,?l2)],
+  succeeds permutation(?l1,?l2))]
+).
+
+:- lemma(merge:first:element,
+all [x,xs,y,ys,l]: succeeds merge([?x|?xs],[?y|?ys],?l) =>
+  (ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs]),
+assume(succeeds merge([?x|?xs],[?y|?ys],?l),
+ [def succeeds merge([?x|?xs],[?y|?ys],?l) by completion,
+  exist([z,zs],
+   ?l = [?z|?zs] &
+   (succeeds ?x =< ?y & ?z = ?x & succeeds merge(?xs,[?y|?ys],?zs) \/
+    fails ?x =< ?y & ?z = ?y & succeeds merge([?x|?xs],?ys,?zs)),
+   cases(succeeds ?x =< ?y & ?z = ?x & succeeds merge(?xs,[?y|?ys],?zs),
+    [?l = [?x|?zs],
+     ?l = [?x|?zs] \/ ?l = [?y|?zs],
+     ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs]],
+    fails ?x =< ?y & ?z = ?y & succeeds merge([?x|?xs],?ys,?zs),
+    [?l = [?y|?zs],
+     ?l = [?x|?zs] \/ ?l = [?y|?zs],
+     ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs]],
+    ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs]),
+   ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs])],
+ ex zs: ?l = [?x|?zs] \/ ?l = [?y|?zs])
+).
+
+:- lemma(int_ordered:cons,
+all [x,l]: succeeds int_ordered([?x|?l]) => succeeds int_ordered(?l),
+assume(succeeds int_ordered([?x|?l]),
+ [def succeeds int_ordered([?x|?l]) by completion,
+  cases(?l = [],
+   [],
+   ex [y,1]: ?l = [?y|?1] & succeeds ?x =< ?y &
+    succeeds int_ordered([?y|?1]),
+   exist([y,1],
+    ?l = [?y|?1] & succeeds ?x =< ?y & succeeds int_ordered([?y|?1]),
+    [],
+    succeeds int_ordered(?l)),
+   succeeds int_ordered(?l))],
+ succeeds int_ordered(?l))
+).
+
+:- lemma(merge:int_ordered,
+all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) &
+ succeeds int_list(?l1) & succeeds int_list(?l2) &
+ succeeds int_ordered(?l1) & succeeds int_ordered(?l2) =>
+  succeeds int_ordered(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds merge(?l1,?l2,?l3) => succeeds int_list(?l1) &
+     succeeds int_list(?l2) & succeeds int_ordered(?l1) &
+     succeeds int_ordered(?l2) => succeeds int_ordered(?l3)],
+  [step([xs],
+    [],
+    assume(succeeds int_list([]) & succeeds int_list(?xs) &
+     succeeds int_ordered([]) & succeeds int_ordered(?xs),
+     [],
+     succeeds int_ordered(?xs)),
+    succeeds int_list([]) & succeeds int_list(?xs) &
+    succeeds int_ordered([]) & succeeds int_ordered(?xs) => 
+     succeeds int_ordered(?xs)),
+   step([xs],
+    [],
+    assume(succeeds int_list(?xs) & succeeds int_list([]) &
+     succeeds int_ordered(?xs) & succeeds int_ordered([]),
+     [],
+     succeeds int_ordered(?xs)),
+    succeeds int_list(?xs) & succeeds int_list([]) &
+    succeeds int_ordered(?xs) & succeeds int_ordered([]) => 
+     succeeds int_ordered(?xs)),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list(?xs) & succeeds int_list([?y|?ys]) &
+     succeeds int_ordered(?xs) & succeeds int_ordered([?y|?ys]) => 
+      succeeds int_ordered(?zs),
+     succeeds ?x =< ?y,
+     ?z = ?x,
+     succeeds merge(?xs,[?y|?ys],?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) &
+     succeeds int_ordered([?x|?xs]) & succeeds int_ordered([?y|?ys]),
+     [def succeeds int_list([?x|?xs]) by completion,
+      succeeds int_ordered(?xs) by lemma(int_ordered:cons),
+      succeeds int_ordered(?zs),
+      def succeeds int_list(?xs) by completion,
+      cases(?xs = [],
+       [def succeeds merge([],[?y|?ys],?zs) by completion,
+	?zs = [?y|?ys],
+	succeeds int_ordered([?x,?y|?ys]) by sld,
+	succeeds int_ordered([?z|?zs])],
+       ex [x,l]: ?xs = [?x|?l] & succeeds integer(?x) &
+        succeeds int_list(?l),
+       exist([0,l],
+        ?xs = [?0|?l] & succeeds integer(?0) & succeeds int_list(?l),
+        [succeeds merge([?0|?l],[?y|?ys],?zs),
+	 ex l1: ?zs = [?0|?l1] \/ ?zs = [?y|?l1] by 
+          lemma(merge:first:element),
+	 exist(l1,
+          ?zs = [?0|?l1] \/ ?zs = [?y|?l1],
+          cases(?zs = [?0|?l1],
+           [def succeeds int_ordered([?x,?0|?l]) by completion,
+	    succeeds int_ordered([?0|?l1]),
+	    succeeds ?x =< ?0,
+	    succeeds int_ordered([?x,?0|?l1]) by sld,
+	    succeeds int_ordered([?z|?zs])],
+           ?zs = [?y|?l1],
+           [succeeds int_ordered([?y|?l1]),
+	    succeeds int_ordered([?x,?y|?l1]) by sld,
+	    succeeds int_ordered([?z|?zs])],
+           succeeds int_ordered([?z|?zs])),
+          succeeds int_ordered([?z|?zs]))],
+        succeeds int_ordered([?z|?zs])),
+       succeeds int_ordered([?z|?zs]))],
+     succeeds int_ordered([?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) &
+    succeeds int_ordered([?x|?xs]) & succeeds int_ordered([?y|?ys]) => 
+     succeeds int_ordered([?z|?zs])),
+   step([x,xs,y,ys,z,zs],
+    [succeeds int_list([?x|?xs]) & succeeds int_list(?ys) &
+     succeeds int_ordered([?x|?xs]) & succeeds int_ordered(?ys) => 
+      succeeds int_ordered(?zs),
+     fails ?x =< ?y,
+     ?z = ?y,
+     succeeds merge([?x|?xs],?ys,?zs)],
+    assume(succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) &
+     succeeds int_ordered([?x|?xs]) & succeeds int_ordered([?y|?ys]),
+     [def succeeds int_list([?x|?xs]) by completion,
+      def succeeds int_list([?y|?ys]) by completion,
+      succeeds ?y =< ?x by axiom(leq:total),
+      succeeds int_ordered(?ys) by lemma(int_ordered:cons),
+      succeeds int_ordered(?zs),
+      def succeeds int_list(?ys) by completion,
+      cases(?ys = [],
+       [def succeeds merge([?x|?xs],[],?zs) by completion,
+	?zs = [?x|?xs],
+	succeeds int_ordered([?y,?x|?xs]) by sld,
+	succeeds int_ordered([?z|?zs])],
+       ex [x,l]: ?ys = [?x|?l] & succeeds integer(?x) &
+        succeeds int_list(?l),
+       exist([0,l],
+        ?ys = [?0|?l] & succeeds integer(?0) & succeeds int_list(?l),
+        [succeeds merge([?x|?xs],[?0|?l],?zs),
+	 ex l1: ?zs = [?x|?l1] \/ ?zs = [?0|?l1] by 
+          lemma(merge:first:element),
+	 exist(l1,
+          ?zs = [?x|?l1] \/ ?zs = [?0|?l1],
+          cases(?zs = [?x|?l1],
+           [succeeds int_ordered([?x|?l1]),
+	    succeeds int_ordered([?y,?x|?l1]) by sld,
+	    succeeds int_ordered([?z|?zs])],
+           ?zs = [?0|?l1],
+           [succeeds int_ordered([?0|?l1]),
+	    def succeeds int_ordered([?y,?0|?l]) by completion,
+	    succeeds ?y =< ?0,
+	    succeeds int_ordered([?y,?0|?l1]) by sld,
+	    succeeds int_ordered([?z|?zs])],
+           succeeds int_ordered([?z|?zs])),
+          succeeds int_ordered([?z|?zs]))],
+        succeeds int_ordered([?z|?zs])),
+       succeeds int_ordered([?z|?zs]))],
+     succeeds int_ordered([?z|?zs])),
+    succeeds int_list([?x|?xs]) & succeeds int_list([?y|?ys]) &
+    succeeds int_ordered([?x|?xs]) & succeeds int_ordered([?y|?ys]) => 
+     succeeds int_ordered([?z|?zs]))]),
+ assume(succeeds merge(?l1,?l2,?l3) & succeeds int_list(?l1) &
+  succeeds int_list(?l2) & succeeds int_ordered(?l1) &
+  succeeds int_ordered(?l2),
+  [succeeds int_list(?l1) & succeeds int_list(?l2) &
+   succeeds int_ordered(?l1) & succeeds int_ordered(?l2) => 
+    succeeds int_ordered(?l3),
+   succeeds int_list(?l1) & succeeds int_list(?l2) &
+   succeeds int_ordered(?l1) & succeeds int_ordered(?l2) => 
+    succeeds int_ordered(?l3),
+   succeeds int_ordered(?l3)],
+  succeeds int_ordered(?l3))]
+).
+
+:- theorem(mergesort:int_ordered,
+all [l1,l2]: succeeds mergesort(?l1,?l2) & succeeds int_list(?l1) =>
+  succeeds int_ordered(?l2),
+[induction(
+  [all [l1,l2]: succeeds mergesort(?l1,?l2) => succeeds int_list(?l1) => 
+      succeeds int_ordered(?l2)],
+  [step([],[],[],succeeds int_list([]) => succeeds int_ordered([])),
+   step([x],
+    [],
+    [],
+    succeeds int_list([?x]) => succeeds int_ordered([?x])),
+   step([x,y,xs,ys,xs1,xs2,ys1,ys2],
+    [succeeds int_list(?xs1) => succeeds int_ordered(?ys1),
+     succeeds int_list(?xs2) => succeeds int_ordered(?ys2),
+     succeeds split([?x,?y|?xs],?xs1,?xs2),
+     succeeds mergesort(?xs1,?ys1),
+     succeeds mergesort(?xs2,?ys2),
+     succeeds merge(?ys1,?ys2,?ys)],
+    assume(succeeds int_list([?x,?y|?xs]),
+     [succeeds int_list(?xs1) & succeeds int_list(?xs2) by 
+       lemma(split:types:2),
+      succeeds int_ordered(?ys1),
+      succeeds int_ordered(?ys2),
+      succeeds int_list(?ys1) by lemma(mergesort:types),
+      succeeds int_list(?ys2) by lemma(mergesort:types),
+      succeeds int_ordered(?ys) by lemma(merge:int_ordered)],
+     succeeds int_ordered(?ys)),
+    succeeds int_list([?x,?y|?xs]) => succeeds int_ordered(?ys))]),
+ assume(succeeds mergesort(?l1,?l2) & succeeds int_list(?l1),
+  [succeeds int_list(?l1) => succeeds int_ordered(?l2),
+   succeeds int_list(?l1) => succeeds int_ordered(?l2),
+   succeeds int_ordered(?l2)],
+  succeeds int_ordered(?l2))]
+).
+
+:- bye(mergesort).

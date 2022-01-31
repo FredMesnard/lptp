@@ -1,0 +1,10 @@
+A union-find based unification algorithm
+========================================
+
+Author: Guido Vogt <guido.vogt@unifr.ch>
+
+Files:
+
+	mgu.pl		Specification and implementation of the algorithm.
+	mgu.pr		The formal correctness proof.
+	test.pl		Test file for `mgu.pl'.

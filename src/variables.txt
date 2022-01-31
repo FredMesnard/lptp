@@ -1,0 +1,43 @@
+#   Author: Robert Staerk <staerk@saul.cis.upenn.edu>
+#  Created: Wed Jan 17 11:44:28 1996
+# Filename: VARIABLES
+# Abstract: This file explains the meaning of variables.
+
+Atom	atomic goal
+Deriv	derivation
+Case	case in a proof
+Form	formula
+Goal	goal
+Step	derivation step or induction step
+Term	term
+
+EAtom	external atomic goal
+EDeriv	external derivation
+EForm	external formula
+EGoal	external goal
+EStep	external derivation step or induction step
+ETerm	external term
+
+Ass	association list
+Bnd	bound variable
+Char	character
+Class	equivalence class
+Clause	clause
+Expr	Expression
+File	file
+Kind	which kind of axiom or lemma or theorem of corollary
+Mode	mode
+N	integer
+Name	name
+Op	operator
+Opt	option
+PTerm	Prolog term
+Part	Partition
+Path	path
+Ref	a reference to an axiom, lemma, theorem or corollary
+Stream	stream
+Sub	substitution
+Tag	tag
+Tree	beauty print tree
+Var	variable
+

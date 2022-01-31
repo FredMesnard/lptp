@@ -1,0 +1,34 @@
+<HEAD>
+<TITLE>Readme</TITLE>
+</HEAD>
+<BODY>
+
+</PRE>
+<H2> About the AVL proof...</H2>
+  AVL trees are subject to the Adelson-Velskii-Landis balance criterion: <P>
+    
+  	A tree is balanced if for every node the heights of its
+  	two subtrees differ by at most 1. <P>
+  
+  The empty tree is represented as t. <BR>
+  A tree with value V, left subtree L and right subtree R is
+  represented as t(V,X,L,R). <BR>
+  X is the difference of the height of R and the height of L. <BR>
+  X can be -1, 0 or 1. <P>
+ 
+  See: Niklaus Wirth, "Algorithmen und Datenstrukturen", 5.4 <P>
+
+
+  The trees are ordered with respect to a total ordering r/2 on a domain a/1. <P>
+ 
+  For the specification and the implementation of the addavl program see :  </B><A HREF = "avl-code.html">avl</A>.<P>
+  
+  The goal of the whole proof is to show that if we add an element to an AVL-Tree we get a new
+  AVL-Tree, containing all the elements it already contained, plus the new one. <BR>
+  
+  This is proved in the </B><A HREF = "avl.html">main file of the proof</A>, with the some helping lemmas.
+
+<PRE>
+<HR>
+<ADDRESS>LPTP, March 11, 1997</ADDRESS>
+</BODY>

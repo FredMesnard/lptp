@@ -1,0 +1,1472 @@
+%   Author: Robert F. Staerk <robert.staerk@unifr.ch>
+%  Created: Sat Dec 26 12:13:55 1998
+%  Updated: Thu Jul 22 10:16:46 1999
+% Filename: int.pr
+% Abstract: The theory of integers (under construction).
+
+:- initialize.
+:- tex_file($(tmp)/int).
+:- thm_file($(lib)/nat/int).
+
+:- needs_gr($(lib)/nat/nat).
+:- needs_thm($(lib)/nat/nat).
+
+:- needs_gr($(lib)/nat/int).
+
+:- lemma(nat:non:negative:1,
+all [x,y]: succeeds nat(?x) => ?x <> - ?y,
+induction([all x: succeeds nat(?x) => (all y: ?x <> - ?y)],
+ [step([],[],[],all y: 0 <> - ?y),
+  step([x],
+   [all y: ?x <> - ?y,
+    succeeds nat(?x)],
+   [],
+   all y: s(?x) <> - ?y)])
+).
+
+:- lemma(nat:non:negative:2,
+all x: succeeds nat(?x) => fails negative(?x),
+assume(succeeds nat(?x),
+ [contra(?x = - s(?0),
+   [?x <> - s(?0) by lemma(nat:non:negative:1),
+    ff]),
+  all 0: ~ ?x = - s(?0),
+  fails negative(?x) by completion],
+ fails negative(?x))
+).
+
+:- lemma(int:gr,
+all z: succeeds int(?z) => gr(?z),
+assume(succeeds int(?z),
+ [def succeeds int(?z) by completion,
+  cases(succeeds nat(?z),
+   gr(?z) by lemma(nat:ground),
+   ex x: ?z = - s(?x) & succeeds nat(?x),
+   exist(x,
+    ?z = - s(?x) & succeeds nat(?x),
+    [gr(?x) by lemma(nat:ground),
+     gr(- s(?x)),
+     gr(?z)],
+    gr(?z)),
+   gr(?z))],
+ gr(?z))
+).
+
+:- lemma(int:termination,
+all z: succeeds int(?z) => terminates int(?z),
+assume(succeeds int(?z),
+ [def succeeds int(?z) by completion,
+  cases(succeeds nat(?z),
+   [terminates nat(?z) by lemma(nat:termination),
+    assume(?z = - s(?x),
+     [?z <> - s(?x) by lemma(nat:non:negative:1), ff],
+     terminates nat(?x)),
+    terminates nat(?z) & (all x: ?z = - s(?x) => terminates nat(?x)),
+    terminates int(?z) by completion],
+   ex x: ?z = - s(?x) & succeeds nat(?x),
+   exist(x,
+    ?z = - s(?x) & succeeds nat(?x),
+    [terminates nat(- s(?x)),
+     terminates nat(?z),
+     assume(?z = - s(?0),
+      [succeeds nat(?0),
+       terminates nat(?0) by lemma(nat:termination)],
+      terminates nat(?0)),
+     all 0: ?z = - s(?0) => terminates nat(?0),
+     terminates nat(?z) & (all x: ?z = - s(?x) => terminates nat(?x)),
+     terminates int(?z) by completion],
+    terminates int(?z)),
+   terminates int(?z))],
+ terminates int(?z))
+).
+
+:- lemma(minus:types:1,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) &
+ succeeds minus(?x,?y,?z) => succeeds int(?z),
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds minus(?x,?y,?z),
+ [def succeeds minus(?x,?y,?z) by completion,
+  cases(succeeds plus(?y,?z,?x) & fails negative(?z),
+   [succeeds nat(?z) by lemma(plus:types:3),
+    succeeds int(?z)],
+   ex 2: ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+   exist(2,
+    ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+    [succeeds nat(s(?2)) by lemma(plus:types:3),
+     def succeeds nat(s(?2)) by completion,
+     succeeds int(?z)],
+    succeeds int(?z)),
+   succeeds int(?z))],
+ succeeds int(?z))
+).
+
+:- lemma(minus:types:2,
+all [x,y,z]: succeeds int(?z) & succeeds minus(?x,?y,?z) =>
+  succeeds nat(?x) & succeeds nat(?y),
+assume(succeeds int(?z) & succeeds minus(?x,?y,?z),
+ [def succeeds minus(?x,?y,?z) by completion,
+  cases(succeeds plus(?y,?z,?x) & fails negative(?z),
+   [def succeeds int(?z) by completion,
+    cases(succeeds nat(?z),
+     [succeeds nat(?x) by lemma(plus:types:2),
+      succeeds nat(?y) by lemma(plus:types:1)],
+     ex x: ?z = - s(?x) & succeeds nat(?x),
+     exist(0,
+      ?z = - s(?0) & succeeds nat(?0),
+      [succeeds negative(- s(?0)),
+       succeeds negative(?z),
+       ff],
+      succeeds nat(?x) & succeeds nat(?y)),
+     succeeds nat(?x) & succeeds nat(?y))],
+   ex 2: ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+   exist(2,
+    ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+    [def succeeds int(?z) by completion,
+     cases(succeeds nat(?z),
+      [?z <> - s(?2) by lemma(nat:non:negative:1),
+       ff],
+      ex x: ?z = - s(?x) & succeeds nat(?x),
+      exist(3,
+       ?z = - s(?3) & succeeds nat(?3),
+       [succeeds nat(?x) by lemma(plus:types:1),
+	succeeds nat(?2),
+	succeeds nat(s(?2)),
+	succeeds nat(?y) by lemma(plus:types:2)],
+       succeeds nat(?x) & succeeds nat(?y)),
+      succeeds nat(?x) & succeeds nat(?y))],
+    succeeds nat(?x) & succeeds nat(?y)),
+   succeeds nat(?x) & succeeds nat(?y))],
+ succeeds nat(?x) & succeeds nat(?y))
+).
+
+:- lemma(minus:gr:1,
+all [x,y,z]: succeeds minus(?x,?y,?z) & gr(?x) & gr(?y) => gr(?z),
+assume(succeeds minus(?x,?y,?z) & gr(?x) & gr(?y),
+ [def succeeds minus(?x,?y,?z) by completion,
+  cases(succeeds plus(?y,?z,?x) & fails negative(?z),
+   gr(?z) by lemma(plus:ground:3),
+   ex 2: ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+   exist(2,
+    ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+    [gr(s(?2)) by lemma(plus:ground:3),
+     gr(- s(?2)), gr(?z)],
+    gr(?z)),
+   gr(?z))],
+ gr(?z))
+).
+
+:- lemma(minus:gr:2,
+all [x,y,z]: succeeds minus(?x,?y,?z) & gr(?z) => gr(?x) & gr(?y),
+assume(succeeds minus(?x,?y,?z) & gr(?z),
+ [def succeeds minus(?x,?y,?z) by completion,
+  cases(succeeds plus(?y,?z,?x) & fails negative(?z),
+   [gr(?y) by lemma(plus:ground:1),
+    gr(?x) by lemma(plus:ground:2)],
+   ex 2: ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+   exist(2,
+    ?z = - s(?2) & succeeds plus(?x,s(?2),?y),
+    [gr(?x) by lemma(plus:ground:1),
+     gr(- s(?2)), gr(s(?2)),
+     gr(?y) by lemma(plus:ground:2)],
+    gr(?x) & gr(?y)),
+   gr(?x) & gr(?y))],
+ gr(?x) & gr(?y))
+).
+
+:- definition_pred(add,3,
+all [z1,z2,z3]: add(?z1,?z2,?z3) <=>
+ (ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3))
+).
+
+:- lemma(add:types,
+all [z1,z2,z3]: add(?z1,?z2,?z3) & succeeds int(?z1) &
+ succeeds int(?z2) => succeeds int(?z3),
+assume(add(?z1,?z2,?z3) & succeeds int(?z1) & succeeds int(?z2),
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) & succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3) by
+   elimination(add,3),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3),
+   [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+    succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+    succeeds nat(?x1 @+ ?x2) by corollary(plus:types),
+    succeeds nat(?y1 @+ ?y2) by corollary(plus:types),    
+    succeeds int(?z3) by lemma(minus:types:1)],
+   succeeds int(?z3))],
+ succeeds int(?z3))
+).
+
+:- lemma(minus:existence:1,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) =>
+  (ex z: succeeds minus(?x,?y,?z)),
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds ?x @< ?y \/ succeeds ?y @=< ?x by corollary(less:leq:total),
+  cases(succeeds ?x @< ?y,
+   [ex n: succeeds plus(?x,s(?n),?y) by lemma(less:plus),
+    exist(n,
+     succeeds plus(?x,s(?n),?y),
+     [succeeds minus(?x,?y,-s(?n)),
+      ex z: succeeds minus(?x,?y,?z)],
+     ex z: succeeds minus(?x,?y,?z))],
+   succeeds ?y @=< ?x,
+   [ex z: succeeds plus(?y,?z,?x) by lemma(leq:plus),
+    exist(z,
+     succeeds plus(?y,?z,?x),
+     [succeeds nat(?z) by lemma(plus:types:3),
+      fails negative(?z) by lemma(nat:non:negative:2),
+      succeeds minus(?x,?y,?z),
+      ex z: succeeds minus(?x,?y,?z)],
+     ex z: succeeds minus(?x,?y,?z))],
+   ex z: succeeds minus(?x,?y,?z))],
+ ex z: succeeds minus(?x,?y,?z))
+).
+
+:- lemma(minus:existence:2,
+all z: succeeds int(?z) => (ex [x,y]: succeeds minus(?x,?y,?z)),
+assume(succeeds int(?z),
+ [def succeeds int(?z) by completion,
+  cases(succeeds nat(?z),
+   [succeeds plus(0,?z,?z),
+    fails negative(?z) by lemma(nat:non:negative:2),
+    succeeds minus(?z,0,?z),
+    ex [x,y]: succeeds minus(?x,?y,?z)],
+   ex x: ?z = - s(?x) & succeeds nat(?x),
+   exist(x,
+    ?z = - s(?x) & succeeds nat(?x),
+    [succeeds plus(0,s(?x),s(?x)),
+     succeeds minus(0,s(?x),-s(?x)),
+     succeeds minus(0,s(?x),?z),
+     ex [x,y]: succeeds minus(?x,?y,?z)],
+    ex [x,y]: succeeds minus(?x,?y,?z)),
+   ex [x,y]: succeeds minus(?x,?y,?z))],
+ ex [x,y]: succeeds minus(?x,?y,?z))
+).
+
+:- lemma(add:existence,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  (ex z3: add(?z1,?z2,?z3)),
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [ex [x1,y1]: succeeds minus(?x1,?y1,?z1) by lemma(minus:existence:2),
+  exist([x1,y1],
+   succeeds minus(?x1,?y1,?z1),
+   [ex [x2,y2]: succeeds minus(?x2,?y2,?z2) by 
+     lemma(minus:existence:2),
+    exist([x2,y2],
+     succeeds minus(?x2,?y2,?z2),
+     [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+      succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?x1 @+ ?x2) by corollary(plus:types),
+      succeeds nat(?y1 @+ ?y2) by corollary(plus:types),
+      ex z3: succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3) by 
+       lemma(minus:existence:1),
+      exist(z3,
+       succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3),
+       [add(?z1,?z2,?z3) by introduction(add,3),
+	ex z3: add(?z1,?z2,?z3)],
+       ex z3: add(?z1,?z2,?z3))],
+     ex z3: add(?z1,?z2,?z3))],
+   ex z3: add(?z1,?z2,?z3))],
+ ex z3: add(?z1,?z2,?z3))
+).
+
+:- lemma(minus:equivalence:1,
+all [x1,y1,x2,y2,z]: succeeds minus(?x1,?y1,?z) &
+ succeeds minus(?x2,?y2,?z) & succeeds int(?z) =>
+  ?x1 @+ ?y2 = ?x2 @+ ?y1,
+assume(succeeds minus(?x1,?y1,?z) & succeeds minus(?x2,?y2,?z) &
+ succeeds int(?z),
+ [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+  succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+  def succeeds minus(?x1,?y1,?z) by completion,
+  cases(succeeds plus(?y1,?z,?x1) & fails negative(?z),
+   [succeeds nat(?z) by lemma(plus:types:3),
+    def succeeds minus(?x2,?y2,?z) by completion,
+    cases(succeeds plus(?y2,?z,?x2) & fails negative(?z),
+     [?y1 @+ ?z = ?x1 by uniqueness(@+,2),
+      ?y2 @+ ?z = ?x2 by uniqueness(@+,2),
+      ?y1 @+ ?z @+ ?y2 = (?y2 @+ ?z) @+ ?y1  by addition,
+      ?x1 @+ ?y2 = ?y1 @+ ?z @+ ?y2 = (?y2 @+ ?z) @+ ?y1 = ?x2 @+ ?y1,
+      ?x1 @+ ?y2 = ?x2 @+ ?y1],
+     ex n: ?z = - s(?n) & succeeds plus(?x2,s(?n),?y2),
+     exist(n,
+      ?z = - s(?n) & succeeds plus(?x2,s(?n),?y2),
+      [succeeds negative(- s(?n)),
+       succeeds negative(?z), ff],
+      ?x1 @+ ?y2 = ?x2 @+ ?y1),
+     ?x1 @+ ?y2 = ?x2 @+ ?y1)],
+   ex n: ?z = - s(?n) & succeeds plus(?x1,s(?n),?y1),
+   exist(n,
+    ?z = - s(?n) & succeeds plus(?x1,s(?n),?y1),
+    [def succeeds minus(?x2,?y2,?z) by completion,
+     cases(succeeds plus(?y2,?z,?x2) & fails negative(?z),
+      [succeeds negative(- s(?n)),
+       succeeds negative(?z), ff],
+      ex 0: ?z = - s(?0) & succeeds plus(?x2,s(?0),?y2),
+      exist(0,
+       ?z = - s(?0) & succeeds plus(?x2,s(?0),?y2),
+       [succeeds plus(?x2,s(?n),?y2),
+	?x1 @+ s(?n) = ?y1 by uniqueness(@+,2),
+	?x2 @+ s(?n) = ?y2 by uniqueness(@+,2),
+	succeeds nat(s(?n)) by lemma(plus:types:3),
+	def succeeds nat(s(?n)) by completion,
+	?x1 @+ (?x2 @+ s(?n)) = ?x2 @+ (?x1 @+ s(?n)) by addition,	
+	?x1 @+ ?y2 = ?x1 @+ (?x2 @+ s(?n)) =
+	?x2 @+ (?x1 @+ s(?n)) = ?x2 @+ ?y1,
+	?x1 @+ ?y2 = ?x2 @+ ?y1],
+       ?x1 @+ ?y2 = ?x2 @+ ?y1),
+      ?x1 @+ ?y2 = ?x2 @+ ?y1)],
+    ?x1 @+ ?y2 = ?x2 @+ ?y1),
+   ?x1 @+ ?y2 = ?x2 @+ ?y1)],
+ ?x1 @+ ?y2 = ?x2 @+ ?y1)
+).
+
+:- lemma(minus:equivalence:2,
+all [x1,y1,x2,y2,z1,z2]: succeeds minus(?x1,?y1,?z1) &
+ succeeds minus(?x2,?y2,?z2) & succeeds int(?z1) & succeeds int(?z2) &
+ ?x1 @+ ?y2 = ?x2 @+ ?y1 => ?z1 = ?z2,
+assume(succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+ succeeds int(?z1) & succeeds int(?z2) & ?x1 @+ ?y2 = ?x2 @+ ?y1,
+ [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+  succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+  def succeeds minus(?x1,?y1,?z1) by completion,
+  cases(succeeds plus(?y1,?z1,?x1) & fails negative(?z1),
+   [succeeds nat(?z1) by lemma(plus:types:3),
+    def succeeds minus(?x2,?y2,?z2) by completion,
+    ?y1 @+ ?z1 = ?x1 by uniqueness(@+,2),
+    cases(succeeds plus(?y2,?z2,?x2) & fails negative(?z2),
+     [?y2 @+ ?z2 = ?x2 by uniqueness(@+,2),
+      succeeds nat(?z2) by lemma(plus:types:3),
+      ?z1 @+ (?y1 @+ ?y2) = ?y1 @+ ?z1 @+ ?y2 by addition,
+      ?y2 @+ ?z2 @+ ?y1 = ?z2 @+ (?y1 @+ ?y2) by addition,      
+      ?z1 @+ (?y1 @+ ?y2) = ?y1 @+ ?z1 @+ ?y2 =
+      ?x1 @+ ?y2 = ?x2 @+ ?y1 = ?y2 @+ ?z2 @+ ?y1 = ?z2 @+ (?y1 @+ ?y2),      
+      ?z1 @+ (?y1 @+ ?y2) = ?z2 @+ (?y1 @+ ?y2),
+      succeeds nat(?y1 @+ ?y2) by corollary(plus:types),
+      ?z1 = ?z2 by lemma(plus:injective:first)],
+     ex z: ?z2 = - s(?z) & succeeds plus(?x2,s(?z),?y2),
+     exist(z,
+      ?z2 = - s(?z) & succeeds plus(?x2,s(?z),?y2),
+      [?x2 @+ s(?z) = ?y2 by uniqueness(@+,2),
+       succeeds nat(s(?z)) by lemma(plus:types:3),
+       def succeeds nat(s(?z)) by completion,
+       (?y1 @+ ?z1) @+ (?x2 @+ s(?z)) = ?x2 @+ ?y1 @+ s(?z @+ ?z1)
+	by addition,      
+       ?x1 @+ ?y2 = (?y1 @+ ?z1) @+ (?x2 @+ s(?z)) =
+       ?x2 @+ ?y1 @+ s(?z @+ ?z1) = ?x1 @+ ?y2 @+ s(?z @+ ?z1),       
+       succeeds nat(?x1 @+ ?y2) by corollary(plus:types),       
+       ?x1 @+ ?y2 = ?x1 @+ ?y2 @+ s(?z @+ ?z1),
+       succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2 @+ s(?z @+ ?z1) by 
+        corollary(less:plus:second),
+       succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2,
+       ~ succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2 by theorem(less:strictness), ff],
+      ?z1 = ?z2),
+     ?z1 = ?z2)],
+   ex z: ?z1 = - s(?z) & succeeds plus(?x1,s(?z),?y1),
+   exist(z,
+    ?z1 = - s(?z) & succeeds plus(?x1,s(?z),?y1),
+    [?x1 @+ s(?z) = ?y1 by uniqueness(@+,2),
+     succeeds nat(s(?z)) by lemma(plus:types:3),
+     def succeeds nat(s(?z)) by completion,
+     def succeeds minus(?x2,?y2,?z2) by completion,
+     cases(succeeds plus(?y2,?z2,?x2) & fails negative(?z2),
+      [?y2 @+ ?z2 = ?x2 by uniqueness(@+,2),
+       succeeds nat(?z2) by lemma(plus:types:3),
+       (?y2 @+ ?z2) @+ (?x1 @+ s(?z)) = ?x1 @+ ?y2 @+ s(?z @+ ?z2)
+	by addition,
+       ?x1 @+ ?y2 = ?x2 @+ ?y1 = (?y2 @+ ?z2) @+ (?x1 @+ s(?z)) =
+       ?x1 @+ ?y2 @+ s(?z @+ ?z2),
+       succeeds nat(?x1 @+ ?y2) by corollary(plus:types),
+       succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2 @+ s(?z @+ ?z2) by 
+        corollary(less:plus:second),
+       succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2,
+       ~ succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2 by theorem(less:strictness), ff],
+      ex z: ?z2 = - s(?z) & succeeds plus(?x2,s(?z),?y2),
+      exist(n,
+       ?z2 = - s(?n) & succeeds plus(?x2,s(?n),?y2),
+       [?x2 @+ s(?n) = ?y2 by uniqueness(@+,2),
+	succeeds nat(s(?n)) by lemma(plus:types:3),
+	def succeeds nat(s(?n)) by completion,
+	s(?z) @+ (?x1 @+ ?x2) = ?x2 @+ (?x1 @+ s(?z)) by addition,
+	?x1 @+ (?x2 @+ s(?n)) = s(?n) @+ (?x1 @+ ?x2) by addition,
+	s(?z) @+ (?x1 @+ ?x2) = ?x2 @+ (?x1 @+ s(?z)) = ?x2 @+ ?y1 =
+	?x1 @+ ?y2 = ?x1 @+ (?x2 @+ s(?n)) = s(?n) @+ (?x1 @+ ?x2),
+	s(?z) @+ (?x1 @+ ?x2) = s(?n) @+ (?x1 @+ ?x2),
+	succeeds nat(?x1 @+ ?x2) by corollary(plus:types),
+	s(?z) = s(?n) by lemma(plus:injective:first),	
+	?z1 = ?z2],
+       ?z1 = ?z2),
+      ?z1 = ?z2)],
+    ?z1 = ?z2),
+   ?z1 = ?z2)],
+ ?z1 = ?z2)
+).
+
+:- lemma(add:uniqueness,
+all [z1,z2,z3,z4]: succeeds int(?z1) & succeeds int(?z2) &
+ add(?z1,?z2,?z3) & add(?z1,?z2,?z4) => ?z3 = ?z4,
+assume(succeeds int(?z1) & succeeds int(?z2) & add(?z1,?z2,?z3) &
+ add(?z1,?z2,?z4),
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) & succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3) by
+   elimination(add,3),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3),
+   [ex [u1,v1,u2,v2]: succeeds minus(?u1,?v1,?z1) &
+     succeeds minus(?u2,?v2,?z2) & 
+     succeeds minus(?u1 @+ ?u2,?v1 @+ ?v2,?z4) by elimination(add,3),
+    exist([u1,v1,u2,v2],
+     succeeds minus(?u1,?v1,?z1) & succeeds minus(?u2,?v2,?z2) &
+     succeeds minus(?u1 @+ ?u2,?v1 @+ ?v2,?z4),
+     [succeeds nat(?x1) & succeeds nat(?x2) by lemma(minus:types:2),
+      succeeds nat(?y1) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?u1) & succeeds nat(?u2) by lemma(minus:types:2),
+      succeeds nat(?v1) & succeeds nat(?v2) by lemma(minus:types:2),
+      ?x1 @+ ?v1 = ?u1 @+ ?y1 by lemma(minus:equivalence:1),
+      ?x2 @+ ?v2 = ?u2 @+ ?y2 by lemma(minus:equivalence:1),
+      (?x1 @+ ?x2) @+ (?v1 @+ ?v2) = (?x1 @+ ?v1) @+ (?x2 @+ ?v2)
+       by addition,
+      (?u1 @+ ?y1) @+ (?u2 @+ ?y2) = (?u1 @+ ?u2) @+ (?y1 @+ ?y2)
+       by addition,      
+      (?x1 @+ ?x2) @+ (?v1 @+ ?v2) = (?x1 @+ ?v1) @+ (?x2 @+ ?v2) =
+      (?u1 @+ ?y1) @+ (?u2 @+ ?y2) = (?u1 @+ ?u2) @+ (?y1 @+ ?y2),
+      (?x1 @+ ?x2) @+ (?v1 @+ ?v2) = (?u1 @+ ?u2) @+ (?y1 @+ ?y2),
+      succeeds int(?z3) by lemma(add:types),
+      succeeds int(?z4) by lemma(add:types),
+      ?z3 = ?z4 by lemma(minus:equivalence:2)],
+     ?z3 = ?z4)],
+   ?z3 = ?z4)],
+ ?z3 = ?z4)
+).
+
+:- definition_fun(#+,2,
+ all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2)  => 
+  (?z1 #+ ?z2 = ?z3 <=> add(?z1,?z2,?z3)),
+ existence by lemma(add:existence),
+ uniqueness by lemma(add:uniqueness)
+).
+
+:- corollary(add:types,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  succeeds int(?z1 #+ ?z2),
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [add(?z1,?z2,?z1 #+ ?z2) by existence(#+,2),
+  succeeds int(?z1 #+ ?z2) by lemma(add:types)],
+ succeeds int(?z1 #+ ?z2))
+).
+
+:- lemma(add:characterization:1,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  (ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+    succeeds minus(?x2,?y2,?z2) &
+    succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2)),
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [add(?z1,?z2,?z1 #+ ?z2) by existence(#+,2),
+  ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2) by elimination(add,3)],
+ ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) & 
+  succeeds minus(?x2,?y2,?z2) &
+  succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2))
+).
+
+:- lemma(add:characterization:2,
+all [x1,x2,y1,y2,z1,z2]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) =>
+  succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2),
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds minus(?x1,?y1,?z1) &
+ succeeds minus(?x2,?y2,?z2),
+ [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+  succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+  succeeds plus(?x1,?x2,?x1 @+ ?x2) by existence(@+,2),
+  succeeds plus(?y1,?y2,?y1 @+ ?y2) by existence(@+,2),
+  succeeds nat(?x1 @+ ?x2) by lemma(plus:types:2),
+  succeeds nat(?y1 @+ ?y2) by lemma(plus:types:2),
+  ex z: succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z) by 
+   lemma(minus:existence:1),
+  exist(z,
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z),
+   [add(?z1,?z2,?z) by introduction(add,3),
+    ?z = ?z1 #+ ?z2 by uniqueness(#+,2),
+    succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2)],
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2))],
+ succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2))
+).
+
+:- lemma(minus:uniqueness,
+all [x,y,z1,z2]: succeeds minus(?x,?y,?z1) & succeeds minus(?x,?y,?z2) &
+ succeeds nat(?x) & succeeds nat(?y) => ?z1 = ?z2,
+assume(succeeds minus(?x,?y,?z1) & succeeds minus(?x,?y,?z2) &
+ succeeds nat(?x) & succeeds nat(?y),
+ [def succeeds minus(?x,?y,?z1) by completion,
+  cases(succeeds plus(?y,?z1,?x) & fails negative(?z1),
+   [?y @+ ?z1 = ?x by uniqueness(@+,2),
+    succeeds nat(?z1) by lemma(plus:types:3),
+    def succeeds minus(?x,?y,?z2) by completion,
+    cases(succeeds plus(?y,?z2,?x) & fails negative(?z2),
+     [?y @+ ?z2 = ?x by uniqueness(@+,2),
+      ?y @+ ?z1 = ?y @+ ?z2,
+      ?z1 = ?z2 by lemma(plus:injective:second)],
+     ex z: ?z2 = - s(?z) & succeeds plus(?x,s(?z),?y),
+     exist(z,
+      ?z2 = - s(?z) & succeeds plus(?x,s(?z),?y),
+      [?x @+ s(?z) = ?y by uniqueness(@+,2),
+       succeeds nat(s(?z)) by lemma(plus:types:3),
+       def succeeds nat(s(?z)) by completion,
+       ?x @+ s(?z) @+ ?z1 = ?x @+ s(?z @+ ?z1) by addition,
+       ?x = ?y @+ ?z1 = ?x @+ s(?z) @+ ?z1 = ?x @+ s(?z @+ ?z1),
+       succeeds ?x @< ?x @+ s(?z @+ ?z1) by corollary(less:plus:second),
+       succeeds ?x @< ?x,
+       ~ succeeds ?x @< ?x by theorem(less:strictness)],
+      ?z1 = ?z2),
+     ?z1 = ?z2)],
+   ex z: ?z1 = - s(?z) & succeeds plus(?x,s(?z),?y),
+   exist(z,
+    ?z1 = - s(?z) & succeeds plus(?x,s(?z),?y),
+    [?x @+ s(?z) = ?y by uniqueness(@+,2),
+     succeeds nat(s(?z)) by lemma(plus:types:3),
+     def succeeds nat(s(?z)) by completion,
+     def succeeds minus(?x,?y,?z2) by completion,
+     cases(succeeds plus(?y,?z2,?x) & fails negative(?z2),
+      [?y @+ ?z2 = ?x by uniqueness(@+,2),
+       succeeds nat(?z2) by lemma(plus:types:3),
+       ?x @+ s(?z) @+ ?z2 = ?x @+ s(?z @+ ?z2) by addition,
+       ?x = ?y @+ ?z2 = ?x @+ s(?z) @+ ?z2 = ?x @+ s(?z @+ ?z2),
+       succeeds ?x @< ?x @+ s(?z @+ ?z2) by corollary(less:plus:second),
+       succeeds ?x @< ?x,
+       ~ succeeds ?x @< ?x by theorem(less:strictness)],
+      ex z: ?z2 = - s(?z) & succeeds plus(?x,s(?z),?y),
+      exist(n,
+       ?z2 = - s(?n) & succeeds plus(?x,s(?n),?y),
+       [?x @+ s(?n) = ?y by uniqueness(@+,2),
+	?x @+ s(?z) = ?x @+ s(?n),
+	s(?z) = s(?n) by lemma(plus:injective:second),
+	?z1 = ?z2],
+       ?z1 = ?z2),
+      ?z1 = ?z2)],
+    ?z1 = ?z2),
+   ?z1 = ?z2)],
+ ?z1 = ?z2)
+).
+
+:- lemma(add:characterization:3,
+all [x1,x2,y1,y2,z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) =>
+  succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3) => ?z3 = ?z1 #+ ?z2,
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds minus(?x1,?y1,?z1) &
+ succeeds minus(?x2,?y2,?z2),
+ assume(succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3),
+  [succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2) by 
+    lemma(add:characterization:2),
+   succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+   succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+   succeeds nat(?x1 @+ ?x2) by corollary(plus:types),
+   succeeds nat(?y1 @+ ?y2) by corollary(plus:types),
+   ?z3 = ?z1 #+ ?z2 by lemma(minus:uniqueness)],
+  ?z3 = ?z1 #+ ?z2),
+ succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z3) => ?z3 = ?z1 #+ ?z2)
+).
+
+:- theorem(add:commutative,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  ?z1 #+ ?z2 = ?z2 #+ ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2) by 
+   lemma(add:characterization:1),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2),
+   [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+    succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+    ?x1 @+ ?x2 = ?x2 @+ ?x1 by theorem(plus:commutative),
+    ?y1 @+ ?y2 = ?y2 @+ ?y1 by theorem(plus:commutative),
+    succeeds minus(?x2 @+ ?x1,?y2 @+ ?y1,?z1 #+ ?z2),    
+    ?z1 #+ ?z2 = ?z2 #+ ?z1 by lemma(add:characterization:3)],
+   ?z1 #+ ?z2 = ?z2 #+ ?z1)],
+ ?z1 #+ ?z2 = ?z2 #+ ?z1)
+).
+
+:- lemma(minus:nat,
+all x: succeeds nat(?x) => succeeds minus(?x,0,?x),
+assume(succeeds nat(?x),
+ [succeeds plus(0,?x,?x) by sld,
+  fails negative(?x) by lemma(nat:non:negative:2),
+  succeeds minus(?x,0,?x) by sld],
+ succeeds minus(?x,0,?x))
+).
+
+:- lemma(add:nat,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => ?x @+ ?y = ?x #+ ?y,
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds int(?x) by sld,
+  succeeds int(?y) by sld,
+  succeeds minus(?x,0,?x) by lemma(minus:nat),
+  succeeds minus(?y,0,?y) by lemma(minus:nat),
+  succeeds nat(?x @+ ?y) by corollary(plus:types),
+  succeeds minus(?x @+ ?y,0,?x @+ ?y) by lemma(minus:nat),
+  0 @+ 0 = 0 by lemma(plus:zero),
+  succeeds minus(?x @+ ?y,0 @+ 0,?x @+ ?y),
+  add(?x,?y,?x @+ ?y) by introduction(add,3),
+  ?x @+ ?y = ?x #+ ?y by uniqueness(#+,2)],
+ ?x @+ ?y = ?x #+ ?y)
+).
+
+:- theorem(add:associative,
+all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3) =>
+  (?z1 #+ ?z2) #+ ?z3 = ?z1 #+ (?z2 #+ ?z3),
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3),
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2) by 
+   lemma(add:characterization:1),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds minus(?x1 @+ ?x2,?y1 @+ ?y2,?z1 #+ ?z2),
+   [ex [x3,y3]: succeeds minus(?x3,?y3,?z3) by 
+     lemma(minus:existence:2),
+    exist([x3,y3],
+     succeeds minus(?x3,?y3,?z3),
+     [succeeds int(?z1 #+ ?z2) by corollary(add:types),
+      succeeds minus(?x1 @+ ?x2 @+ ?x3,?y1 @+ ?y2 @+ ?y3,
+       ?z1 #+ ?z2 #+ ?z3) by
+       lemma(add:characterization:2),
+      succeeds minus(?x2 @+ ?x3,?y2 @+ ?y3,?z2 #+ ?z3) by 
+       lemma(add:characterization:2),
+      succeeds int(?z2 #+ ?z3) by corollary(add:types),
+      succeeds minus(?x1 @+ (?x2 @+ ?x3),?y1 @+ (?y2 @+ ?y3),
+       ?z1 #+ (?z2 #+ ?z3)) by
+       lemma(add:characterization:2),
+      succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+      succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?x3) & succeeds nat(?y3) by lemma(minus:types:2),
+      ?x1 @+ ?x2 @+ ?x3 = ?x1 @+ (?x2 @+ ?x3) by 
+       theorem(plus:associative),
+      ?y1 @+ ?y2 @+ ?y3 = ?y1 @+ (?y2 @+ ?y3) by 
+       theorem(plus:associative),
+      succeeds minus(?x1 @+ (?x2 @+ ?x3),?y1 @+ (?y2 @+ ?y3),
+       ?z1 #+ ?z2 #+ ?z3),      
+      ?z1 #+ ?z2 #+ ?z3 = ?z1 #+ (?z2 #+ ?z3) by 
+       lemma(add:characterization:3)],
+     ?z1 #+ ?z2 #+ ?z3 = ?z1 #+ (?z2 #+ ?z3))],
+   ?z1 #+ ?z2 #+ ?z3 = ?z1 #+ (?z2 #+ ?z3))],
+ ?z1 #+ ?z2 #+ ?z3 = ?z1 #+ (?z2 #+ ?z3))
+).
+
+:- theorem(add:zero,
+all z: succeeds int(?z) => ?z #+ 0 = ?z,
+assume(succeeds int(?z),
+ [ex [x,y]: succeeds minus(?x,?y,?z) by lemma(minus:existence:2),
+  exist([x,y],succeeds minus(?x,?y,?z),
+   [succeeds minus(0,0,0),
+    succeeds minus(?x @+ 0,?y @+ 0,?z #+ 0) by 
+     lemma(add:characterization:2),
+    succeeds nat(?x) & succeeds nat(?y) by lemma(minus:types:2),
+    ?x @+ 0 = ?x by lemma(plus:zero),
+    ?y @+ 0 = ?y by lemma(plus:zero),
+    succeeds minus(?x,?y,?z #+ 0),
+    ?z #+ 0 = ?z by lemma(minus:uniqueness)],
+   ?z #+ 0 = ?z)],
+ ?z #+ 0 = ?z)
+).
+
+:- corollary(add:zero,
+all z: succeeds int(?z) => 0 #+ ?z = ?z,
+assume(succeeds int(?z),
+ [?z #+ 0 = ?z by theorem(add:zero),
+  succeeds int(0),
+  ?z #+ 0 = 0 #+ ?z by theorem(add:commutative),
+  0 #+ ?z = ?z],
+ 0 #+ ?z = ?z)
+).
+
+:- lemma(minus:2:types,
+all [z1,z2]: succeeds minus(?z1,?z2) & succeeds int(?z1) =>
+  succeeds int(?z2),
+assume(succeeds minus(?z1,?z2) & succeeds int(?z1),
+ [def succeeds minus(?z1,?z2) by completion,
+  cases(
+   [case(ex x: ?z1 = s(?x) & ?z2 = - s(?x),
+     exist(x,
+      ?z1 = s(?x) & ?z2 = - s(?x),
+      [def succeeds int(?z1) by completion,
+       cases(succeeds nat(?z1),
+        [def succeeds nat(s(?x)) by completion,
+	 succeeds int(- s(?x)),
+	 succeeds int(?z2)],
+        ex x: ?z1 = - s(?x) & succeeds nat(?x),
+        exist(0,
+         ?z1 = - s(?0) & succeeds nat(?0),
+         [],
+         succeeds int(?z2)),
+        succeeds int(?z2))],
+      succeeds int(?z2))),
+    case(?z1 = 0 & ?z2 = 0,
+     []),
+    case(?z1 = - ?z2,
+     [def succeeds int(?z1) by completion,
+      cases(succeeds nat(?z1),
+       [?z1 <> - ?z2 by lemma(nat:non:negative:1)],
+       ex x: ?z1 = - s(?x) & succeeds nat(?x),
+       exist(x,
+        ?z1 = - s(?x) & succeeds nat(?x),
+        [succeeds nat(s(?x)),
+	 succeeds nat(?z2),
+	 succeeds int(?z2)],
+        succeeds int(?z2)),
+       succeeds int(?z2))])],
+   succeeds int(?z2))],
+ succeeds int(?z2))
+).
+
+:- lemma(minus:2:existence,
+all z1: succeeds int(?z1) => (ex z2: succeeds minus(?z1,?z2)),
+assume(succeeds int(?z1),
+ [def succeeds int(?z1) by completion,
+  cases(succeeds nat(?z1),
+   [def succeeds nat(?z1) by completion,
+    cases(?z1 = 0,
+     [succeeds minus(0,0) by sld,
+      succeeds minus(?z1,0),
+      ex z2: succeeds minus(?z1,?z2)],
+     ex x: ?z1 = s(?x) & succeeds nat(?x),
+     exist(x,
+      ?z1 = s(?x) & succeeds nat(?x),
+      [succeeds minus(s(?x),- s(?x)) by sld,
+       succeeds minus(?z1,- s(?x)),
+       ex z2: succeeds minus(?z1,?z2)],
+      ex z2: succeeds minus(?z1,?z2)),
+     ex z2: succeeds minus(?z1,?z2))],
+   ex x: ?z1 = - s(?x) & succeeds nat(?x),
+   exist(x,
+    ?z1 = - s(?x) & succeeds nat(?x),
+    [succeeds minus(- s(?x),s(?x)),
+     succeeds minus(?z1,s(?x)),
+     ex z2: succeeds minus(?z1,?z2)],
+    ex z2: succeeds minus(?z1,?z2)),
+   ex z2: succeeds minus(?z1,?z2))],
+ ex z2: succeeds minus(?z1,?z2))
+).
+
+:- lemma(minus:2:uniqueness,
+all [z,z1,z2]: succeeds minus(?z,?z1) & succeeds minus(?z,?z2) =>
+  ?z1 = ?z2,
+assume(succeeds minus(?z,?z1) & succeeds minus(?z,?z2),
+ [def succeeds minus(?z,?z1) by completion,
+  cases(
+   [case(ex x: ?z = s(?x) & ?z1 = - s(?x),
+     exist(x,
+      ?z = s(?x) & ?z1 = - s(?x),
+      [def succeeds minus(?z,?z2) by completion,
+       cases(
+        [case(ex x: ?z = s(?x) & ?z2 = - s(?x),
+          exist(0,
+           ?z = s(?0) & ?z2 = - s(?0),
+           [],
+           ?z1 = ?z2)),
+         case(?z = 0 & ?z2 = 0,
+          []),
+         case(?z = - ?z2,
+          [])],
+        ?z1 = ?z2)],
+      ?z1 = ?z2)),
+    case(?z = 0 & ?z1 = 0,
+     [def succeeds minus(?z,?z2) by completion,
+      cases(
+       [case(ex x: ?z = s(?x) & ?z2 = - s(?x),
+         exist(x,
+          ?z = s(?x) & ?z2 = - s(?x),
+          [],
+          ?z1 = ?z2)),
+        case(?z = 0 & ?z2 = 0,
+         []),
+        case(?z = - ?z2,
+         [])],
+       ?z1 = ?z2)]),
+    case(?z = - ?z1,
+     [def succeeds minus(?z,?z2) by completion,
+      cases(
+       [case(ex x: ?z = s(?x) & ?z2 = - s(?x),
+         exist(x,
+          ?z = s(?x) & ?z2 = - s(?x),
+          [],
+          ?z1 = ?z2)),
+        case(?z = 0 & ?z2 = 0,
+         []),
+        case(?z = - ?z2,
+         [])],
+       ?z1 = ?z2)])],
+   ?z1 = ?z2)],
+ ?z1 = ?z2)
+).
+
+:- definition_fun(#-,1,
+ all [z1,z2]: succeeds int(?z1) =>
+  (#- ?z1 = ?z2 <=> succeeds minus(?z1,?z2)),
+ existence by lemma(minus:2:existence),
+ uniqueness by lemma(minus:2:uniqueness)
+).
+
+:- corollary(minus:types,
+all z: succeeds int(?z) => succeeds int(#- ?z),
+assume(succeeds int(?z),
+ [succeeds minus(?z,#- ?z) by existence(#-,1),
+  succeeds int(#- ?z) by lemma(minus:2:types)],
+ succeeds int(#- ?z))
+).
+
+:- lemma(minus:zero,
+#- 0 = 0,
+[succeeds minus(0,0) by sld,
+ #- 0 = 0 by uniqueness(#-,1)]
+).
+
+:- lemma(minus:transpose,
+all [x,y,z]: succeeds int(?z) & succeeds minus(?x,?y,?z) =>
+  succeeds minus(?y,?x,#- ?z),
+assume(succeeds int(?z) & succeeds minus(?x,?y,?z),
+ [succeeds nat(?x) & succeeds nat(?y) by lemma(minus:types:2),
+  def succeeds minus(?x,?y,?z) by completion,
+  cases(succeeds plus(?y,?z,?x) & fails negative(?z),
+   [succeeds nat(?z) by lemma(plus:types:3),
+    def succeeds nat(?z) by completion,
+    cases(?z = 0,
+     [succeeds plus(?y,0,?x),
+      ?y @+ 0 = ?x by uniqueness(@+,2),
+      ?y @+ 0 = ?y by lemma(plus:zero),
+      ?y = ?x,
+      succeeds plus(?x,0,?y),
+      fails negative(0),
+      succeeds minus(?y,?x,0),
+      #- 0 = 0 by lemma(minus:zero),
+      #- ?z = 0,
+      succeeds minus(?y,?x,#- ?z)],
+     ex x: ?z = s(?x) & succeeds nat(?x),
+     exist(n,
+      ?z = s(?n) & succeeds nat(?n),
+      [succeeds plus(?y,s(?n),?x),
+       succeeds minus(?y,?x,- s(?n)) by sld,
+       succeeds minus(s(?n),- s(?n)) by sld,
+       #- s(?n) = - s(?n) by uniqueness(#-,1),
+       #- ?z = - s(?n),
+       succeeds minus(?y,?x,#- ?z)],
+      succeeds minus(?y,?x,#- ?z)),
+     succeeds minus(?y,?x,#- ?z))],
+   ex n: ?z = - s(?n) & succeeds plus(?x,s(?n),?y),
+   exist(n,
+    ?z = - s(?n) & succeeds plus(?x,s(?n),?y),
+    [fails negative(s(?n)),
+     succeeds minus(?y,?x,s(?n)) by sld,
+     succeeds minus(- s(?n),s(?n)) by sld,
+     #- (- s(?n)) = s(?n) by uniqueness(#-,1),
+     #- ?z = s(?n),
+     succeeds minus(?y,?x,#- ?z)],
+    succeeds minus(?y,?x,#- ?z)),
+   succeeds minus(?y,?x,#- ?z))],
+ succeeds minus(?y,?x,#- ?z))
+).
+
+:- theorem(minus:inverse,
+all z: succeeds int(?z) => ?z #+ (#- ?z) = 0,
+assume(succeeds int(?z),
+ [ex [x,y]: succeeds minus(?x,?y,?z) by lemma(minus:existence:2),
+  exist([x,y],
+   succeeds minus(?x,?y,?z),
+   [succeeds minus(?y,?x,#- ?z) by lemma(minus:transpose),
+    succeeds int(#- ?z) by corollary(minus:types),
+    succeeds nat(?x) & succeeds nat(?y) by lemma(minus:types:2),
+    ?x @+ ?y = ?y @+ ?x by theorem(plus:commutative),
+    succeeds nat(?y @+ ?x) by corollary(plus:types),
+    ?y @+ ?x @+ 0 = ?y @+ ?x by lemma(plus:zero),
+    ?y @+ ?x @+ 0 = ?x @+ ?y,
+    succeeds plus(?y @+ ?x,0,?y @+ ?x @+ 0) by existence(@+,2),
+    succeeds plus(?y @+ ?x,0,?x @+ ?y),
+    fails negative(0),
+    succeeds minus(?x @+ ?y,?y @+ ?x,0) by sld,
+    0 = ?z #+ #- ?z by lemma(add:characterization:3)],
+   ?z #+ #- ?z = 0)],
+ ?z #+ #- ?z = 0)
+).
+
+:- corollary(minus:inverse,
+all z: succeeds int(?z) => #- ?z #+ ?z = 0,
+assume(succeeds int(?z),
+ [?z #+ #- ?z = 0 by theorem(minus:inverse),
+  succeeds int(#- ?z) by corollary(minus:types),
+  ?z #+ #- ?z = #- ?z #+ ?z by theorem(add:commutative),
+  #- ?z #+ ?z = 0],
+ #- ?z #+ ?z = 0)
+).
+
+:- lemma(minus:zero:characterization,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #+ ?z2 = 0 => ?z2 = #- ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2) & ?z1 #+ ?z2 = 0,
+ [succeeds int(#- ?z1) by corollary(minus:types),
+  #- ?z1 #+ 0 = #- ?z1 by theorem(add:zero),
+  #- ?z1 #+ (?z1 #+ ?z2) = #- ?z1 #+ 0,
+  #- ?z1 #+ ?z1 #+ ?z2 = #- ?z1 #+ (?z1 #+ ?z2) by 
+   theorem(add:associative),
+  #- ?z1 #+ ?z1 = 0 by corollary(minus:inverse),
+  0 #+ ?z2 = ?z2 by corollary(add:zero),
+  ?z2 = 0 #+ ?z2 = #- ?z1 #+ ?z1 #+ ?z2 = #- ?z1 #+ (?z1 #+ ?z2) =
+  #- ?z1 #+ 0= #- ?z1,
+  ?z2 = #- ?z1],
+ ?z2 = #- ?z1)
+).
+
+:- lemma(minus:double,
+all z: succeeds int(?z) => #- #- ?z = ?z,
+assume(succeeds int(?z),
+ [succeeds int(#- ?z) by corollary(minus:types),
+  #- ?z #+ ?z = 0 by corollary(minus:inverse),
+  ?z = #- #- ?z by lemma(minus:zero:characterization)],
+ #- #- ?z = ?z)
+).
+
+:- lemma(subtraction:existence,
+all [z1,z2]: (ex z3: ?z1 #+ (#- ?z2) = ?z3),
+[?z1 #+ #- ?z2 = ?z1 #+ #- ?z2,
+ ex z3: ?z1 #+ #- ?z2 = ?z3]
+).
+
+:- lemma(subtraction:uniqueness,
+all [z1,z2,z3,z4]: ?z1 #+ (#- ?z2) = ?z3 & ?z1 #+ (#- ?z2) = ?z4 =>
+  ?z3 = ?z4,
+[]
+).
+
+:- definition_fun(#-,2,
+ all [z1,z2,z3]: tt  => 
+  (?z1 #- ?z2 = ?z3 <=> ?z1 #+ (#- ?z2) = ?z3),
+ existence by lemma(subtraction:existence),
+ uniqueness by lemma(subtraction:uniqueness)
+).
+
+:- corollary(subtraction:add:minus,
+all [z1,z2]: ?z1 #- ?z2 = ?z1 #+ (#- ?z2),
+?z1 #- ?z2 = ?z1 #+ #- ?z2 by uniqueness(#-,2)
+).
+
+:- lemma(subtraction:types,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  succeeds int(?z1 #- ?z2),
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [?z1 #- ?z2 = ?z1 #+ #- ?z2 by uniqueness(#-,2),
+  succeeds int(#- ?z2) by corollary(minus:types),
+  succeeds int(?z1 #+ #- ?z2) by corollary(add:types),
+  succeeds int(?z1 #- ?z2)],
+ succeeds int(?z1 #- ?z2))
+).
+
+:- lemma(minus:add,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+ #- (?z1 #+ ?z2) = (#- ?z1) #- ?z2,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [succeeds int(?z1 #+ ?z2) by corollary(add:types),
+  succeeds int(#- ?z1) by corollary(minus:types),
+  succeeds int(#- ?z1 #- ?z2) by lemma(subtraction:types),
+  #- ?z1 #- ?z2 = #- ?z1 #+ #- ?z2 by uniqueness(#-,2),
+  succeeds int(#- ?z2) by corollary(minus:types),  
+  ?z1 #+ ?z2 #+ #- ?z1 #+ #- ?z2 = ?z1 #+ ?z2 #+ (#- ?z1 #+ #- ?z2) by 
+   theorem(add:associative),
+  ?z1 #+ ?z2 = ?z2 #+ ?z1 by theorem(add:commutative),
+  ?z2 #+ ?z1 #+ #- ?z1 = ?z2 #+ (?z1 #+ #- ?z1) by 
+   theorem(add:associative),
+  ?z1 #+ #- ?z1 = 0 by theorem(minus:inverse),
+  ?z2 #+ 0 = ?z2 by theorem(add:zero),
+  ?z2 #+ #- ?z2 = 0 by theorem(minus:inverse),
+  ?z1 #+ ?z2 #+ (#- ?z1 #- ?z2) =
+  ?z1 #+ ?z2 #+ (#- ?z1 #+ #- ?z2) =
+  ?z1 #+ ?z2 #+ #- ?z1 #+ #- ?z2 =
+  ?z2 #+ ?z1 #+ #- ?z1 #+ #- ?z2 =
+  ?z2 #+ (?z1 #+ #- ?z1) #+ #- ?z2 =
+  ?z2 #+ 0 #+ #- ?z2 =
+  ?z2 #+ #- ?z2 = 0,
+  ?z1 #+ ?z2 #+ (#- ?z1 #- ?z2) = 0,
+  #- ?z1 #- ?z2 = #- (?z1 #+ ?z2) by lemma(minus:zero:characterization)],
+ #- (?z1 #+ ?z2) = #- ?z1 #- ?z2)
+).
+
+:- lemma(minus:subtraction,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+ #- (?z1 #- ?z2) = (#- ?z1) #+ ?z2,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [?z1 #- ?z2 = ?z1 #+ #- ?z2 by uniqueness(#-,2),
+  succeeds int(#- ?z2) by corollary(minus:types),
+  #- (?z1 #+ #- ?z2) = #- ?z1 #- #- ?z2 by lemma(minus:add),
+  #- ?z1 #- #- ?z2 = #- ?z1 #+ #- #- ?z2 by uniqueness(#-,2),
+  #- #- ?z2 = ?z2 by lemma(minus:double),
+  #- (?z1 #- ?z2) = #- (?z1 #+ #- ?z2) = #- ?z1 #- #- ?z2 =
+  #- ?z1 #+ #- #- ?z2 = #- ?z1 #+ ?z2,
+  #- (?z1 #- ?z2) = #- ?z1 #+ ?z2],
+ #- (?z1 #- ?z2) = #- ?z1 #+ ?z2)
+).
+
+:- definition_pred(#<,2,
+all [z1,z2]: ?z1 #< ?z2 <=>
+ (ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) & succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1)
+).
+
+:- theorem(int:less:irreflexive,
+all z: succeeds int(?z) => ~ ?z #< ?z,
+assume(succeeds int(?z),
+ contra(?z #< ?z,
+  [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z) & 
+    succeeds minus(?x2,?y2,?z) & succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1 by 
+    elimination(#<,2),
+   exist([x1,y1,x2,y2],
+    succeeds minus(?x1,?y1,?z) & succeeds minus(?x2,?y2,?z) &
+    succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1,
+    [?x1 @+ ?y2 = ?x2 @+ ?y1 by lemma(minus:equivalence:1),
+     succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2,
+     succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+     succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+     succeeds nat(?x1 @+ ?y2) by lemma(less:types),
+     ~ succeeds ?x1 @+ ?y2 @< ?x1 @+ ?y2 by theorem(less:strictness)],
+    ff)]),
+ ~ ?z #< ?z)
+).
+
+:- theorem(int:less:transitive,
+all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds int(?z3) & ?z1 #< ?z2 & ?z2 #< ?z3 => ?z1 #< ?z3,
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3) &
+ ?z1 #< ?z2 & ?z2 #< ?z3,
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) & succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1 by 
+   elimination(#<,2),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1,
+   [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z2) &
+     succeeds minus(?x2,?y2,?z3) & succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1 by 
+     elimination(#<,2),
+    exist([u,v,x3,y3],
+     succeeds minus(?u,?v,?z2) & succeeds minus(?x3,?y3,?z3) &
+     succeeds ?u @+ ?y3 @< ?x3 @+ ?v,
+     [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+      succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?x3) & succeeds nat(?y3) by lemma(minus:types:2),
+      succeeds nat(?u) & succeeds nat(?v) by lemma(minus:types:2),
+      ?x1 @+ ?y3 @+ (?y2 @+ ?v) = ?x1 @+ ?y2 @+ (?y3 @+ ?v) by addition,
+      succeeds nat(?x1 @+ ?y2) by corollary(plus:types),
+      succeeds nat(?x2 @+ ?y1) by corollary(plus:types),
+      succeeds nat(?y3 @+ ?v) by corollary(plus:types),
+      succeeds ?x1 @+ ?y2 @+ (?y3 @+ ?v) @< ?x2 @+ ?y1 @+ (?y3 @+ ?v) by 
+       lemma(less:plus:first),      
+      succeeds ?x1 @+ ?y3 @+ (?y2 @+ ?v) @< ?x2 @+ ?y1 @+ (?y3 @+ ?v),
+      ?x2 @+ ?y1 @+ (?y3 @+ ?v) = ?x2 @+ ?v @+ (?y1 @+ ?y3) by addition,
+      ?x2 @+ ?v = ?u @+ ?y2 by lemma(minus:equivalence:1),
+      ?x2 @+ ?v @+ (?y1 @+ ?y3) = ?u @+ ?y2 @+ (?y1 @+ ?y3),
+      ?x2 @+ ?y1 @+ (?y3 @+ ?v) = ?u @+ ?y2 @+ (?y1 @+ ?y3),
+      succeeds ?x1 @+ ?y3 @+ (?y2 @+ ?v) @< ?u @+ ?y2 @+ (?y1 @+ ?y3),
+      ?u @+ ?y2 @+ (?y1 @+ ?y3) = ?u @+ ?y3 @+ (?y2 @+ ?y1) by addition,
+      succeeds nat(?x3 @+ ?v) by corollary(plus:types),
+      succeeds nat(?y2 @+ ?y1) by corollary(plus:types),
+      succeeds ?u @+ ?y3 @+ (?y2 @+ ?y1) @< ?x3 @+ ?v @+ (?y2 @+ ?y1) by 
+       lemma(less:plus:first),
+      ?x3 @+ ?v @+ (?y2 @+ ?y1) = ?x3 @+ ?y1 @+ (?y2 @+ ?v) by addition,
+      succeeds ?u @+ ?y2 @+ (?y1 @+ ?y3) @< ?x3 @+ ?y1 @+ (?y2 @+ ?v),
+      succeeds ?x1 @+ ?y3 @+ (?y2 @+ ?v) @< ?x3 @+ ?y1 @+ (?y2 @+ ?v) by 
+       theorem(less:transitive),
+      succeeds nat(?y2 @+ ?v) by corollary(plus:types),
+      succeeds nat(?x1 @+ ?y3) by corollary(plus:types),
+      succeeds nat(?x3 @+ ?y1) by corollary(plus:types),
+      succeeds ?x1 @+ ?y3 @< ?x3 @+ ?y1 by corollary(less:plus:inverse),  
+      ?z1 #< ?z3 by introduction(#<,2)],
+     ?z1 #< ?z3)],
+   ?z1 #< ?z3)],
+ ?z1 #< ?z3)
+).
+
+:- theorem(int:less:total,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  ?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [ex [x1,y1]: succeeds minus(?x1,?y1,?z1) by lemma(minus:existence:2),
+  exist([x1,y1],
+   succeeds minus(?x1,?y1,?z1),
+   [ex [x2,y2]: succeeds minus(?x2,?y2,?z2) by 
+     lemma(minus:existence:2),
+    exist([x2,y2],
+     succeeds minus(?x2,?y2,?z2),
+     [succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+      succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?x1 @+ ?y2) by corollary(plus:types),
+      succeeds nat(?x2 @+ ?y1) by corollary(plus:types),
+      succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1 \/ ?x1 @+ ?y2 = ?x2 @+ ?y1 \/
+      succeeds ?x2 @+ ?y1 @< ?x1 @+ ?y2 by theorem(less:totality),     
+      cases(
+       [case(succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1,
+         ?z1 #< ?z2 by introduction(#<,2)),
+        case(?x1 @+ ?y2 = ?x2 @+ ?y1,
+         ?z1 = ?z2 by lemma(minus:equivalence:2)),
+        case(succeeds ?x2 @+ ?y1 @< ?x1 @+ ?y2,
+         ?z2 #< ?z1 by introduction(#<,2))],
+       ?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1)],
+     ?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1)],
+   ?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1)],
+ ?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1)
+).
+
+:- theorem(less:add,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #< ?z2 => ?z #+ ?z1 #< ?z #+ ?z2,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #< ?z2,
+ [ex [x1,y1,x2,y2]: succeeds minus(?x1,?y1,?z1) &
+   succeeds minus(?x2,?y2,?z2) & succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1 by 
+   elimination(#<,2),
+  exist([x1,y1,x2,y2],
+   succeeds minus(?x1,?y1,?z1) & succeeds minus(?x2,?y2,?z2) &
+   succeeds ?x1 @+ ?y2 @< ?x2 @+ ?y1,
+   [ex [x,y]: succeeds minus(?x,?y,?z) by lemma(minus:existence:2),
+    exist([x,y],
+     succeeds minus(?x,?y,?z),
+     [succeeds minus(?x @+ ?x1,?y @+ ?y1,?z #+ ?z1) by 
+       lemma(add:characterization:2),
+      succeeds minus(?x @+ ?x2,?y @+ ?y2,?z #+ ?z2) by 
+       lemma(add:characterization:2),
+      succeeds nat(?x) & succeeds nat(?y) by lemma(minus:types:2),
+      succeeds nat(?x1) & succeeds nat(?y1) by lemma(minus:types:2),
+      succeeds nat(?x2) & succeeds nat(?y2) by lemma(minus:types:2),
+      succeeds nat(?x @+ ?y) by corollary(plus:types),
+      succeeds nat(?x1 @+ ?y2) by corollary(plus:types),
+      succeeds nat(?x2 @+ ?y1) by corollary(plus:types),
+      succeeds ?x1 @+ ?y2 @+ (?x @+ ?y) @< ?x2 @+ ?y1 @+ (?x @+ ?y) by 
+       lemma(less:plus:first),
+      ?x @+ ?x1 @+ (?y @+ ?y2) = ?x1 @+ ?y2 @+ (?x @+ ?y) by addition,
+      ?x @+ ?x2 @+ (?y @+ ?y1) = ?x2 @+ ?y1 @+ (?x @+ ?y) by addition,     
+      succeeds ?x @+ ?x1 @+ (?y @+ ?y2) @< ?x @+ ?x2 @+ (?y @+ ?y1),
+      ?z #+ ?z1 #< ?z #+ ?z2 by introduction(#<,2)],
+     ?z #+ ?z1 #< ?z #+ ?z2)],
+   ?z #+ ?z1 #< ?z #+ ?z2)],
+ ?z #+ ?z1 #< ?z #+ ?z2)
+).
+
+:- corollary(less:add,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #< ?z2 => ?z1 #+ ?z #< ?z2 #+ ?z,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #< ?z2,
+ [?z #+ ?z1 #< ?z #+ ?z2 by theorem(less:add),
+  ?z1 #+ ?z = ?z #+ ?z1 by theorem(add:commutative),
+  ?z2 #+ ?z = ?z #+ ?z2 by theorem(add:commutative),
+  ?z1 #+ ?z #< ?z2 #+ ?z],
+ ?z1 #+ ?z #< ?z2 #+ ?z)
+).
+
+:- corollary(less:minus,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) & ?z1 #< ?z2 =>
+  #- ?z2 #< #- ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2) & ?z1 #< ?z2,
+ [succeeds int(#- ?z1) by corollary(minus:types),
+  #- ?z1 #+ ?z1 #< #- ?z1 #+ ?z2 by theorem(less:add),
+  #- ?z1 #+ ?z1 = 0 by corollary(minus:inverse),
+  #- ?z1 #+ ?z2 = ?z2 #+ #- ?z1 by theorem(add:commutative),
+  0 #< ?z2 #+ #- ?z1,
+  succeeds int(0),
+  succeeds int(#- ?z2) by corollary(minus:types),
+  succeeds int(?z2 #+ #- ?z1) by corollary(add:types),
+  #- ?z2 #+ 0 #< #- ?z2 #+ (?z2 #+ #- ?z1) by theorem(less:add),
+  #- ?z2 #+ 0 = #- ?z2 by theorem(add:zero),
+  #- ?z2 #+ ?z2 #+ #- ?z1 = #- ?z2 #+ (?z2 #+ #- ?z1) by 
+   theorem(add:associative),
+  #- ?z2 #+ ?z2 = 0 by corollary(minus:inverse),
+  0 #+ #- ?z1 = #- ?z1 by corollary(add:zero),
+  #- ?z2 #+ (?z2 #+ #- ?z1) = #- ?z2 #+ ?z2 #+ #- ?z1 =
+  0 #+ #- ?z1 = #- ?z1, 
+  #- ?z2 #< #- ?z1],
+ #- ?z2 #< #- ?z1)
+).
+
+:- corollary(less:subtraction,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #< ?z2 => ?z #- ?z2 #< ?z #- ?z1,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #< ?z2,
+ [#- ?z2 #< #- ?z1 by corollary(less:minus),
+  succeeds int(#- ?z1) by corollary(minus:types),
+  succeeds int(#- ?z2) by corollary(minus:types),
+  ?z #+ #- ?z2 #< ?z #+ #- ?z1 by theorem(less:add),
+  ?z #- ?z2 = ?z #+ #- ?z2 by uniqueness(#-,2),
+  ?z #- ?z1 = ?z #+ #- ?z1 by uniqueness(#-,2),
+  ?z #- ?z2 #< ?z #- ?z1],
+ ?z #- ?z2 #< ?z #- ?z1)
+).
+
+:- lemma(less:nat:int,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) &
+ succeeds ?x @< ?y => ?x #< ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @< ?y,
+ [succeeds minus(?x,0,?x) by lemma(minus:nat),
+  succeeds minus(?y,0,?y) by lemma(minus:nat),
+  ?x @+ 0 = ?x by lemma(plus:zero),
+  ?y @+ 0 = ?y by lemma(plus:zero),
+  succeeds ?x @+ 0 @< ?y @+ 0,  
+  ?x #< ?y by introduction(#<,2)],
+ ?x #< ?y)
+).
+
+:- lemma(less:int:nat,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) & ?x #< ?y =>
+ succeeds ?x @< ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & ?x #< ?y,
+ [succeeds int(?x) & succeeds int(?y),
+  succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x by 
+   theorem(less:totality),
+  cases(
+   [case(succeeds ?x @< ?y,[]),
+    case(?x = ?y,
+     [?x #< ?x,
+      ~ ?x #< ?x by theorem(int:less:irreflexive), ff]),
+    case(succeeds ?y @< ?x,
+     [?y #< ?x by lemma(less:nat:int),
+      ?x #< ?x by theorem(int:less:transitive),
+      ~ ?x #< ?x by theorem(int:less:irreflexive),
+      ff])],
+   succeeds ?x @< ?y)],
+ succeeds ?x @< ?y)
+).
+
+:- definition_pred(#=<,2,
+all [z1,z2]: ?z1 #=< ?z2 <=> ?z1 #< ?z2 \/ ?z1 = ?z2
+).
+
+:- lemma(int:less:leq,
+all [z1,z2]: ?z1 #< ?z2 => ?z1 #=< ?z2,
+assume(?z1 #< ?z2,
+ [?z1 #< ?z2 \/ ?z1 = ?z2,
+  ?z1 #=< ?z2 by introduction(#=<,2)],
+ ?z1 #=< ?z2)
+).
+
+:- lemma(int:leq:reflexive,
+all z: ?z #=< ?z,
+?z #=< ?z by introduction(#=<,2)
+).
+
+:- lemma(int:leq:transitive:1,
+all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds int(?z3) & ?z1 #=< ?z2 & ?z2 #< ?z3 => ?z1 #< ?z3,
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3) &
+ ?z1 #=< ?z2 & ?z2 #< ?z3,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   ?z1 #< ?z3 by theorem(int:less:transitive),
+   ?z1 = ?z2,
+   [],
+   ?z1 #< ?z3)],
+ ?z1 #< ?z3)
+).
+
+:- lemma(int:leq:transitive:2,
+all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds int(?z3) & ?z1 #< ?z2 & ?z2 #=< ?z3 => ?z1 #< ?z3,
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3) &
+ ?z1 #< ?z2 & ?z2 #=< ?z3,
+ [?z2 #< ?z3 \/ ?z2 = ?z3 by elimination(#=<,2),
+  cases(?z2 #< ?z3,
+   ?z1 #< ?z3 by theorem(int:less:transitive),
+   ?z2 = ?z3,
+   [],
+   ?z1 #< ?z3)],
+ ?z1 #< ?z3)
+).
+
+:- lemma(int:leq:transitive:3,
+all [z1,z2,z3]: succeeds int(?z1) & succeeds int(?z2) &
+ succeeds int(?z3) & ?z1 #=< ?z2 & ?z2 #=< ?z3 => ?z1 #=< ?z3,
+assume(succeeds int(?z1) & succeeds int(?z2) & succeeds int(?z3) &
+ ?z1 #=< ?z2 & ?z2 #=< ?z3,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   [?z1 #< ?z3 by lemma(int:leq:transitive:2),
+    ?z1 #=< ?z3 by lemma(int:less:leq)],
+   ?z1 = ?z2,
+   [],
+   ?z1 #=< ?z3)],
+ ?z1 #=< ?z3)
+).
+
+:- lemma(int:leq:anti:symmetric,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #=< ?z2 & ?z2 #=< ?z1 => ?z1 = ?z2,
+assume(succeeds int(?z1) & succeeds int(?z2) & ?z1 #=< ?z2 & ?z2 #=< ?z1,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   [?z2 #< ?z1 \/ ?z2 = ?z1 by elimination(#=<,2),
+    cases(?z2 #< ?z1,
+     [?z1 #< ?z1 by theorem(int:less:transitive),
+      ~ ?z1 #< ?z1 by theorem(int:less:irreflexive)],
+     ?z2 = ?z1,
+     [],
+     ?z1 = ?z2)],
+   ?z1 = ?z2,
+   [],
+   ?z1 = ?z2)],
+ ?z1 = ?z2)
+).
+
+:- lemma(int:total:1,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  ?z1 #=< ?z2 \/ ?z2 #< ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [?z1 #< ?z2 \/ ?z1 = ?z2 \/ ?z2 #< ?z1 by theorem(int:less:total),
+  cases(
+   [case(?z1 #< ?z2,
+     [?z1 #=< ?z2 by lemma(int:less:leq),
+      ?z1 #=< ?z2 \/ ?z2 #< ?z1]),
+    case(?z1 = ?z2,
+     [?z1 #=< ?z1 by lemma(int:leq:reflexive),
+      ?z1 #=< ?z2,
+      ?z1 #=< ?z2 \/ ?z2 #< ?z1]),
+    case(?z2 #< ?z1,
+     [])],
+   ?z1 #=< ?z2 \/ ?z2 #< ?z1)],
+ ?z1 #=< ?z2 \/ ?z2 #< ?z1)
+).
+
+:- lemma(int:total:2,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) =>
+  ?z1 #=< ?z2 \/ ?z2 #=< ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2),
+ [?z1 #=< ?z2 \/ ?z2 #< ?z1 by lemma(int:total:1),
+  cases(?z1 #=< ?z2,
+   [],
+   ?z2 #< ?z1,
+   [?z2 #=< ?z1 by lemma(int:less:leq),
+    ?z1 #=< ?z2 \/ ?z2 #=< ?z1],
+   ?z1 #=< ?z2 \/ ?z2 #=< ?z1)],
+ ?z1 #=< ?z2 \/ ?z2 #=< ?z1)
+).
+
+:- lemma(int:leq:add,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #=< ?z2 => ?z #+ ?z1 #=< ?z #+ ?z2,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #=< ?z2,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   [?z #+ ?z1 #< ?z #+ ?z2 by theorem(less:add),
+    ?z #+ ?z1 #=< ?z #+ ?z2 by lemma(int:less:leq)],
+   ?z1 = ?z2,
+   [?z #+ ?z1 #=< ?z #+ ?z1 by lemma(int:leq:reflexive),
+    ?z #+ ?z1 #=< ?z #+ ?z2],
+   ?z #+ ?z1 #=< ?z #+ ?z2)],
+ ?z #+ ?z1 #=< ?z #+ ?z2)
+).
+
+:- corollary(int:leq:add,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #=< ?z2 => ?z1 #+ ?z #=< ?z2 #+ ?z,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #=< ?z2,
+ [?z #+ ?z1 #=< ?z #+ ?z2 by lemma(int:leq:add),
+  ?z #+ ?z1 = ?z1 #+ ?z by theorem(add:commutative),
+  ?z #+ ?z2 = ?z2 #+ ?z by theorem(add:commutative),
+  ?z1 #+ ?z #=< ?z2 #+ ?z],
+ ?z1 #+ ?z #=< ?z2 #+ ?z)
+).
+
+:- lemma(int:leq:minus,
+all [z1,z2]: succeeds int(?z1) & succeeds int(?z2) & ?z1 #=< ?z2 =>
+  #- ?z2 #=< #- ?z1,
+assume(succeeds int(?z1) & succeeds int(?z2) & ?z1 #=< ?z2,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   [#- ?z2 #< #- ?z1 by corollary(less:minus),
+    #- ?z2 #=< #- ?z1 by lemma(int:less:leq)],
+   ?z1 = ?z2,
+   [#- ?z2 #=< #- ?z2 by lemma(int:leq:reflexive),
+    #- ?z2 #=< #- ?z1],
+   #- ?z2 #=< #- ?z1)],
+ #- ?z2 #=< #- ?z1)
+).
+
+:- lemma(int:leq:subtraction,
+all [z,z1,z2]: succeeds int(?z) & succeeds int(?z1) &
+ succeeds int(?z2) & ?z1 #=< ?z2 => ?z #- ?z2 #=< ?z #- ?z1,
+assume(succeeds int(?z) & succeeds int(?z1) & succeeds int(?z2) &
+ ?z1 #=< ?z2,
+ [?z1 #< ?z2 \/ ?z1 = ?z2 by elimination(#=<,2),
+  cases(?z1 #< ?z2,
+   [?z #- ?z2 #< ?z #- ?z1 by corollary(less:subtraction),
+    ?z #- ?z2 #=< ?z #- ?z1 by lemma(int:less:leq)],
+   ?z1 = ?z2,
+   [?z #- ?z2 #=< ?z #- ?z2 by lemma(int:leq:reflexive),
+    ?z #- ?z2 #=< ?z #- ?z1],
+   ?z #- ?z2 #=< ?z #- ?z1)],
+ ?z #- ?z2 #=< ?z #- ?z1)
+).
+
+:- corollary(leq:nat:int,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) &
+ succeeds ?x @=< ?y => ?x #=< ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @=< ?y,
+ [succeeds ?x @< ?y \/ ?x = ?y by lemma(leq:less),
+  cases(succeeds ?x @< ?y,
+   [?x #< ?y by lemma(less:nat:int),
+    ?x #=< ?y by lemma(int:less:leq)],
+   ?x = ?y,
+   [?x #=< ?x by lemma(int:leq:reflexive),
+    ?x #=< ?y],
+   ?x #=< ?y)],
+ ?x #=< ?y)
+).
+
+:- lemma(leq:int:nat,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) & ?x #=< ?y =>
+ succeeds ?x @=< ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & ?x #=< ?y,
+ [?x #< ?y \/ ?x = ?y by elimination(#=<,2),
+  cases(?x #< ?y,
+   [succeeds ?x @< ?y by lemma(less:int:nat),
+    succeeds ?x @=< ?y by lemma(less:leq)],
+   ?x = ?y,
+   [succeeds ?x @=< ?x by theorem(leq:reflexive),
+    succeeds ?x @=< ?y],
+   succeeds ?x @=< ?y)],
+ succeeds ?x @=< ?y)
+).
+
+:- lemma(nat:zero:leq,
+all x: succeeds nat(?x) => 0 #=< ?x,
+assume(succeeds nat(?x),
+ [succeeds 0 @=< ?x,
+  0 #=< ?x by corollary(leq:nat:int)],
+ 0 #=< ?x)
+).
+
+:- lemma(int:zero:leq:nat,
+all z: succeeds int(?z) & 0 #=< ?z => succeeds nat(?z),
+assume(succeeds int(?z) & 0 #=< ?z,
+ [def succeeds int(?z) by completion,
+  cases(succeeds nat(?z),
+   [],
+   ex x: ?z = - s(?x) & succeeds nat(?x),
+   exist(x,
+    ?z = - s(?x) & succeeds nat(?x),
+    [succeeds minus(0,s(?x),- s(?x)),
+     succeeds minus(0,s(?x),?z),
+     succeeds minus(0,0,0),
+     succeeds 0 @< s(?x),
+     0 @+ 0 = 0 by lemma(plus:zero),
+     0 @+ s(?x) = s(?x) by corollary(plus:zero),
+     succeeds 0 @+ 0 @< 0 @+ s(?x),
+     ?z #< 0 by introduction(#<,2),
+     succeeds int(0),
+     ?z #< ?z by lemma(int:leq:transitive:2),
+     ~ ?z #< ?z by theorem(int:less:irreflexive),
+     ff],
+    succeeds nat(?z)),
+   succeeds nat(?z))],
+ succeeds nat(?z))
+).
+
+:- bye(int).

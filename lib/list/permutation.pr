@@ -1,0 +1,1021 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/26/95, 8:10 PM */
+/* Filename: permutation.pr */
+
+:- initialize.
+:- tex_file($(tmp)/permutation).
+:- thm_file($(lib)/list/permutation).
+:- needs_gr($(lib)/list/permutation).
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/list/list).
+:- needs_thm($(lib)/nat/nat).
+:- needs_thm($(lib)/list/list).
+
+:- lemma(permutation:types,
+all [l1,l2]: succeeds permutation(?l1,?l2) => succeeds list(?l1) & 
+ succeeds list(?l2),
+induction(
+ [all [l1,l2]: succeeds permutation(?l1,?l2) => succeeds list(?l1) & 
+   succeeds list(?l2)],
+ [step([],[],[],succeeds list([]) & succeeds list([])),
+  step([l1,x,l3,l2],
+   [succeeds list(?l2) & succeeds list(?l3),
+    succeeds delete(?x,?l1,?l2),
+    succeeds permutation(?l2,?l3)],
+   [succeeds list(?l1) by lemma(delete:types:2),
+    succeeds list([?x|?l3])],
+   succeeds list(?l1) & succeeds list([?x|?l3]))])
+).
+
+:- lemma(permutation:termination,
+all [n,l1,l2]: succeeds nat(?n) & succeeds list(?l1) & lh(?l1) = ?n => 
+ terminates permutation(?l1,?l2),
+[induction(
+  [all n: succeeds nat(?n) => 
+    (all [l1,l2]: succeeds list(?l1) & lh(?l1) = ?n => 
+      terminates permutation(?l1,?l2))],
+  [step([],
+    [],
+    assume(succeeds list(?l1) & lh(?l1) = 0,
+     [?l1 = [] by corollary(lh:zero),
+      assume(?l2 = [?x|?l3],
+       [terminates delete(?x,[],?l4) by completion,
+        fails delete(?x,[],?l4) by completion,
+        terminates (delete(?x,[],?l4) & permutation(?l4,?l3))],
+       terminates (delete(?x,[],?l4) & permutation(?l4,?l3))),
+      all [x,l3,l4]: ?l2 = [?x|?l3] => 
+       terminates (delete(?x,[],?l4) & permutation(?l4,?l3)),
+      terminates permutation([],?l2) by completion,
+      terminates permutation(?l1,?l2)],
+     terminates permutation(?l1,?l2)),
+    all [l1,l2]: succeeds list(?l1) & lh(?l1) = 0 => 
+     terminates permutation(?l1,?l2)),
+   step([n],
+    [all [l1,l2]: succeeds list(?l1) & lh(?l1) = ?n => 
+      terminates permutation(?l1,?l2),
+     succeeds nat(?n)],
+    assume(succeeds list(?l1) & lh(?l1) = s(?n),
+     [ex [x,l3]: ?l1 = [?x|?l3] by corollary(lh:successor),
+      exist([x,l3],
+       ?l1 = [?x|?l3],
+       [assume(?l2 = [?y|?l5],
+         [succeeds list([?x|?l3]),
+          terminates delete(?y,[?x|?l3],?l4) by 
+           lemma(delete:termination:1),
+          succeeds delete(?y,[?x|?l3],?l4) \/ fails delete(?y,[?x|?l3],?l4),
+          cases(succeeds delete(?y,[?x|?l3],?l4),
+           [lh([?x|?l3]) = s(lh(?l4)) by theorem(delete:length),
+            s(?n) = lh(?l1) = lh([?x|?l3]) = s(lh(?l4)),
+            s(lh(?l4)) = s(?n),
+            lh(?l4) = ?n,
+            succeeds list(?l4) by lemma(delete:types:1),
+            terminates permutation(?l4,?l5),
+            terminates (delete(?y,[?x|?l3],?l4) & permutation(?l4,?l5))],
+           fails delete(?y,[?x|?l3],?l4),
+           [],
+           terminates (delete(?y,[?x|?l3],?l4) & permutation(?l4,?l5)))],
+         terminates (delete(?y,[?x|?l3],?l4) & permutation(?l4,?l5))),
+        all [y,l5,l4]: ?l2 = [?y|?l5] => 
+         terminates (delete(?y,[?x|?l3],?l4) & permutation(?l4,?l5)),
+        terminates permutation([?x|?l3],?l2) by completion,
+        terminates permutation(?l1,?l2)],
+       terminates permutation(?l1,?l2))],
+     terminates permutation(?l1,?l2)),
+    all [l1,l2]: succeeds list(?l1) & lh(?l1) = s(?n) => 
+     terminates permutation(?l1,?l2))]),
+ assume(succeeds nat(?n) & succeeds list(?l1) & lh(?l1) = ?n,
+  [all [l1,l2]: succeeds list(?l1) & lh(?l1) = ?n => 
+    terminates permutation(?l1,?l2),
+   terminates permutation(?l1,?l2)],
+  terminates permutation(?l1,?l2))]
+).
+
+:- theorem(permutation:termination,
+all [l1,l2]: succeeds list(?l1) => terminates permutation(?l1,?l2),
+assume(succeeds list(?l1),
+ [succeeds nat(lh(?l1)) by corollary(lh:types),
+  lh(?l1) = lh(?l1),
+  terminates permutation(?l1,?l2) by lemma(permutation:termination)],
+ terminates permutation(?l1,?l2))
+).
+
+:- lemma(member2:termination,
+all [x,l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ terminates member2(?x,?l1,?l2),
+assume(succeeds list(?l1) & succeeds list(?l2),
+ [terminates member(?x,?l1) by lemma(member:termination),
+  terminates member(?x,?l2) by lemma(member:termination),
+  terminates member(?x,?l1) & terminates member(?x,?l2),
+  terminates member2(?x,?l1,?l2) by completion],
+ terminates member2(?x,?l1,?l2))
+).
+
+:- lemma(occ:termination,
+all [x,l,n]: succeeds list(?l) & gr(?l) & gr(?x) => 
+ terminates occ(?x,?l,?n),
+[induction(
+  [all l: succeeds list(?l) => 
+    (all [x,n]: gr(?l) & gr(?x) => terminates occ(?x,?l,?n))],
+  [step([],
+    [],
+    [terminates occ(?x,[],?n) by completion,
+     gr([]) & gr(?x) => terminates occ(?x,[],?n)],
+    all [x,n]: gr([]) & gr(?x) => terminates occ(?x,[],?n)),
+   step([x,l],
+    [all [x,n]: gr(?l) & gr(?x) => terminates occ(?x,?l,?n),
+     succeeds list(?l)],
+    assume(gr([?x|?l]) & gr(?y),
+     [?y = ?x & ?n = s(?m) => terminates occ(?y,?l,?m),
+      (all m: ?y = ?x & ?n = s(?m) => terminates occ(?y,?l,?m)) & 
+      terminates (~ ?y = ?x & occ(?y,?l,?n)),
+      terminates occ(?y,[?x|?l],?n) by completion],
+     terminates occ(?y,[?x|?l],?n)),
+    all [y,n]: gr([?x|?l]) & gr(?y) => terminates occ(?y,[?x|?l],?n))]),
+ assume(succeeds list(?l) & gr(?l) & gr(?x),
+  [all [x,n]: gr(?l) & gr(?x) => terminates occ(?x,?l,?n),
+   gr(?l) & gr(?x) => terminates occ(?x,?l,?n),
+   terminates occ(?x,?l,?n)],
+  terminates occ(?x,?l,?n))]
+).
+
+:- lemma(member2:ground,
+all [x,l1,l2]: succeeds member2(?x,?l1,?l2) & gr(?l1) & gr(?l2) => gr(?x),
+assume(succeeds member2(?x,?l1,?l2) & gr(?l1) & gr(?l2),
+ [def succeeds member2(?x,?l1,?l2) by completion,
+  cases(succeeds member(?x,?l1),
+   gr(?x) by lemma(member:ground),
+   succeeds member(?x,?l2),
+   gr(?x) by lemma(member:ground),
+   gr(?x))],
+ gr(?x))
+).
+
+:- lemma(occ:ground,
+all [x,l,n]: succeeds occ(?x,?l,?n) => gr(?n),
+induction([all [x,l,n]: succeeds occ(?x,?l,?n) => gr(?n)],
+ [step([x],[],[],gr(0)),
+  step([x,l,n],
+   [gr(?n),
+    succeeds occ(?x,?l,?n)],
+   [],
+   gr(s(?n))),
+  step([x,y,l,n],
+   [gr(?n),
+    ?x <> ?y,
+    succeeds occ(?x,?l,?n)],
+   [],
+   gr(?n))])
+).
+
+:- lemma(not_same_occ:termination,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) & gr(?l1) & gr(?l2) 
+ => terminates not_same_occ(?l1,?l2),
+assume(succeeds list(?l1) & succeeds list(?l2) & gr(?l1) & gr(?l2),
+ [terminates member2(?x,?l1,?l2) by lemma(member2:termination),
+  succeeds member2(?x,?l1,?l2) \/ fails member2(?x,?l1,?l2),
+  cases(succeeds member2(?x,?l1,?l2),
+   [gr(?x) by lemma(member2:ground),
+    terminates occ(?x,?l1,?n1) by lemma(occ:termination),
+    succeeds occ(?x,?l1,?n1) \/ fails occ(?x,?l1,?n1),
+    cases(succeeds occ(?x,?l1,?n1),
+     [gr(?n1) by lemma(occ:ground),
+      terminates occ(?x,?l2,?n2) by lemma(occ:termination),
+      succeeds occ(?x,?l2,?n2) \/ fails occ(?x,?l2,?n2),
+      cases(succeeds occ(?x,?l2,?n2),
+       [gr(?n2) by lemma(occ:ground),
+        terminates (occ(?x,?l2,?n2) & ~ ?n1 = ?n2)],
+       fails occ(?x,?l2,?n2),
+       [],
+       terminates (occ(?x,?l2,?n2) & ~ ?n1 = ?n2)),
+      terminates (occ(?x,?l1,?n1) & occ(?x,?l2,?n2) & ~ ?n1 = ?n2)],
+     fails occ(?x,?l1,?n1),
+     [],
+     terminates (occ(?x,?l1,?n1) & occ(?x,?l2,?n2) & ~ ?n1 = ?n2)),
+    terminates 
+    (member2(?x,?l1,?l2) & occ(?x,?l1,?n1) & occ(?x,?l2,?n2) & ~ ?n1 = ?n2)],
+   fails member2(?x,?l1,?l2),
+   [],
+   terminates 
+   (member2(?x,?l1,?l2) & occ(?x,?l1,?n1) & occ(?x,?l2,?n2) & ~ ?n1 = ?n2)),
+  all [x,n1,n2]: 
+   terminates 
+   (member2(?x,?l1,?l2) & occ(?x,?l1,?n1) & occ(?x,?l2,?n2) & ~ ?n1 = ?n2),
+  terminates not_same_occ(?l1,?l2) by completion],
+ terminates not_same_occ(?l1,?l2))
+).
+
+:- theorem(same_occ:termination,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) & gr(?l1) & gr(?l2) 
+ => terminates same_occ(?l1,?l2),
+assume(succeeds list(?l1) & succeeds list(?l2) & gr(?l1) & gr(?l2),
+ [terminates not_same_occ(?l1,?l2) by lemma(not_same_occ:termination),
+  terminates not_same_occ(?l1,?l2) & gr(?l1) & gr(?l2),
+  terminates same_occ(?l1,?l2) by completion],
+ terminates same_occ(?l1,?l2))
+).
+
+:- lemma(occ:types,
+all [x,l,n]: succeeds occ(?x,?l,?n) => succeeds list(?l) & 
+ succeeds nat(?n),
+induction(
+ [all [x,l,n]: succeeds occ(?x,?l,?n) => succeeds list(?l) & 
+   succeeds nat(?n)],
+ [step([0],[],[],succeeds list([]) & succeeds nat(0)),
+  step([x,l,n],
+   [succeeds list(?l) & succeeds nat(?n),
+    succeeds occ(?x,?l,?n)],
+   [],
+   succeeds list([?x|?l]) & succeeds nat(s(?n))),
+  step([x,y,l,n],
+   [succeeds list(?l) & succeeds nat(?n),
+    ?x <> ?y,
+    succeeds occ(?x,?l,?n)],
+   [],
+   succeeds list([?y|?l]) & succeeds nat(?n))])
+).
+
+:- lemma(occ:existence,
+all [x,l]: succeeds list(?l) => (ex n: succeeds occ(?x,?l,?n)),
+induction([all l: succeeds list(?l) => (ex n: succeeds occ(?x,?l,?n))],
+ [step([],[],succeeds occ(?x,[],0),ex n: succeeds occ(?x,[],?n)),
+  step([y,l],
+   [ex n: succeeds occ(?x,?l,?n),
+    succeeds list(?l)],
+   exist(n,
+    succeeds occ(?x,?l,?n),
+    cases(?x = ?y,
+     [succeeds occ(?x,[?x|?l],s(?n)),
+      succeeds occ(?x,[?y|?l],s(?n))],
+     ?x <> ?y,
+     [succeeds occ(?x,[?y|?l],?n)],
+     ex n: succeeds occ(?x,[?y|?l],?n)),
+    ex n: succeeds occ(?x,[?y|?l],?n)),
+   ex n: succeeds occ(?x,[?y|?l],?n))])
+).
+
+:- lemma(occ:uniqueness,
+all [x,l,m,n]: succeeds occ(?x,?l,?m) & succeeds occ(?x,?l,?n) => ?m = ?n,
+[induction(
+  [all [x,l,m]: succeeds occ(?x,?l,?m) => 
+    (all n: succeeds occ(?x,?l,?n) => ?m = ?n)],
+  [step([x],
+    [],
+    assume(succeeds occ(?x,[],?n),
+     [def succeeds occ(?x,[],?n) by completion,
+      ?n = 0],
+     0 = ?n),
+    all n: succeeds occ(?x,[],?n) => 0 = ?n),
+   step([x,l,m],
+    [all n: succeeds occ(?x,?l,?n) => ?m = ?n,
+     succeeds occ(?x,?l,?m)],
+    assume(succeeds occ(?x,[?x|?l],?n),
+     [def succeeds occ(?x,[?x|?l],?n) by completion,
+      cases(ex k: ?n = s(?k) & succeeds occ(?x,?l,?k),
+       exist(k,
+        ?n = s(?k) & succeeds occ(?x,?l,?k),
+        [succeeds occ(?x,?l,?k) => ?m = ?k,
+         ?m = ?k],
+        s(?m) = ?n),
+       ?x <> ?x & succeeds occ(?x,?l,?n),
+       ff,
+       s(?m) = ?n)],
+     s(?m) = ?n),
+    all n: succeeds occ(?x,[?x|?l],?n) => s(?m) = ?n),
+   step([x,y,l,m],
+    [all n: succeeds occ(?x,?l,?n) => ?m = ?n,
+     ?x <> ?y,
+     succeeds occ(?x,?l,?m)],
+    assume(succeeds occ(?x,[?y|?l],?n),
+     [def succeeds occ(?x,[?y|?l],?n) by completion,
+      cases(ex k: ?x = ?y & ?n = s(?k) & succeeds occ(?x,?l,?k),
+       exist(k,
+        ?x = ?y & ?n = s(?k) & succeeds occ(?x,?l,?k),
+        ff,
+        ?m = ?n),
+       ?x <> ?y & succeeds occ(?x,?l,?n),
+       [succeeds occ(?x,?l,?n) => ?m = ?n,
+        ?m = ?n],
+       ?m = ?n)],
+     ?m = ?n),
+    all n: succeeds occ(?x,[?y|?l],?n) => ?m = ?n)]),
+ assume(succeeds occ(?x,?l,?m) & succeeds occ(?x,?l,?n),
+  [succeeds occ(?x,?l,?m) => (all n: succeeds occ(?x,?l,?n) => ?m = ?n),
+   all n: succeeds occ(?x,?l,?n) => ?m = ?n,
+   succeeds occ(?x,?l,?n) => ?m = ?n,
+   ?m = ?n],
+  ?m = ?n)]
+).
+
+:- definition_fun(occ,2,
+ all [x,l,m]: succeeds list(?l) => 
+  (occ(?x,?l) = ?m <=> succeeds occ(?x,?l,?m)),
+ existence by lemma(occ:existence),
+ uniqueness by lemma(occ:uniqueness)
+).
+
+:- lemma(occ:nil,
+all x: occ(?x,[]) = 0,
+[succeeds occ(?x,[],0),occ(?x,[]) = 0 by uniqueness(occ,2)]
+).
+
+:- lemma(occ:cons:diff,
+all [x,y,l]: succeeds list(?l) & ?x <> ?y => occ(?x,[?y|?l]) = occ(?x,?l),
+assume(succeeds list(?l) & ?x <> ?y,
+ [succeeds occ(?x,[?y|?l],occ(?x,[?y|?l])) by existence(occ,2),
+  def succeeds occ(?x,[?y|?l],occ(?x,[?y|?l])) by completion,
+  (ex n: ?x = ?y & occ(?x,[?y|?l]) = s(?n) & succeeds occ(?x,?l,?n)) \/ 
+  ?x <> ?y & succeeds occ(?x,?l,occ(?x,[?y|?l])),
+  cases(ex n: ?x = ?y & occ(?x,[?y|?l]) = s(?n) & succeeds occ(?x,?l,?n),
+   exist(n,
+    ?x = ?y & occ(?x,[?y|?l]) = s(?n) & succeeds occ(?x,?l,?n),
+    [?x = ?y,
+     ?x <> ?y,
+     ff],
+    ff),
+   ?x <> ?y & succeeds occ(?x,?l,occ(?x,[?y|?l])),
+   occ(?x,[?y|?l]) = occ(?x,?l) by uniqueness(occ,2),
+   occ(?x,[?y|?l]) = occ(?x,?l))],
+ occ(?x,[?y|?l]) = occ(?x,?l))
+).
+
+:- lemma(occ:cons:eq,
+all [x,l]: succeeds list(?l) => occ(?x,[?x|?l]) = s(occ(?x,?l)),
+assume(succeeds list(?l),
+ [succeeds occ(?x,[?x|?l],occ(?x,[?x|?l])) by existence(occ,2),
+  def succeeds occ(?x,[?x|?l],occ(?x,[?x|?l])) by completion,
+  (ex n: occ(?x,[?x|?l]) = s(?n) & succeeds occ(?x,?l,?n)) \/ ?x <> ?x & 
+  succeeds occ(?x,?l,occ(?x,[?x|?l])),
+  cases(ex n: occ(?x,[?x|?l]) = s(?n) & succeeds occ(?x,?l,?n),
+   exist(n,
+    occ(?x,[?x|?l]) = s(?n) & succeeds occ(?x,?l,?n),
+    [?n = occ(?x,?l) by uniqueness(occ,2),
+     s(?n) = s(occ(?x,?l))],
+    occ(?x,[?x|?l]) = s(occ(?x,?l))),
+   ?x <> ?x & succeeds occ(?x,?l,occ(?x,[?x|?l])),
+   ff,
+   occ(?x,[?x|?l]) = s(occ(?x,?l)))],
+ occ(?x,[?x|?l]) = s(occ(?x,?l)))
+).
+
+:- corollary(occ:types,
+all [x,l]: succeeds list(?l) => succeeds nat(occ(?x,?l)),
+assume(succeeds list(?l),
+ [succeeds occ(?x,?l,occ(?x,?l)) by existence(occ,2),
+  succeeds list(?l) & succeeds nat(occ(?x,?l)) by lemma(occ:types)],
+ succeeds nat(occ(?x,?l)))
+).
+
+:- lemma(occ:app,
+all [x,l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2),
+[induction(
+  [all l1: succeeds list(?l1) => succeeds list(?l2) => 
+    occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2)],
+  [step([],
+    [],
+    assume(succeeds list(?l2),
+     [[] ** ?l2 = ?l2 by corollary(app:nil),
+      occ(?x,[]) = 0 by lemma(occ:nil),
+      0 @+ occ(?x,?l2) = occ(?x,?l2) by corollary(plus:zero),
+      occ(?x,[] ** ?l2) = occ(?x,?l2) = 0 @+ occ(?x,?l2) = occ(?x,[]) @+ 
+      occ(?x,?l2)],
+     occ(?x,[] ** ?l2) = occ(?x,[]) @+ occ(?x,?l2)),
+    succeeds list(?l2) => occ(?x,[] ** ?l2) = occ(?x,[]) @+ occ(?x,?l2)),
+   step([y,l1],
+    [succeeds list(?l2) => occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2),
+     succeeds list(?l1)],
+    assume(succeeds list(?l2),
+     [[?y|?l1] ** ?l2 = [?y|?l1 ** ?l2] by corollary(app:cons),
+      succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+      occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2),
+      ?x = ?y \/ ?x <> ?y,
+      cases(?x = ?y,
+       [occ(?x,[?x|?l1 ** ?l2]) = s(occ(?x,?l1 ** ?l2)) by 
+         lemma(occ:cons:eq),
+        occ(?x,[?x|?l1]) = s(occ(?x,?l1)) by lemma(occ:cons:eq),
+        succeeds nat(occ(?x,?l1)) by corollary(occ:types),
+        s(occ(?x,?l1)) @+ occ(?x,?l2) = s(occ(?x,?l1) @+ occ(?x,?l2)) by 
+         corollary(plus:successor),
+        occ(?x,[?y|?l1] ** ?l2) = occ(?x,[?y|?l1 ** ?l2]) = 
+        occ(?x,[?x|?l1 ** ?l2]) = s(occ(?x,?l1 ** ?l2)) = 
+        s(occ(?x,?l1) @+ occ(?x,?l2)) = s(occ(?x,?l1)) @+ occ(?x,?l2) = 
+        occ(?x,[?x|?l1]) @+ occ(?x,?l2) = occ(?x,[?y|?l1]) @+ occ(?x,?l2)],
+       ?x <> ?y,
+       [occ(?x,[?y|?l1 ** ?l2]) = occ(?x,?l1 ** ?l2) by 
+         lemma(occ:cons:diff),
+        occ(?x,[?y|?l1]) = occ(?x,?l1) by lemma(occ:cons:diff),
+        occ(?x,[?y|?l1] ** ?l2) = occ(?x,[?y|?l1 ** ?l2]) = 
+        occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2) = occ(?x,[?y|?l1])
+        @+ occ(?x,?l2)],
+       occ(?x,[?y|?l1] ** ?l2) = occ(?x,[?y|?l1]) @+ occ(?x,?l2))],
+     occ(?x,[?y|?l1] ** ?l2) = occ(?x,[?y|?l1]) @+ occ(?x,?l2)),
+    succeeds list(?l2) => 
+    occ(?x,[?y|?l1] ** ?l2) = occ(?x,[?y|?l1]) @+ occ(?x,?l2))]),
+ assume(succeeds list(?l1) & succeeds list(?l2),
+  [succeeds list(?l2) => occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2),
+   occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2)],
+  occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2))]
+).
+
+:- lemma(delete:occ:diff,
+all [x,y,l1,l2]: succeeds list(?l1) & succeeds delete(?x,?l1,?l2) & 
+ ?x <> ?y => occ(?y,?l1) = occ(?y,?l2),
+assume(succeeds list(?l1) & succeeds delete(?x,?l1,?l2) & ?x <> ?y,
+ [ex [l3,l4]: succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & 
+   ?l2 = ?l3 ** ?l4 by theorem(delete:app:2),
+  exist([l3,l4],
+   succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & ?l2 = ?l3 ** ?l4,
+   [succeeds list(?l2) by lemma(delete:types:1),
+    succeeds list(?l3 ** ?l4),
+    succeeds list(?l4) by corollary(app:types:2),
+    succeeds list([?x|?l4]),
+    occ(?y,?l3 ** [?x|?l4]) = occ(?y,?l3) @+ occ(?y,[?x|?l4]) by 
+     lemma(occ:app),
+    occ(?y,[?x|?l4]) = occ(?y,?l4) by lemma(occ:cons:diff),
+    occ(?y,?l3 ** ?l4) = occ(?y,?l3) @+ occ(?y,?l4) by lemma(occ:app),
+    occ(?y,?l1) = occ(?y,?l3 ** [?x|?l4]) = occ(?y,?l3) @+ 
+    occ(?y,[?x|?l4]) = occ(?y,?l3) @+ occ(?y,?l4) = occ(?y,?l3 ** ?l4) = 
+    occ(?y,?l2)],
+   occ(?y,?l1) = occ(?y,?l2))],
+ occ(?y,?l1) = occ(?y,?l2))
+).
+
+:- lemma(delete:occ:eq,
+all [x,l1,l2]: succeeds list(?l1) & succeeds delete(?x,?l1,?l2) => 
+ occ(?x,?l1) = s(occ(?x,?l2)),
+assume(succeeds list(?l1) & succeeds delete(?x,?l1,?l2),
+ [ex [l3,l4]: succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & 
+   ?l2 = ?l3 ** ?l4 by theorem(delete:app:2),
+  exist([l3,l4],
+   succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & ?l2 = ?l3 ** ?l4,
+   [succeeds list(?l2) by lemma(delete:types:1),
+    succeeds list(?l3 ** ?l4),
+    succeeds list(?l4) by corollary(app:types:2),
+    succeeds list([?x|?l4]),
+    occ(?x,?l3 ** [?x|?l4]) = occ(?x,?l3) @+ occ(?x,[?x|?l4]) by 
+     lemma(occ:app),
+    occ(?x,[?x|?l4]) = s(occ(?x,?l4)) by lemma(occ:cons:eq),
+    occ(?x,?l3 ** ?l4) = occ(?x,?l3) @+ occ(?x,?l4) by lemma(occ:app),
+    succeeds nat(occ(?x,?l3)) by corollary(occ:types),
+    succeeds nat(occ(?x,?l4)) by corollary(occ:types),
+    occ(?x,?l3) @+ s(occ(?x,?l4)) = s(occ(?x,?l3)) @+ occ(?x,?l4) by 
+     lemma(plus:successor),
+    s(occ(?x,?l3)) @+ occ(?x,?l4) = s(occ(?x,?l3) @+ occ(?x,?l4)) by 
+     corollary(plus:successor),
+    occ(?x,?l1) = occ(?x,?l3 ** [?x|?l4]) = occ(?x,?l3) @+ 
+    occ(?x,[?x|?l4]) = occ(?x,?l3) @+ s(occ(?x,?l4)) = s(occ(?x,?l3)) @+ 
+    occ(?x,?l4) = s(occ(?x,?l3) @+ occ(?x,?l4)) = s(occ(?x,?l3 ** ?l4)) = 
+    s(occ(?x,?l2))],
+   occ(?x,?l1) = s(occ(?x,?l2)))],
+ occ(?x,?l1) = s(occ(?x,?l2)))
+).
+
+:- theorem(permutation:occ,
+all [l1,l2]: succeeds permutation(?l1,?l2) => 
+ (all x: occ(?x,?l1) = occ(?x,?l2)),
+induction(
+ [all [l1,l2]: succeeds permutation(?l1,?l2) => 
+   (all x: occ(?x,?l1) = occ(?x,?l2))],
+ [step([],[],occ(?x,[]) = occ(?x,[]),all x: occ(?x,[]) = occ(?x,[])),
+  step([l1,y,l3,l2],
+   [all x: occ(?x,?l2) = occ(?x,?l3),
+    succeeds delete(?y,?l1,?l2),
+    succeeds permutation(?l2,?l3)],
+   [succeeds list(?l2) & succeeds list(?l3) by lemma(permutation:types),
+    succeeds list(?l1) by lemma(delete:types:2),
+    occ(?x,?l2) = occ(?x,?l3),
+    ?x = ?y \/ ?x <> ?y,
+    cases(?x = ?y,
+     [occ(?x,?l1) = s(occ(?x,?l2)) by lemma(delete:occ:eq),
+      occ(?x,[?x|?l3]) = s(occ(?x,?l3)) by lemma(occ:cons:eq),
+      occ(?x,?l1) = s(occ(?x,?l2)) = s(occ(?x,?l3)) = occ(?x,[?x|?l3]) = 
+      occ(?x,[?y|?l3])],
+     ?x <> ?y,
+     [succeeds list(?l1) & succeeds delete(?y,?l1,?l2) & ?y <> ?x,
+      occ(?x,?l1) = occ(?x,?l2) by lemma(delete:occ:diff),
+      occ(?x,[?y|?l3]) = occ(?x,?l3) by lemma(occ:cons:diff),
+      occ(?x,?l1) = occ(?x,?l2) = occ(?x,?l3) = occ(?x,[?y|?l3])],
+     occ(?x,?l1) = occ(?x,[?y|?l3]))],
+   all x: occ(?x,?l1) = occ(?x,[?y|?l3]))])
+).
+
+:- theorem(permutation:soundness,
+all [l1,l2]: succeeds permutation(?l1,?l2) & gr(?l1) & gr(?l2) => 
+ succeeds same_occ(?l1,?l2),
+assume(succeeds permutation(?l1,?l2) & gr(?l1) & gr(?l2),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(permutation:types),
+  all x: occ(?x,?l1) = occ(?x,?l2) by theorem(permutation:occ),
+  terminates not_same_occ(?l1,?l2) by lemma(not_same_occ:termination),
+  succeeds not_same_occ(?l1,?l2) \/ fails not_same_occ(?l1,?l2),
+  cases(succeeds not_same_occ(?l1,?l2),
+   [def succeeds not_same_occ(?l1,?l2) by completion,
+    ex [x,m,n]: succeeds member2(?x,?l1,?l2) & succeeds occ(?x,?l1,?m) & 
+     succeeds occ(?x,?l2,?n) & ?m <> ?n,
+    exist([x,m,n],
+     succeeds member2(?x,?l1,?l2) & succeeds occ(?x,?l1,?m) & 
+     succeeds occ(?x,?l2,?n) & ?m <> ?n,
+     [occ(?x,?l1) = occ(?x,?l2),
+      occ(?x,?l1) = ?m by uniqueness(occ,2),
+      occ(?x,?l2) = ?n by uniqueness(occ,2),
+      ?m = occ(?x,?l1) = occ(?x,?l2) = ?n,
+      ?m = ?n],
+     ff)],
+   fails not_same_occ(?l1,?l2),
+   succeeds same_occ(?l1,?l2),
+   succeeds same_occ(?l1,?l2))],
+ succeeds same_occ(?l1,?l2))
+).
+
+:- lemma(occ:zero,
+all l: succeeds list(?l) & (all x: occ(?x,?l) = 0) => ?l = [],
+assume(succeeds list(?l) & (all x: occ(?x,?l) = 0),
+ [def succeeds list(?l) by completion,
+  cases(?l = [],
+   [],
+   ex [x,l1]: ?l = [?x|?l1] & succeeds list(?l1),
+   exist([x,l1],
+    ?l = [?x|?l1] & succeeds list(?l1),
+    [occ(?x,?l) = 0,
+     occ(?x,[?x|?l1]) = 0,
+     occ(?x,[?x|?l1]) = s(occ(?x,?l1)) by lemma(occ:cons:eq),
+     0 = s(occ(?x,?l1)),
+     0 <> s(occ(?x,?l1)),
+     ff],
+    ff),
+   ?l = [])],
+ ?l = [])
+).
+
+:- lemma(occ:successor,
+all [x,l1,n]: succeeds list(?l1) & occ(?x,?l1) = s(?n) => 
+ (ex l2: succeeds delete(?x,?l1,?l2)),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    (all [x,n]: occ(?x,?l1) = s(?n) => 
+      (ex l2: succeeds delete(?x,?l1,?l2)))],
+  [step([],
+    [],
+    assume(occ(?x,[]) = s(?n),
+     [occ(?x,[]) = 0 by lemma(occ:nil),
+      s(?n) = 0,
+      ff],
+     ex l2: succeeds delete(?x,[],?l2)),
+    all [x,n]: occ(?x,[]) = s(?n) => (ex l2: succeeds delete(?x,[],?l2))),
+   step([y,l1],
+    [all [x,n]: occ(?x,?l1) = s(?n) => 
+      (ex l2: succeeds delete(?x,?l1,?l2)),
+     succeeds list(?l1)],
+    assume(occ(?x,[?y|?l1]) = s(?n),
+     [?x = ?y \/ ?x <> ?y,
+      cases(?x = ?y,
+       [succeeds delete(?x,[?x|?l1],?l1),
+        succeeds delete(?x,[?y|?l1],?l1),
+        ex l2: succeeds delete(?x,[?y|?l1],?l2)],
+       ?x <> ?y,
+       [occ(?x,[?y|?l1]) = occ(?x,?l1) by lemma(occ:cons:diff),
+        occ(?x,?l1) = s(?n),
+        occ(?x,?l1) = s(?n) => (ex l2: succeeds delete(?x,?l1,?l2)),
+        exist(l2,
+         succeeds delete(?x,?l1,?l2),
+         succeeds delete(?x,[?y|?l1],[?y|?l2]),
+         ex l2: succeeds delete(?x,[?y|?l1],?l2))],
+       ex l2: succeeds delete(?x,[?y|?l1],?l2))],
+     ex l2: succeeds delete(?x,[?y|?l1],?l2)),
+    all [x,n]: occ(?x,[?y|?l1]) = s(?n) => 
+     (ex l2: succeeds delete(?x,[?y|?l1],?l2)))]),
+ assume(succeeds list(?l1) & occ(?x,?l1) = s(?n),
+  [all [x,n]: occ(?x,?l1) = s(?n) => (ex l2: succeeds delete(?x,?l1,?l2)),
+   ex l2: succeeds delete(?x,?l1,?l2)],
+  ex l2: succeeds delete(?x,?l1,?l2))]
+).
+
+:- lemma(permutation:completeness,
+all l2: succeeds list(?l2) => 
+ (all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,?l2)) => 
+   succeeds permutation(?l1,?l2)),
+induction(
+ [all l2: succeeds list(?l2) => 
+   (all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,?l2)) => 
+     succeeds permutation(?l1,?l2))],
+ [step([],
+   [],
+   assume(succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,[])),
+    [occ(?x,[]) = 0 by lemma(occ:nil),
+     occ(?x,?l1) = occ(?x,[]),
+     occ(?x,?l1) = 0,
+     all x: occ(?x,?l1) = 0,
+     ?l1 = [] by lemma(occ:zero),
+     succeeds permutation([],[]),
+     succeeds permutation(?l1,[])],
+    succeeds permutation(?l1,[])),
+   all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,[])) => 
+    succeeds permutation(?l1,[])),
+  step([y,l3],
+   [all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,?l3)) => 
+     succeeds permutation(?l1,?l3),
+    succeeds list(?l3)],
+   assume(succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,[?y|?l3])),
+    [occ(?y,[?y|?l3]) = s(occ(?y,?l3)) by lemma(occ:cons:eq),
+     occ(?y,?l1) = occ(?y,[?y|?l3]),
+     occ(?y,?l1) = s(occ(?y,?l3)),
+     succeeds list(?l1) & occ(?y,?l1) = s(occ(?y,?l3)),
+     ex l2: succeeds delete(?y,?l1,?l2) by lemma(occ:successor),
+     exist(l2,
+      succeeds delete(?y,?l1,?l2),
+      [succeeds list(?l1) => succeeds list(?l2) by 
+        lemma(delete:types:1),
+       cases(?x = ?y,
+        [occ(?y,?l1) = s(occ(?y,?l2)) by lemma(delete:occ:eq),
+         s(occ(?y,?l2)) = s(occ(?y,?l3)),
+         s(occ(?x,?l2)) = s(occ(?x,?l3)),
+         occ(?x,?l2) = occ(?x,?l3)],
+        ?x <> ?y,
+        [succeeds list(?l1) & succeeds delete(?y,?l1,?l2) & ?y <> ?x,
+         occ(?x,?l1) = occ(?x,?l2) by lemma(delete:occ:diff),
+         occ(?x,?l1) = occ(?x,[?y|?l3]),
+         occ(?x,[?y|?l3]) = occ(?x,?l3) by lemma(occ:cons:diff),
+         occ(?x,?l2) = occ(?x,?l3)],
+        occ(?x,?l2) = occ(?x,?l3)),
+       all x: occ(?x,?l2) = occ(?x,?l3),
+       succeeds list(?l2) & (all x: occ(?x,?l2) = occ(?x,?l3)),
+       succeeds permutation(?l2,?l3)],
+      succeeds permutation(?l1,[?y|?l3]))],
+    succeeds permutation(?l1,[?y|?l3])),
+   all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,[?y|?l3])) 
+    => succeeds permutation(?l1,[?y|?l3]))])
+).
+
+:- theorem(occ:permutation,
+all [l1,l2]: succeeds list(?l2) & succeeds list(?l1) & 
+ (all x: occ(?x,?l1) = occ(?x,?l2)) => succeeds permutation(?l1,?l2),
+assume(succeeds list(?l2) & succeeds list(?l1) & 
+ (all x: occ(?x,?l1) = occ(?x,?l2)),
+ [all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,?l2)) => 
+   succeeds permutation(?l1,?l2) by lemma(permutation:completeness),
+  succeeds permutation(?l1,?l2)],
+ succeeds permutation(?l1,?l2))
+).
+
+:- lemma(occ:member,
+all [x,l]: succeeds list(?l) & fails member(?x,?l) => occ(?x,?l) = 0,
+[induction(
+  [all l: succeeds list(?l) => 
+    (all x: fails member(?x,?l) => occ(?x,?l) = 0)],
+  [step([],
+    [],
+    assume(fails member(?x,[]),
+     occ(?x,[]) = 0 by lemma(occ:nil),
+     occ(?x,[]) = 0),
+    all x: fails member(?x,[]) => occ(?x,[]) = 0),
+   step([y,l],
+    [all x: fails member(?x,?l) => occ(?x,?l) = 0,
+     succeeds list(?l)],
+    assume(fails member(?x,[?y|?l]),
+     [def fails member(?x,[?y|?l]) by completion,
+      ~ ?x = ?y & fails member(?x,?l),
+      occ(?x,?l) = 0,
+      ?x <> ?y,
+      occ(?x,[?y|?l]) = occ(?x,?l) by lemma(occ:cons:diff),
+      occ(?x,[?y|?l]) = 0],
+     occ(?x,[?y|?l]) = 0),
+    all x: fails member(?x,[?y|?l]) => occ(?x,[?y|?l]) = 0)]),
+ assume(succeeds list(?l) & fails member(?x,?l),
+  [all x: fails member(?x,?l) => occ(?x,?l) = 0,
+   occ(?x,?l) = 0],
+  occ(?x,?l) = 0)]
+).
+
+:- lemma(same_occ:success,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) & 
+ succeeds same_occ(?l1,?l2) => (all x: occ(?x,?l1) = occ(?x,?l2)),
+assume(succeeds list(?l1) & succeeds list(?l2) & succeeds same_occ(?l1,?l2),
+ [def succeeds same_occ(?l1,?l2) by completion,
+  fails not_same_occ(?l1,?l2),
+  def fails not_same_occ(?l1,?l2) by completion,
+  fails member2(?x,?l1,?l2) \/ fails occ(?x,?l1,occ(?x,?l1)) \/ 
+  fails occ(?x,?l2,occ(?x,?l2)) \/ occ(?x,?l1) = occ(?x,?l2),
+  cases(
+   [case(fails member2(?x,?l1,?l2),
+     [def fails member2(?x,?l1,?l2) by completion,
+      fails member(?x,?l1) & fails member(?x,?l2),
+      occ(?x,?l1) = 0 by lemma(occ:member),
+      occ(?x,?l2) = 0 by lemma(occ:member),
+      occ(?x,?l1) = occ(?x,?l2)]),
+    case(fails occ(?x,?l1,occ(?x,?l1)),
+     [succeeds occ(?x,?l1,occ(?x,?l1)) by existence(occ,2),
+      ff]),
+    case(fails occ(?x,?l2,occ(?x,?l2)),
+     [succeeds occ(?x,?l2,occ(?x,?l2)) by existence(occ,2),
+      ff]),
+    case(occ(?x,?l1) = occ(?x,?l2),
+     [])],
+   occ(?x,?l1) = occ(?x,?l2)),
+  all x: occ(?x,?l1) = occ(?x,?l2)],
+ all x: occ(?x,?l1) = occ(?x,?l2))
+).
+
+:- theorem(permutation:completeness,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) & 
+ succeeds same_occ(?l1,?l2) => succeeds permutation(?l1,?l2),
+assume(succeeds list(?l1) & succeeds list(?l2) & succeeds same_occ(?l1,?l2),
+ [all x: occ(?x,?l1) = occ(?x,?l2) by lemma(same_occ:success),
+  all l1: succeeds list(?l1) & (all x: occ(?x,?l1) = occ(?x,?l2)) => 
+   succeeds permutation(?l1,?l2) by lemma(permutation:completeness),
+  succeeds permutation(?l1,?l2)],
+ succeeds permutation(?l1,?l2))
+).
+
+:- theorem(permutation:reflexive,
+all l: succeeds list(?l) => succeeds permutation(?l,?l),
+assume(succeeds list(?l),
+ [occ(?x,?l) = occ(?x,?l),
+  all x: occ(?x,?l) = occ(?x,?l),
+  succeeds permutation(?l,?l) by theorem(occ:permutation)],
+ succeeds permutation(?l,?l))
+).
+
+:- theorem(permutation:symmetric,
+all [l1,l2]: succeeds permutation(?l1,?l2) => 
+ succeeds permutation(?l2,?l1),
+assume(succeeds permutation(?l1,?l2),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(permutation:types),
+  all x: occ(?x,?l1) = occ(?x,?l2) by theorem(permutation:occ),
+  occ(?x,?l1) = occ(?x,?l2),
+  occ(?x,?l2) = occ(?x,?l1),
+  all x: occ(?x,?l2) = occ(?x,?l1),
+  succeeds permutation(?l2,?l1) by theorem(occ:permutation)],
+ succeeds permutation(?l2,?l1))
+).
+
+:- theorem(permutation:transitive,
+all [l1,l2,l3]: succeeds permutation(?l1,?l2) & 
+ succeeds permutation(?l2,?l3) => succeeds permutation(?l1,?l3),
+assume(succeeds permutation(?l1,?l2) & succeeds permutation(?l2,?l3),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(permutation:types),
+  succeeds list(?l2) & succeeds list(?l3) by lemma(permutation:types),
+  all x: occ(?x,?l1) = occ(?x,?l2) by theorem(permutation:occ),
+  all x: occ(?x,?l2) = occ(?x,?l3) by theorem(permutation:occ),
+  occ(?x,?l1) = occ(?x,?l2),
+  occ(?x,?l2) = occ(?x,?l3),
+  occ(?x,?l1) = occ(?x,?l3),
+  succeeds permutation(?l1,?l3) by theorem(occ:permutation)],
+ succeeds permutation(?l1,?l3))
+).
+
+:- theorem(permutation:app,
+all [l1,l2,l3,l4]: succeeds permutation(?l1,?l3) & 
+ succeeds permutation(?l2,?l4) => 
+ succeeds permutation(?l1 ** ?l2,?l3 ** ?l4),
+assume(succeeds permutation(?l1,?l3) & succeeds permutation(?l2,?l4),
+ [succeeds list(?l1) & succeeds list(?l3) by lemma(permutation:types),
+  succeeds list(?l2) & succeeds list(?l4) by lemma(permutation:types),
+  all x: occ(?x,?l1) = occ(?x,?l3) by theorem(permutation:occ),
+  all x: occ(?x,?l2) = occ(?x,?l4) by theorem(permutation:occ),
+  occ(?x,?l1) = occ(?x,?l3),
+  occ(?x,?l2) = occ(?x,?l4),
+  occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2) by lemma(occ:app),
+  occ(?x,?l3 ** ?l4) = occ(?x,?l3) @+ occ(?x,?l4) by lemma(occ:app),
+  occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2) = occ(?x,?l3) @+ 
+  occ(?x,?l4) = occ(?x,?l3 ** ?l4),
+  occ(?x,?l1 ** ?l2) = occ(?x,?l3 ** ?l4),
+  all x: occ(?x,?l1 ** ?l2) = occ(?x,?l3 ** ?l4),
+  succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+  succeeds list(?l3 ** ?l4) by corollary(app:types:1),
+  succeeds permutation(?l1 ** ?l2,?l3 ** ?l4) by theorem(occ:permutation)],
+ succeeds permutation(?l1 ** ?l2,?l3 ** ?l4))
+).
+
+:- theorem(permutation:app:commutative,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ succeeds permutation(?l1 ** ?l2,?l2 ** ?l1),
+assume(succeeds list(?l1) & succeeds list(?l2),
+ [occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2) by lemma(occ:app),
+  occ(?x,?l2 ** ?l1) = occ(?x,?l2) @+ occ(?x,?l1) by lemma(occ:app),
+  succeeds nat(occ(?x,?l1)) by corollary(occ:types),
+  succeeds nat(occ(?x,?l2)) by corollary(occ:types),
+  occ(?x,?l1) @+ occ(?x,?l2) = occ(?x,?l2) @+ occ(?x,?l1) by 
+   theorem(plus:commutative),
+  occ(?x,?l1 ** ?l2) = occ(?x,?l1) @+ occ(?x,?l2) = occ(?x,?l2) @+ 
+  occ(?x,?l1) = occ(?x,?l2 ** ?l1),
+  occ(?x,?l1 ** ?l2) = occ(?x,?l2 ** ?l1),
+  all x: occ(?x,?l1 ** ?l2) = occ(?x,?l2 ** ?l1),
+  succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+  succeeds list(?l2 ** ?l1) by corollary(app:types:1),
+  succeeds permutation(?l1 ** ?l2,?l2 ** ?l1) by theorem(occ:permutation)],
+ succeeds permutation(?l1 ** ?l2,?l2 ** ?l1))
+).
+
+:- lemma(permutation:nat_list,
+all [l1,l2]: succeeds permutation(?l1,?l2) & succeeds nat_list(?l1) => 
+ succeeds nat_list(?l2),
+[induction(
+  [all [l1,l2]: succeeds permutation(?l1,?l2) => succeeds nat_list(?l1) =>
+    succeeds nat_list(?l2)],
+  [step([],[],[],succeeds nat_list([]) => succeeds nat_list([])),
+   step([l1,x,l2,l3],
+    [succeeds nat_list(?l3) => succeeds nat_list(?l2),
+     succeeds delete(?x,?l1,?l3),
+     succeeds permutation(?l3,?l2)],
+    assume(succeeds nat_list(?l1),
+     [succeeds nat(?x) & succeeds nat_list(?l3) by lemma(delete:nat_list),
+      succeeds nat_list(?l2),
+      succeeds nat_list([?x|?l2])],
+     succeeds nat_list([?x|?l2])),
+    succeeds nat_list(?l1) => succeeds nat_list([?x|?l2]))]),
+ assume(succeeds permutation(?l1,?l2) & succeeds nat_list(?l1),
+  [succeeds nat_list(?l1) => succeeds nat_list(?l2),
+   succeeds nat_list(?l2)],
+  succeeds nat_list(?l2))]
+).
+
+:- lemma(occ:member:success,
+all [x,l,n]: succeeds list(?l) & succeeds occ(?x,?l,s(?n)) => 
+ succeeds member(?x,?l),
+[induction(
+  [all l: succeeds list(?l) => succeeds occ(?x,?l,s(?n)) => 
+    succeeds member(?x,?l)],
+  [step([],
+    [],
+    assume(succeeds occ(?x,[],s(?n)),
+     [def succeeds occ(?x,[],s(?n)) by completion,
+      ff],
+     succeeds member(?x,[])),
+    succeeds occ(?x,[],s(?n)) => succeeds member(?x,[])),
+   step([y,l],
+    [succeeds occ(?x,?l,s(?n)) => succeeds member(?x,?l),
+     succeeds list(?l)],
+    assume(succeeds occ(?x,[?y|?l],s(?n)),
+     [def succeeds occ(?x,[?y|?l],s(?n)) by completion,
+      cases(?x = ?y & succeeds occ(?x,?l,?n),
+       [succeeds member(?x,[?x|?l]),
+        succeeds member(?x,[?y|?l])],
+       ?x <> ?y & succeeds occ(?x,?l,s(?n)),
+       [succeeds member(?x,?l),
+        succeeds member(?x,[?y|?l])],
+       succeeds member(?x,[?y|?l]))],
+     succeeds member(?x,[?y|?l])),
+    succeeds occ(?x,[?y|?l],s(?n)) => succeeds member(?x,[?y|?l]))]),
+ assume(succeeds list(?l) & succeeds occ(?x,?l,s(?n)),
+  [succeeds occ(?x,?l,s(?n)) => succeeds member(?x,?l),
+   succeeds member(?x,?l)],
+  succeeds member(?x,?l))]
+).
+
+:- corollary(occ:member:success,
+all [x,l,n]: succeeds list(?l) & occ(?x,?l) = s(?n) => 
+ succeeds member(?x,?l),
+assume(succeeds list(?l) & occ(?x,?l) = s(?n),
+ [succeeds occ(?x,?l,occ(?x,?l)) by existence(occ,2),
+  succeeds occ(?x,?l,s(?n)),
+  succeeds member(?x,?l) by lemma(occ:member:success)],
+ succeeds member(?x,?l))
+).
+
+:- lemma(member:occ:success,
+all [x,l]: succeeds list(?l) & succeeds member(?x,?l) => 
+ (ex n: occ(?x,?l) = s(?n)),
+[induction(
+  [all l: succeeds list(?l) => succeeds member(?x,?l) => 
+    (ex n: occ(?x,?l) = s(?n))],
+  [step([],
+    [],
+    assume(succeeds member(?x,[]),
+     [def succeeds member(?x,[]) by completion,
+      ff],
+     ex n: occ(?x,[]) = s(?n)),
+    succeeds member(?x,[]) => (ex n: occ(?x,[]) = s(?n))),
+   step([y,l],
+    [succeeds member(?x,?l) => (ex n: occ(?x,?l) = s(?n)),
+     succeeds list(?l)],
+    assume(succeeds member(?x,[?y|?l]),
+     [def succeeds member(?x,[?y|?l]) by completion,
+      cases(?x = ?y,
+       [occ(?x,[?x|?l]) = s(occ(?x,?l)) by lemma(occ:cons:eq),
+        occ(?x,[?y|?l]) = s(occ(?x,?l)),
+        ex n: occ(?x,[?y|?l]) = s(?n)],
+       succeeds member(?x,?l),
+       [ex n: occ(?x,?l) = s(?n),
+        exist(n,
+         occ(?x,?l) = s(?n),
+         [?x = ?y \/ ?x <> ?y,
+          cases(?x = ?y,
+           [occ(?x,[?x|?l]) = s(occ(?x,?l)) by lemma(occ:cons:eq),
+            occ(?x,[?y|?l]) = s(occ(?x,?l)),
+            ex n: occ(?x,[?y|?l]) = s(?n)],
+           ?x <> ?y,
+           [occ(?x,[?y|?l]) = occ(?x,?l) by lemma(occ:cons:diff),
+            occ(?x,[?y|?l]) = s(?n),
+            ex n: occ(?x,[?y|?l]) = s(?n)],
+           ex n: occ(?x,[?y|?l]) = s(?n))],
+         ex n: occ(?x,[?y|?l]) = s(?n))],
+       ex n: occ(?x,[?y|?l]) = s(?n))],
+     ex n: occ(?x,[?y|?l]) = s(?n)),
+    succeeds member(?x,[?y|?l]) => (ex n: occ(?x,[?y|?l]) = s(?n)))]),
+ assume(succeeds list(?l) & succeeds member(?x,?l),
+  [succeeds member(?x,?l) => (ex n: occ(?x,?l) = s(?n)),
+   ex n: occ(?x,?l) = s(?n)],
+  ex n: occ(?x,?l) = s(?n))]
+).
+
+:- theorem(permutation:member,
+all [x,l1,l2]: succeeds permutation(?l1,?l2) & succeeds member(?x,?l1) => 
+ succeeds member(?x,?l2),
+assume(succeeds permutation(?l1,?l2) & succeeds member(?x,?l1),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(permutation:types),
+  all x: occ(?x,?l1) = occ(?x,?l2) by theorem(permutation:occ),
+  occ(?x,?l1) = occ(?x,?l2),
+  ex n: occ(?x,?l1) = s(?n) by lemma(member:occ:success),
+  exist(n,
+   occ(?x,?l1) = s(?n),
+   [occ(?x,?l2) = s(?n),
+    succeeds member(?x,?l2) by corollary(occ:member:success)],
+   succeeds member(?x,?l2))],
+ succeeds member(?x,?l2))
+).
+
+:- theorem(permutation:cons,
+all [x,l1,l2]: succeeds permutation([?x|?l1],[?x|?l2]) => 
+ succeeds permutation(?l1,?l2),
+assume(succeeds permutation([?x|?l1],[?x|?l2]),
+ [succeeds list([?x|?l1]) & succeeds list([?x|?l2]) by 
+   lemma(permutation:types),
+  succeeds list(?l1) by lemma(list:cons),
+  succeeds list(?l2) by lemma(list:cons),
+  all y: occ(?y,[?x|?l1]) = occ(?y,[?x|?l2]) by theorem(permutation:occ),
+  occ(?y,[?x|?l1]) = occ(?y,[?x|?l2]),
+  ?x = ?y \/ ?x <> ?y,
+  cases(?x = ?y,
+   [occ(?y,[?y|?l1]) = s(occ(?y,?l1)) by lemma(occ:cons:eq),
+    occ(?y,[?y|?l2]) = s(occ(?y,?l2)) by lemma(occ:cons:eq),
+    s(occ(?y,?l1)) = occ(?y,[?y|?l1]) = occ(?y,[?x|?l1]) = occ(?y,[?x|?l2])
+    = occ(?y,[?y|?l2]) = s(occ(?y,?l2)),
+    s(occ(?y,?l1)) = s(occ(?y,?l2)),
+    occ(?y,?l1) = occ(?y,?l2)],
+   ?x <> ?y,
+   [occ(?y,[?x|?l1]) = occ(?y,?l1) by lemma(occ:cons:diff),
+    occ(?y,[?x|?l2]) = occ(?y,?l2) by lemma(occ:cons:diff),
+    occ(?y,?l1) = occ(?y,[?x|?l1]) = occ(?y,[?x|?l2]) = occ(?y,?l2)],
+   occ(?y,?l1) = occ(?y,?l2)),
+  all y: occ(?y,?l1) = occ(?y,?l2),
+  succeeds permutation(?l1,?l2) by theorem(occ:permutation)],
+ succeeds permutation(?l1,?l2))
+).
+
+:- lemma(permutation:nil,
+all l: succeeds permutation([],?l) => ?l = [],
+assume(succeeds permutation([],?l),
+ [def succeeds permutation([],?l) by completion,
+  cases(?l = [],
+   [],
+   ex [x,l2,l1]: ?l = [?x|?l2] & succeeds delete(?x,[],?l1) & 
+    succeeds permutation(?l1,?l2),
+   exist([x,l2,l1],
+    ?l = [?x|?l2] & succeeds delete(?x,[],?l1) & 
+    succeeds permutation(?l1,?l2),
+    [def succeeds delete(?x,[],?l1) by completion,
+     ff],
+    ?l = []),
+   ?l = [])],
+ ?l = [])
+).
+
+:- lemma(permutation:ground,
+all [l1,l2]: succeeds permutation(?l1,?l2) & gr(?l1) => gr(?l2),
+[induction(
+  [all [l1,l2]: succeeds permutation(?l1,?l2) => gr(?l1) => gr(?l2)],
+  [step([],[],[],gr([]) => gr([])),
+   step([l1,x,l3,l2],
+    [gr(?l2) => gr(?l3),
+     succeeds delete(?x,?l1,?l2),
+     succeeds permutation(?l2,?l3)],
+    assume(gr(?l1),
+     [gr(?x) & gr(?l2) by lemma(delete:ground),
+      gr([?x|?l3])],
+     gr([?x|?l3])),
+    gr(?l1) => gr([?x|?l3]))]),
+ assume(succeeds permutation(?l1,?l2) & gr(?l1),
+  [gr(?l1) => gr(?l2),
+   gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- lemma(permutation:length,
+all [l1,l2]: succeeds permutation(?l1,?l2) => lh(?l1) = lh(?l2),
+induction(
+ [all [l1,l2]: succeeds permutation(?l1,?l2) => lh(?l1) = lh(?l2)],
+ [step([],[],[],lh([]) = lh([])),
+  step([l1,x,l3,l2],
+   [lh(?l2) = lh(?l3),
+    succeeds delete(?x,?l1,?l2),
+    succeeds permutation(?l2,?l3)],
+   [succeeds list(?l2) & succeeds list(?l3) by lemma(permutation:types),
+    succeeds list(?l1) by lemma(delete:types:2),
+    lh(?l1) = s(lh(?l2)) by theorem(delete:length),
+    lh([?x|?l3]) = s(lh(?l3)) by theorem(delete:length),
+    lh(?l1) = s(lh(?l2)) = s(lh(?l3)) = lh([?x|?l3]),
+    lh(?l1) = lh([?x|?l3])],
+   lh(?l1) = lh([?x|?l3]))])
+).
+
+:- bye(permutation).

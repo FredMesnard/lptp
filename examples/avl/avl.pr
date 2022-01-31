@@ -1,0 +1,118 @@
+%   Author: Rene Lehmann  <rene.lehmann@unifr.ch> & 
+%           Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+%  Created: Tue Mar 11 09:08:50 1997 
+% Filename: main.pr 
+
+:-initialize.
+:-needs_gr($(examples)/avl/avl).
+:-thm_file($(tmp)/avl).
+:-tex_file($(tmp)/avl).
+:-needs_thm($(tmp)/set).
+:-needs_thm($(tmp)/ordered).
+:-needs_thm($(tmp)/balanced).
+:-needs_thm($(tmp)/termination).
+:-needs_thm($(tmp)/existence).
+
+/** This is the main proof file, and contains the important theorems. */
+
+/** If we insert an element into an avl-tree, then the new tree we get 
+is also an avl-tree.
+lemma(insert:ordered) and lemma(addavl:balanced) are neeed in the proof. */
+
+:- theorem(addavl:avl,
+all [v,t1,t2]: succeeds addavl(?v,?t1,?t2) & succeeds a(?v) &
+ succeeds avl(?t1) => succeeds avl(?t2),
+assume(succeeds addavl(?v,?t1,?t2) & succeeds a(?v) & succeeds avl(?t1),
+ [def succeeds addavl(?v,?t1,?t2) by completion,
+  exist(0,
+   succeeds insert(?v,?t1,?t2,?0),
+   [def succeeds avl(?t1) by completion,
+    succeeds ordered(?t2) by lemma(insert:ordered),
+    def succeeds ordered(?t2) by completion,
+    succeeds ordered(?t2) by completion],
+   succeeds ordered(?t2)),
+  def succeeds avl(?t1) by completion,
+  succeeds balanced(?t2) by theorem(addavl:balanced),
+  succeeds ordered(?t2) & succeeds balanced(?t2),
+  succeeds avl(?t2) by completion],
+ succeeds avl(?t2))
+).
+
+
+/** If we insert an element in an avl-tree, then the added element is
+member of the new avl-tree we get. */
+
+:-theorem(addavl:in:1,
+all [v,t1,t2]: succeeds addavl(?v,?t1,?t2) => succeeds in(?v,?t2),
+assume(succeeds addavl(?v,?t1,?t2),
+ [def succeeds addavl(?v,?t1,?t2) by completion,
+  exist(0,
+   succeeds insert(?v,?t1,?t2,?0),
+   succeeds in(?v,?t2) by theorem(insert:in:1),
+   succeeds in(?v,?t2))],
+ succeeds in(?v,?t2))
+).
+
+/** If we add an element to an avl-tree containing element x, then
+the new avl-tree also contains element x. */
+
+:-theorem(addavl:in:2,
+all [v,t1,t2,x]: succeeds addavl(?v,?t1,?t2) &
+ succeeds in(?x,?t1) => succeeds in(?x,?t2),
+assume(succeeds addavl(?v,?t1,?t2) & succeeds in(?x,?t1),
+ [def succeeds addavl(?v,?t1,?t2) by completion,
+  exist(0,
+   succeeds insert(?v,?t1,?t2,?0),
+   succeeds in(?x,?t2) by theorem(insert:in:2),
+   succeeds in(?x,?t2))],
+ succeeds in(?x,?t2))
+).
+
+/** If we add an element t1 to an avl-tree, an if the new avl-tree
+contains the element x, then either x is the element t1 we just added, or
+x was already in the initial avl-tree. */
+
+:-theorem(addavl:in:3,
+all [v,t1,t2,x]: succeeds addavl(?v,?t1,?t2) &
+ succeeds in(?x,?t2) => succeeds in(?x,?t1) \/ ?x = ?v,
+assume(succeeds addavl(?v,?t1,?t2) & succeeds in(?x,?t2),
+ [def succeeds addavl(?v,?t1,?t2) by completion,
+  exist(0,
+   succeeds insert(?v,?t1,?t2,?0),
+   succeeds in(?x,?t1) \/ ?x = ?v by theorem(insert:in:3),
+   succeeds in(?x,?t1) \/ ?x = ?v)],
+ succeeds in(?x,?t1) \/ ?x = ?v)
+).
+
+/** The action of adding an element to an existing avl-tree always terminates. */
+
+:- theorem(addavl:termination,
+all [v,t1,t2]: succeeds avl(?t1) & succeeds a(?v) =>
+  terminates addavl(?v,?t1,?t2),
+assume(succeeds avl(?t1) & succeeds a(?v),
+ [succeeds avl(?t1),
+  def succeeds avl(?t1) by completion,succeeds ordered(?t1),
+  succeeds a_tree(?t1) by lemma(ordered:a_tree),
+  terminates insert(?v,?t1,?t2,?0) by theorem(insert:termination),
+  all 0: terminates insert(?v,?t1,?t2,?0),
+  terminates addavl(?v,?t1,?t2) by completion],
+ terminates addavl(?v,?t1,?t2))).
+
+
+/** There always exists an avl-tree t2 resulting of the insertion of an element v
+in an already existing avl-tree t1. */
+
+:- theorem(addavl:existence,
+all [v,t1]: succeeds a(?v) & succeeds avl(?t1) =>
+ (ex t2: succeeds addavl(?v,?t1,?t2)),
+assume(succeeds a(?v) & succeeds avl(?t1),
+ [ex [t2,g]: succeeds insert(?v,?t1,?t2,?g) by theorem(insert:existence),
+  exist([t2,g],
+   succeeds insert(?v,?t1,?t2,?g),
+   [succeeds addavl(?v,?t1,?t2),
+    ex t2: succeeds addavl(?v,?t1,?t2)],
+   ex t2: succeeds addavl(?v,?t1,?t2))],
+ ex t2: succeeds addavl(?v,?t1,?t2))
+).
+
+:-bye(main).

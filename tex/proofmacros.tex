@@ -1,0 +1,161 @@
+%   Author: Robert Staerk <staerk@math.stanford.edu>
+%  Created: January 1995
+%  Updated: Fri Mar 31 13:52:35 2000 
+% Filename: proofmacros.tex
+%
+% Font for operators `succeeds', `fails' and `terminates'.
+%
+\font\bfsf=cmssbx10
+%
+% The style of proofs is "ragged right".
+%
+\rightskip 0pt plus 10cm
+\tolerance=400
+\hoffset=-4.5mm
+%
+% Macros used in formulas:
+%
+%  \D          definition
+%  \F          failure operator
+%  \It          italic font for defined functions
+%  \S          success operator
+%  \T          termination operator
+%  \Tt         typewriter font for predicates
+%  \all        universal quantifier
+%  \app        X ** Y
+%  \eq         equality
+%  \eqv        equivalence
+%  \ex         existential quantifier
+%  \is         X is Y
+%  \land       conjunction
+%  \leq        less than or equal to
+%  \lnot       negation
+%  \lor        disjunction
+%  \neq        disequality
+%  \sub        subset
+%  \to         implication
+%  \v          integer variables
+%
+\def\D{\mathop{\hbox{\bfsf D}}}
+\def\F{\mathop{\hbox{\bfsf F}}}
+\def\It#1{\hbox{\it #1}}
+\def\S{\mathop{\hbox{\bfsf S}}}
+\def\Tt#1{\hbox{\tt #1}}
+\def\T{\mathop{\hbox{\bfsf T}}}
+\def\all[#1]{\forall #1}
+\def\app{\nobreak\mathbin{**}\nobreak}
+\def\eqv{\leftrightarrow\penalty\levcount}
+\def\eq{\nobreak=\nobreak}
+\def\ex[#1]{\exists #1}
+\def\is{\nobreak\mathbin{\hbox{\tt is}}\nobreak}
+\def\land{\wedge\penalty\levcount}
+\def\lor{\vee\penalty\levcount}
+\def\sub{\nobreak\subseteq\nobreak}
+\def\to{\rightarrow\penalty\levcount}
+\def\apply{\nobreak\mathbin{/. }\nobreak}
+\def\v#1{v_{#1}}
+%
+% The depth of formulas:
+%
+\newcount\levcount
+\def\0{\global\levcount=20}
+\def\1{\global\advance\levcount by 20}
+\def\2{\global\advance\levcount by -20}
+%
+% Underscores (cf. ^ and ^^ in manmac.tex):
+%
+\newif\ifref
+\reffalse
+\def\specialunderscore{\ifmmode_\else\ifref-\else\_\fi\fi}
+\catcode`\_=13 % active
+\let _=\specialunderscore
+%
+% Labels and backward references:
+%
+\def\label#1#2{\reftrue\expandafter\edef\csname#1:#2\endcsname{\Hlink{\number\thmcount}}%
+\Htarget{\number\thmcount}%
+\edef\next{\write\auxout{\string\newlabel{#1}{#2}{\jobname}{\number\thmcount}}}%
+\next\reffalse\ignorespaces}
+\def\by#1#2{\penalty 20\ by\penalty 20\ #1~\reftrue%
+\expandafter\ifx\csname#1:#2\endcsname\relax??%
+\else\csname#1:#2\endcsname\fi\reffalse~[{\it #2}]}
+\def\newlabel#1#2#3#4{\expandafter\edef\csname#1:#2\endcsname{#4 in Module {\tt #3}}}
+%
+% Hyperlinks (based on `hyperref.dtx' by Sebastian Rahtz):
+%
+\def\Hlink#1{#1}
+\def\Htarget#1{}
+%
+% Uncomment the following lines if you want to use hyperlinks.
+%
+%\def\Hend{\special{html:</A>}}
+%\edef\Hhash{\string#}
+%\edef\Hquote{\string"}
+%\def\Hhref#1{\special{html:<A href=\Hquote\Hhash#1\Hquote>}}
+%\def\Hname#1{\special{html:<A name=\Hquote#1\Hquote>}}
+%\def\Hlink#1{\Hhref{#1}#1\Hend}
+%\def\Htarget#1{\Hname{#1}\Hend}
+%
+% Theorem, Lemma, Corollary, Definition, Axiom:
+%
+\newcount\thmcount
+\thmcount=0
+\newcount\indcount
+\def\inc{\global\advance\indcount by 1\hangindent\indcount em}
+\def\dec{\global\advance\indcount by-1}
+\def\nl{\par\hangindent\indcount em\noindent\kern\indcount em\ignorespaces} 
+\def\lev{$\strut_{\number\indcount}$}
+\def\Module#1#2#3{\bigskip\goodbreak % \vfil\allowbreak\vfilneg
+  \advance\thmcount by1\label{#1}{#2}
+  \noindent{\bf #1~\the\thmcount}~[{\it #2}] $#3$.\allowbreak}
+\def\theorem{\Module{Theorem}}
+\def\lemma{\Module{Lemma}}
+\def\corollary{\Module{Corollary}}
+\def\definition{\Module{Definition}}
+\def\axiom{\Module{Axiom}}
+%
+% Proof steps:
+%
+\def\Pr{\allowbreak\smallskip\noindent\global\indcount=0{\bf Proof. }\nobreak}
+\def\Epr{\hbox{\rlap{$\sqcup$}$\sqcap$}\smallskip\allowbreak}
+\def\Ass#1{\nl Assumption\lev: $#1$. \inc}
+\def\Eass#1{\dec\nl Thus\lev: $#1$.}
+\def\Cas#1{\nl Case\lev: $#1$. \inc}
+\def\Ecas{\dec}
+\def\Fin#1{\nl Hence\lev, in all cases: $#1$.}
+\def\Dir#1{\nl Indirect\lev: $#1$. \inc}
+\def\Edir#1{\dec\nl Thus\lev: $#1$.}
+\def\Con#1{\nl Contra\lev: $#1$. \inc}
+\def\Econ#1{\dec\nl Thus\lev: $#1$.}
+\def\Ex[#1]#2{\nl Let\lev\ $#1$ with $#2$. \inc}
+\def\Eex#1{\dec\nl Thus\lev: $#1$.}
+\def\Ind#1{\nl Induction\lev: #1. \inc}
+\def\Eind{\dec}
+\def\Stp#1{\nl Hypothesis\lev: #1. \inc}
+\def\Estp#1{\dec\nl Conclusion\lev: $#1$.}
+\def\noproofs{\let\Pr=\nil\let\Epr=\par}
+\def\nil#1{}
+\def\title#1{\noindent{\bf File:} {\tt#1.pr}\par}
+%
+% .aux
+%
+\newread\inputcheck
+\def\inputaux#1{\openin\inputcheck #1 \ifeof\inputcheck \message
+  {No file #1.}\else\closein\inputcheck \relax\input #1 \fi}
+\newwrite\auxout
+\openout\auxout=\jobname.aux
+\let\endsave=\end
+\def\end{\write\auxout{}\closeout\auxout\endsave}
+%
+%
+% "!" is escape character like backslash "\"
+%
+\catcode `!=0
+\catcode `@=11
+\catcode `#=11
+\catcode `&=11
+%
+%\noproofs
+%
+%
+% End of proofmacros.tex

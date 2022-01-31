@@ -1,0 +1,1497 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/26/95, 8:10 PM */
+/* Filename: list.pr */
+
+
+:- initialize.
+
+:- tex_file($(tmp)/list).
+:- thm_file($(lib)/list/list).
+
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/nat/nat).
+:- needs_thm($(lib)/nat/nat).
+
+:- lemma(list:1,
+all x: succeeds list([?x]),
+[succeeds list([]),succeeds list([?x])]
+).
+
+:- lemma(list:2,
+all [x,y]: succeeds list([?x,?y]),
+[succeeds list([?y]) by lemma(list:1),succeeds list([?x,?y])]
+).
+
+:- lemma(list:3,
+all [x,y,z]: succeeds list([?x,?y,?z]),
+[succeeds list([?y,?z]) by lemma(list:2),succeeds list([?x,?y,?z])]
+).
+
+:- lemma(list:cons,
+all [x,l]: succeeds list([?x|?l]) => succeeds list(?l),
+assume(succeeds list([?x|?l]),
+ [def succeeds list([?x|?l]) by completion,
+  succeeds list(?l)],
+ succeeds list(?l))
+).
+
+:- lemma(list:termination,
+all l: succeeds list(?l) => terminates list(?l),
+induction([all l: succeeds list(?l) => terminates list(?l)],
+ [step([],[],terminates list([]) by completion,terminates list([])),
+  step([x,l],
+   [terminates list(?l),
+    succeeds list(?l)],
+   terminates list([?x|?l]) by completion,
+   terminates list([?x|?l]))])
+).
+
+:- lemma(member:termination,
+all [x,l]: succeeds list(?l) => terminates member(?x,?l),
+[induction([all l: succeeds list(?l) => terminates member(?x,?l)],
+  [step([],
+    [],
+    terminates member(?x,[]) by completion,
+    terminates member(?x,[])),
+   step([y,l],
+    [terminates member(?x,?l),
+     succeeds list(?l)],
+    terminates member(?x,[?y|?l]) by completion,
+    terminates member(?x,[?y|?l]))])]
+).
+
+:- corollary(member:termination,
+all [x,l]: succeeds list(?l) => succeeds member(?x,?l) \/ 
+ fails member(?x,?l),
+assume(succeeds list(?l),
+ [terminates member(?x,?l) by lemma(member:termination),
+  succeeds member(?x,?l) \/ fails member(?x,?l)],
+ succeeds member(?x,?l) \/ fails member(?x,?l))
+).
+
+:- lemma(member:ground,
+all [x,l]: succeeds member(?x,?l) & gr(?l) => gr(?x),
+[induction([all [x,l]: succeeds member(?x,?l) => gr(?l) => gr(?x)],
+  [step([x,l],[],assume(gr([?x|?l]),[],gr(?x)),gr([?x|?l]) => gr(?x)),
+   step([x,y,l],
+    [gr(?l) => gr(?x),
+     succeeds member(?x,?l)],
+    assume(gr([?y|?l]),
+     [],
+     gr(?x)),
+    gr([?y|?l]) => gr(?x))]),
+ assume(succeeds member(?x,?l) & gr(?l),
+  [gr(?l) => gr(?x),
+   gr(?x)],
+  gr(?x))]
+).
+
+:- lemma(member:cons,
+all [x,y,z,l]: succeeds member(?x,[?y|?l]) & ?x <> ?y => 
+ succeeds member(?x,?l),
+assume(succeeds member(?x,[?y|?l]) & ?x <> ?y,
+ [def succeeds member(?x,[?y|?l]) by completion,
+  cases(?x = ?y,
+   [],
+   succeeds member(?x,?l),
+   [],
+   succeeds member(?x,?l))],
+ succeeds member(?x,?l))
+).
+
+:- lemma(append:types:1,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds list(?l1),
+induction(
+ [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds list(?l1)],
+ [step([0],[],[],succeeds list([])),
+  step([x,l1,l2,l3],
+   [succeeds list(?l1),
+    succeeds append(?l1,?l2,?l3)],
+   [],
+   succeeds list([?x|?l1]))])
+).
+
+:- lemma(append:types:2,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l2) => 
+ succeeds list(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds list(?l2) => 
+    succeeds list(?l3)],
+  [step([l],[],[],succeeds list(?l) => succeeds list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds list(?l2) => succeeds list(?l3),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds list(?l2),
+     [succeeds list(?l3),
+      succeeds list([?x|?l3]) by completion],
+     succeeds list([?x|?l3])),
+    succeeds list(?l2) => succeeds list([?x|?l3]))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l2),
+  [succeeds list(?l2) => succeeds list(?l3),
+   succeeds list(?l3)],
+  succeeds list(?l3))]
+).
+
+:- lemma(append:types:3,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ succeeds list(?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds list(?l3) => 
+    succeeds list(?l2)],
+  [step([l],[],[],succeeds list(?l) => succeeds list(?l)),
+   step([x,l1,l2,l3],
+    [succeeds list(?l3) => succeeds list(?l2),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds list([?x|?l3]),
+     [def succeeds list([?x|?l3]) by completion,
+      succeeds list(?l3),
+      succeeds list(?l2)],
+     succeeds list(?l2)),
+    succeeds list([?x|?l3]) => succeeds list(?l2))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+  [succeeds list(?l3) => succeeds list(?l2),
+   succeeds list(?l2)],
+  succeeds list(?l2))]
+).
+
+:- lemma(append:types:4,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ succeeds list(?l1) & succeeds list(?l2),
+assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+ [succeeds list(?l1) by lemma(append:types:1),
+  succeeds list(?l2) by lemma(append:types:3)],
+ succeeds list(?l1) & succeeds list(?l2))
+).
+
+:- lemma(append:termination:1,
+all [l1,l2,l3]: succeeds list(?l1) => terminates append(?l1,?l2,?l3),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    (all [l2,l3]: terminates append(?l1,?l2,?l3))],
+  [step([],
+    [],
+    terminates append([],?l2,?l3) by completion,
+    all [l2,l3]: terminates append([],?l2,?l3)),
+   step([x,l1],
+    [all [l2,l3]: terminates append(?l1,?l2,?l3),
+     succeeds list(?l1)],
+    [?l3 = [?x|?l4] => terminates append(?l1,?l2,?l4),
+     all l4: ?l3 = [?x|?l4] => terminates append(?l1,?l2,?l4),
+     terminates append([?x|?l1],?l2,?l3) by completion],
+    all [l2,l3]: terminates append([?x|?l1],?l2,?l3))]),
+ assume(succeeds list(?l1),
+  [all [l2,l3]: terminates append(?l1,?l2,?l3),
+   terminates append(?l1,?l2,?l3)],
+  terminates append(?l1,?l2,?l3))]
+).
+
+:- lemma(append:termination:2,
+all [l1,l2,l3]: succeeds list(?l3) => terminates append(?l1,?l2,?l3),
+[induction(
+  [all l3: succeeds list(?l3) => 
+    (all [l1,l2]: terminates append(?l1,?l2,?l3))],
+  [step([],
+    [],
+    terminates append(?l1,?l2,[]) by completion,
+    all [l1,l2]: terminates append(?l1,?l2,[])),
+   step([x,l3],
+    [all [l1,l2]: terminates append(?l1,?l2,?l3),
+     succeeds list(?l3)],
+    [?l1 = [?x|?l4] => terminates append(?l4,?l2,?l3),
+     all l4: ?l1 = [?x|?l4] => terminates append(?l4,?l2,?l3),
+     terminates append(?l1,?l2,[?x|?l3]) by completion],
+    all [l1,l2]: terminates append(?l1,?l2,[?x|?l3]))]),
+ assume(succeeds list(?l3),
+  [all [l1,l2]: terminates append(?l1,?l2,?l3),
+   terminates append(?l1,?l2,?l3)],
+  terminates append(?l1,?l2,?l3))]
+).
+
+:- lemma(append:ground:1,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & gr(?l1) & gr(?l2) => 
+ gr(?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => gr(?l1) & gr(?l2) => 
+    gr(?l3)],
+  [step([l],[],assume(gr([]) & gr(?l),[],gr(?l)),gr([]) & gr(?l) => gr(?l)),
+   step([x,l1,l2,l3],
+    [gr(?l1) & gr(?l2) => gr(?l3),
+     succeeds append(?l1,?l2,?l3)],
+    assume(gr([?x|?l1]) & gr(?l2),
+     [],
+     gr([?x|?l3])),
+    gr([?x|?l1]) & gr(?l2) => gr([?x|?l3]))]),
+ assume(succeeds append(?l1,?l2,?l3) & gr(?l1) & gr(?l2),
+  [gr(?l1) & gr(?l2) => gr(?l3),
+   gr(?l3)],
+  gr(?l3))]
+).
+
+:- lemma(append:ground:2,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & gr(?l3) => gr(?l1) & 
+ gr(?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => gr(?l3) => gr(?l1) & 
+    gr(?l2)],
+  [step([l],[],assume(gr(?l),[],gr([]) & gr(?l)),gr(?l) => gr([]) & gr(?l)),
+   step([x,l1,l2,l3],
+    [gr(?l3) => gr(?l1) & gr(?l2),
+     succeeds append(?l1,?l2,?l3)],
+    assume(gr([?x|?l3]),
+     [gr(?l3),
+      gr(?l1) & gr(?l2),
+      gr([?x|?l1])],
+     gr([?x|?l1]) & gr(?l2)),
+    gr([?x|?l3]) => gr([?x|?l1]) & gr(?l2))]),
+ assume(succeeds append(?l1,?l2,?l3) & gr(?l3),
+  [gr(?l3) => gr(?l1) & gr(?l2),
+   gr(?l1) & gr(?l2)],
+  gr(?l1) & gr(?l2))]
+).
+
+:- lemma(append:existence,
+all [l1,l2]: succeeds list(?l1) => (ex l3: succeeds append(?l1,?l2,?l3)),
+[induction(
+  [all l1: succeeds list(?l1) => (ex l3: succeeds append(?l1,?l2,?l3))],
+  [step([],
+    [],
+    [succeeds append([],?l2,?l2),
+     ex l3: succeeds append([],?l2,?l3)],
+    ex l3: succeeds append([],?l2,?l3)),
+   step([x,l1],
+    [ex l3: succeeds append(?l1,?l2,?l3),
+     succeeds list(?l1)],
+    exist(l3,
+     succeeds append(?l1,?l2,?l3),
+     [succeeds append([?x|?l1],?l2,[?x|?l3]),
+      ex l3: succeeds append([?x|?l1],?l2,?l3)],
+     ex l3: succeeds append([?x|?l1],?l2,?l3)),
+    ex l3: succeeds append([?x|?l1],?l2,?l3))]),
+ assume(succeeds list(?l1),
+  ex l3: succeeds append(?l1,?l2,?l3),
+  ex l3: succeeds append(?l1,?l2,?l3))]
+).
+
+:- lemma(append:uniqueness,
+all [l1,l2,l3,l4]: succeeds append(?l1,?l2,?l3) & 
+ succeeds append(?l1,?l2,?l4) => ?l3 = ?l4,
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => 
+    (all l4: succeeds append(?l1,?l2,?l4) => ?l3 = ?l4)],
+  [step([l2],
+    [],
+    assume(succeeds append([],?l2,?l4),
+     [def succeeds append([],?l2,?l4) by completion,
+      ?l2 = ?l4],
+     ?l2 = ?l4),
+    all l4: succeeds append([],?l2,?l4) => ?l2 = ?l4),
+   step([x,l1,l2,l3],
+    [all l4: succeeds append(?l1,?l2,?l4) => ?l3 = ?l4,
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds append([?x|?l1],?l2,?l4),
+     [def succeeds append([?x|?l1],?l2,?l4) by completion,
+      ex l5: ?l4 = [?x|?l5] & succeeds append(?l1,?l2,?l5),
+      exist(l5,
+       ?l4 = [?x|?l5] & succeeds append(?l1,?l2,?l5),
+       [succeeds append(?l1,?l2,?l5) => ?l3 = ?l5,
+        ?l3 = ?l5,
+        [?x|?l3] = ?l4],
+       [?x|?l3] = ?l4)],
+     [?x|?l3] = ?l4),
+    all l4: succeeds append([?x|?l1],?l2,?l4) => [?x|?l3] = ?l4)]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds append(?l1,?l2,?l4),
+  [all l4: succeeds append(?l1,?l2,?l4) => ?l3 = ?l4,
+   succeeds append(?l1,?l2,?l4) => ?l3 = ?l4,
+   ?l3 = ?l4],
+  ?l3 = ?l4)]
+).
+
+:- definition_fun(**,2,
+ all [l1,l2,l3]: succeeds list(?l1) => 
+  (?l1 ** ?l2 = ?l3 <=> succeeds append(?l1,?l2,?l3)),
+ existence by lemma(append:existence),
+ uniqueness by lemma(append:uniqueness)
+).
+
+:- corollary(app:nil,
+all l: [] ** ?l = ?l,
+[] ** ?l = ?l by uniqueness(**,2)
+).
+
+:- corollary(app:cons,
+all [x,l1,l2]: succeeds list(?l1) => [?x|?l1] ** ?l2 = [?x|?l1 ** ?l2],
+assume(succeeds list(?l1),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds append([?x|?l1],?l2,[?x|?l1 ** ?l2]),
+  succeeds list([?x|?l1]),
+  [?x|?l1] ** ?l2 = [?x|?l1 ** ?l2] by uniqueness(**,2)],
+ [?x|?l1] ** ?l2 = [?x|?l1 ** ?l2])
+).
+
+:- corollary(app:types:1,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ succeeds list(?l1 ** ?l2),
+assume(succeeds list(?l1) & succeeds list(?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds list(?l1 ** ?l2) by lemma(append:types:2)],
+ succeeds list(?l1 ** ?l2))
+).
+
+:- corollary(app:types:2,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l1 ** ?l2) => 
+ succeeds list(?l2),
+assume(succeeds list(?l1) & succeeds list(?l1 ** ?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds list(?l2) by lemma(append:types:3)],
+ succeeds list(?l2))
+).
+
+:- corollary(app:ground:1,
+all [l1,l2]: succeeds list(?l1) & gr(?l1) & gr(?l2) => gr(?l1 ** ?l2),
+assume(succeeds list(?l1) & gr(?l1) & gr(?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  gr(?l1 ** ?l2) by lemma(append:ground:1)],
+ gr(?l1 ** ?l2))
+).
+
+:- corollary(app:ground:2,
+all [l1,l2]: succeeds list(?l1) & gr(?l1 ** ?l2) => gr(?l1) & gr(?l2),
+assume(succeeds list(?l1) & gr(?l1 ** ?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  gr(?l1) & gr(?l2) by lemma(append:ground:2)],
+ gr(?l1) & gr(?l2))
+).
+
+:- theorem(app:associative,
+all [l1,l2,l3]: succeeds list(?l1) & succeeds list(?l2) => 
+ ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3),
+[assume(succeeds list(?l2),
+  induction(
+   [all l1: succeeds list(?l1) => ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3)],
+   [step([],
+     [],
+     [[] ** ?l2 = ?l2 by corollary(app:nil),
+      [] ** ?l2 ** ?l3 = ?l2 ** ?l3,
+      [] ** (?l2 ** ?l3) = ?l2 ** ?l3 by corollary(app:nil)],
+     [] ** ?l2 ** ?l3 = [] ** (?l2 ** ?l3)),
+    step([x,l1],
+     [?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3),
+      succeeds list(?l1)],
+     [[?x|?l1] ** ?l2 = [?x|?l1 ** ?l2] by corollary(app:cons),
+      succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+      [?x|?l1 ** ?l2] ** ?l3 = [?x|?l1 ** ?l2 ** ?l3] by 
+       corollary(app:cons),
+      [?x|?l1] ** (?l2 ** ?l3) = [?x|?l1 ** (?l2 ** ?l3)] by 
+       corollary(app:cons),
+      [?x|?l1] ** ?l2 ** ?l3 = [?x|?l1 ** ?l2] ** ?l3 = 
+      [?x|?l1 ** ?l2 ** ?l3] = [?x|?l1 ** (?l2 ** ?l3)] =
+       [?x|?l1] ** (?l2 ** ?l3)],
+     [?x|?l1] ** ?l2 ** ?l3 = [?x|?l1] ** (?l2 ** ?l3))]),
+  succeeds list(?l1) => ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3)),
+ assume(succeeds list(?l1) & succeeds list(?l2),
+  [succeeds list(?l1) => ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3),
+   ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3)],
+  ?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3))]
+).
+
+:- lemma(app:nil,
+all l: succeeds list(?l) => ?l ** [] = ?l,
+induction([all l: succeeds list(?l) => ?l ** [] = ?l],
+ [step([],[],[] ** [] = [] by corollary(app:nil),[] ** [] = []),
+  step([x,l],
+   [?l ** [] = ?l,
+    succeeds list(?l)],
+   [[?x|?l] ** [] = [?x|?l ** []] by corollary(app:cons),
+    [?x|?l] ** [] = [?x|?l]],
+   [?x|?l] ** [] = [?x|?l])])
+).
+
+:- lemma(length:types,
+all [l,n]: succeeds length(?l,?n) => succeeds list(?l) & succeeds nat(?n),
+induction(
+ [all [l,n]: succeeds length(?l,?n) => succeeds list(?l) & 
+   succeeds nat(?n)],
+ [step([],[],[],succeeds list([]) & succeeds nat(0)),
+  step([x,l,n],
+   [succeeds list(?l) & succeeds nat(?n),
+    succeeds length(?l,?n)],
+   [],
+   succeeds list([?x|?l]) & succeeds nat(s(?n)))])
+).
+
+:- lemma(length:termination,
+all [l,n]: succeeds list(?l) => terminates length(?l,?n),
+[induction(
+  [all l: succeeds list(?l) => (all n: terminates length(?l,?n))],
+  [step([],
+    [],
+    terminates length([],?n) by completion,
+    all n: terminates length([],?n)),
+   step([x,l],
+    [all n: terminates length(?l,?n),
+     succeeds list(?l)],
+    [?n = s(?m) => terminates length(?l,?m),
+     all m: ?n = s(?m) => terminates length(?l,?m),
+     terminates length([?x|?l],?n) by completion],
+    all n: terminates length([?x|?l],?n))]),
+ assume(succeeds list(?l),
+  [all n: terminates length(?l,?n),
+   terminates length(?l,?n)],
+  terminates length(?l,?n))]
+).
+
+:- lemma(length:ground,
+all [l,n]: succeeds length(?l,?n) => gr(?n),
+induction([all [l,n]: succeeds length(?l,?n) => gr(?n)],
+ [step([],[],[],gr(0)),
+  step([x,l,n],
+   [gr(?n),
+    succeeds length(?l,?n)],
+   [],
+   gr(s(?n)))])
+).
+
+:- lemma(length:existence,
+all l: succeeds list(?l) => (ex n: succeeds length(?l,?n)),
+induction([all l: succeeds list(?l) => (ex n: succeeds length(?l,?n))],
+ [step([],
+   [],
+   [succeeds length([],0),
+    ex n: succeeds length([],?n)],
+   ex n: succeeds length([],?n)),
+  step([x,l],
+   [ex n: succeeds length(?l,?n),
+    succeeds list(?l)],
+   exist(n,
+    succeeds length(?l,?n),
+    [succeeds length([?x|?l],s(?n)),
+     ex n: succeeds length([?x|?l],?n)],
+    ex n: succeeds length([?x|?l],?n)),
+   ex n: succeeds length([?x|?l],?n))])
+).
+
+:- lemma(length:uniqueness,
+all [l,m,n]: succeeds length(?l,?m) & succeeds length(?l,?n) => ?m = ?n,
+[induction(
+  [all [l,m]: succeeds length(?l,?m) => 
+    (all n: succeeds length(?l,?n) => ?m = ?n)],
+  [step([],
+    [],
+    assume(succeeds length([],?n),
+     [def succeeds length([],?n) by completion,
+      0 = ?n],
+     0 = ?n),
+    all n: succeeds length([],?n) => 0 = ?n),
+   step([x,l,m],
+    [all n: succeeds length(?l,?n) => ?m = ?n,
+     succeeds length(?l,?m)],
+    assume(succeeds length([?x|?l],?n),
+     [def succeeds length([?x|?l],?n) by completion,
+      exist(k,
+       ?n = s(?k) & succeeds length(?l,?k),
+       [?m = ?k,
+        s(?m) = ?n],
+       s(?m) = ?n)],
+     s(?m) = ?n),
+    all n: succeeds length([?x|?l],?n) => s(?m) = ?n)]),
+ assume(succeeds length(?l,?m) & succeeds length(?l,?n),
+  [all n: succeeds length(?l,?n) => ?m = ?n,
+   succeeds length(?l,?n) => ?m = ?n,
+   ?m = ?n],
+  ?m = ?n)]
+).
+
+:- definition_fun(lh,1,
+ all [l,n]: succeeds list(?l) => (lh(?l) = ?n <=> succeeds length(?l,?n)),
+ existence by lemma(length:existence),
+ uniqueness by lemma(length:uniqueness)
+).
+
+:- corollary(lh:nil,
+lh([]) = 0,
+[succeeds length([],0),lh([]) = 0 by uniqueness(lh,1)]
+).
+
+:- corollary(lh:cons,
+all [x,l]: succeeds list(?l) => lh([?x|?l]) = s(lh(?l)),
+assume(succeeds list(?l),
+ [succeeds length(?l,lh(?l)) by existence(lh,1),
+  succeeds length([?x|?l],s(lh(?l))),
+  lh([?x|?l]) = s(lh(?l)) by uniqueness(lh,1)],
+ lh([?x|?l]) = s(lh(?l)))
+).
+
+:- corollary(lh:types,
+all l: succeeds list(?l) => succeeds nat(lh(?l)),
+assume(succeeds list(?l),
+ [succeeds length(?l,lh(?l)) by existence(lh,1),
+  succeeds list(?l) & succeeds nat(lh(?l)) by lemma(length:types)],
+ succeeds nat(lh(?l)))
+).
+
+:- corollary(lh:zero,
+all l: succeeds list(?l) & lh(?l) = 0 => ?l = [],
+assume(succeeds list(?l) & lh(?l) = 0,
+ [succeeds length(?l,lh(?l)) by existence(lh,1),
+  def succeeds length(?l,0) by completion,
+  ?l = []],
+ ?l = [])
+).
+
+:- corollary(lh:successor,
+all [n,l1]: succeeds list(?l1) & lh(?l1) = s(?n) => 
+ (ex [x,l2]: ?l1 = [?x|?l2]),
+assume(succeeds list(?l1) & lh(?l1) = s(?n),
+ [succeeds length(?l1,lh(?l1)) by existence(lh,1),
+  def succeeds length(?l1,s(?n)) by completion,
+  exist([x,l2],
+   ?l1 = [?x|?l2] & succeeds length(?l2,?n),
+   [],
+   ex [x,l2]: ?l1 = [?x|?l2])],
+ ex [x,l2]: ?l1 = [?x|?l2])
+).
+
+:- theorem(app:lh,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2),
+[induction(
+  [all l1: succeeds list(?l1) => succeeds list(?l2) => 
+    lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2)],
+  [step([],
+    [],
+    assume(succeeds list(?l2),
+     [[] ** ?l2 = ?l2 by corollary(app:nil),
+      lh([]) = 0 by corollary(lh:nil),
+      0 @+ lh(?l2) = lh(?l2) by corollary(plus:zero),
+      lh([] ** ?l2) = lh(?l2) = 0 @+ lh(?l2) = lh([]) @+ lh(?l2)],
+     lh([] ** ?l2) = lh([]) @+ lh(?l2)),
+    succeeds list(?l2) => lh([] ** ?l2) = lh([]) @+ lh(?l2)),
+   step([x,l1],
+    [succeeds list(?l2) => lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2),
+     succeeds list(?l1)],
+    assume(succeeds list(?l2),
+     [[?x|?l1] ** ?l2 = [?x|?l1 ** ?l2] by corollary(app:cons),
+      succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+      lh([?x|?l1 ** ?l2]) = s(lh(?l1 ** ?l2)) by corollary(lh:cons),
+      lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2),
+      lh([?x|?l1]) = s(lh(?l1)) by corollary(lh:cons),
+      succeeds nat(lh(?l1)) by corollary(lh:types),
+      s(lh(?l1)) @+ lh(?l2) = s(lh(?l1) @+ lh(?l2)) by 
+       corollary(plus:successor),
+      lh([?x|?l1] ** ?l2) = lh([?x|?l1 ** ?l2]) = s(lh(?l1 ** ?l2)) = 
+      s(lh(?l1) @+ lh(?l2)) = s(lh(?l1)) @+ lh(?l2) = lh([?x|?l1]) @+ 
+      lh(?l2)],
+     lh([?x|?l1] ** ?l2) = lh([?x|?l1]) @+ lh(?l2)),
+    succeeds list(?l2) => lh([?x|?l1] ** ?l2) = lh([?x|?l1]) @+ lh(?l2))]),
+ assume(succeeds list(?l1) & succeeds list(?l2),
+  [succeeds list(?l2) => lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2),
+   lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2)],
+  lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2))]
+).
+
+:- corollary(app:lh:leq:first,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ succeeds lh(?l1) @=< lh(?l1 ** ?l2),
+assume(succeeds list(?l1) & succeeds list(?l2),
+ [lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2) by theorem(app:lh),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds lh(?l1) @=< lh(?l1) @+ lh(?l2) by 
+   corollary(leq:plus:first),
+  succeeds lh(?l1) @=< lh(?l1 ** ?l2)],
+ succeeds lh(?l1) @=< lh(?l1 ** ?l2))
+).
+
+:- corollary(app:lh:leq:second,
+all [l1,l2]: succeeds list(?l1) & succeeds list(?l2) => 
+ succeeds lh(?l2) @=< lh(?l1 ** ?l2),
+assume(succeeds list(?l1) & succeeds list(?l2),
+ [lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2) by theorem(app:lh),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds lh(?l2) @=< lh(?l1) @+ lh(?l2) by 
+   corollary(leq:plus:second),
+  succeeds lh(?l2) @=< lh(?l1 ** ?l2)],
+ succeeds lh(?l2) @=< lh(?l1 ** ?l2))
+).
+
+:- corollary(lh:cons:leq,
+all [x,l]: succeeds list(?l) => succeeds lh(?l) @=< lh([?x|?l]),
+assume(succeeds list(?l),
+ [lh([?x|?l]) = s(lh(?l)) by corollary(lh:cons),
+  succeeds nat(lh(?l)) by corollary(lh:types),
+  succeeds lh(?l) @=< s(lh(?l)) by lemma(leq:one:success),
+  succeeds lh(?l) @=< lh([?x|?l])],
+ succeeds lh(?l) @=< lh([?x|?l]))
+).
+
+:- corollary(append:lh,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ lh(?l1) @+ lh(?l2) = lh(?l3),
+assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+ [succeeds list(?l1) & succeeds list(?l2) by lemma(append:types:4),
+  lh(?l1 ** ?l2) = lh(?l1) @+ lh(?l2) by theorem(app:lh),
+  ?l1 ** ?l2 = ?l3 by uniqueness(**,2),
+  lh(?l1) @+ lh(?l2) = lh(?l1 ** ?l2) = lh(?l3)],
+ lh(?l1) @+ lh(?l2) = lh(?l3))
+).
+
+:- corollary(append:lh:leq:first,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ succeeds lh(?l1) @=< lh(?l3),
+assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+ [lh(?l1) @+ lh(?l2) = lh(?l3) by corollary(append:lh),
+  succeeds list(?l1) & succeeds list(?l2) by lemma(append:types:4),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds lh(?l1) @=< lh(?l1) @+ lh(?l2) by 
+   corollary(leq:plus:first),
+  succeeds lh(?l1) @=< lh(?l3)],
+ succeeds lh(?l1) @=< lh(?l3))
+).
+
+:- corollary(append:lh:leq:second,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ succeeds lh(?l2) @=< lh(?l3),
+assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+ [lh(?l1) @+ lh(?l2) = lh(?l3) by corollary(append:lh),
+  succeeds list(?l1) & succeeds list(?l2) by lemma(append:types:4),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds lh(?l2) @=< lh(?l1) @+ lh(?l2) by 
+   corollary(leq:plus:second),
+  succeeds lh(?l2) @=< lh(?l3)],
+ succeeds lh(?l2) @=< lh(?l3))
+).
+
+:- definition_pred(sub,2,
+ all [l1,l2]: sub(?l1,?l2) <=> 
+  (all x: succeeds member(?x,?l1) => succeeds member(?x,?l2))
+).
+
+:- lemma(sub:cons,
+all [x,i]: sub(?i,[?x|?i]),
+[assume(succeeds member(?y,?i),
+  succeeds member(?y,[?x|?i]),
+  succeeds member(?y,[?x|?i])),
+ all y: succeeds member(?y,?i) => succeeds member(?y,[?x|?i]),
+ sub(?i,[?x|?i]) by introduction(sub,2)]
+).
+
+:- lemma(sub:reflexive,
+all l: sub(?l,?l),
+[succeeds member(?x,?l) => succeeds member(?x,?l),
+ all x: succeeds member(?x,?l) => succeeds member(?x,?l),
+ sub(?l,?l) by introduction(sub,2)]
+).
+
+:- lemma(sub:transitive,
+all [i,j,k]: sub(?i,?j) & sub(?j,?k) => sub(?i,?k),
+assume(sub(?i,?j) & sub(?j,?k),
+ [all x: succeeds member(?x,?i) => succeeds member(?x,?j) by 
+   elimination(sub,2),
+  all x: succeeds member(?x,?j) => succeeds member(?x,?k) by 
+   elimination(sub,2),
+  assume(succeeds member(?x,?i),
+   [succeeds member(?x,?i) => succeeds member(?x,?j),
+    succeeds member(?x,?j),
+    succeeds member(?x,?j) => succeeds member(?x,?k),
+    succeeds member(?x,?k)],
+   succeeds member(?x,?k)),
+  all x: succeeds member(?x,?i) => succeeds member(?x,?k),
+  sub(?i,?k) by introduction(sub,2)],
+ sub(?i,?k))
+).
+
+:- lemma(sub:nil,
+all l: sub([],?l),
+[assume(succeeds member(?x,[]),
+  [def succeeds member(?x,[]) by completion,
+   ff],
+  succeeds member(?x,?l)),
+ all x: succeeds member(?x,[]) => succeeds member(?x,?l),
+ sub([],?l) by introduction(sub,2)]
+).
+
+:- lemma(sub:member,
+all [x,i,j]: sub(?i,?j) & succeeds member(?x,?j) => sub([?x|?i],?j),
+assume(sub(?i,?j) & succeeds member(?x,?j),
+ [assume(succeeds member(?y,[?x|?i]),
+   [def succeeds member(?y,[?x|?i]) by completion,
+    ?y = ?x \/ succeeds member(?y,?i),
+    cases(?y = ?x,
+     succeeds member(?y,?j),
+     succeeds member(?y,?i),
+     [all y: succeeds member(?y,?i) => succeeds member(?y,?j) by 
+       elimination(sub,2),
+      succeeds member(?y,?i) => succeeds member(?y,?j),
+      succeeds member(?y,?j)],
+     succeeds member(?y,?j))],
+   succeeds member(?y,?j)),
+  all y: succeeds member(?y,[?x|?i]) => succeeds member(?y,?j),
+  sub([?x|?i],?j) by introduction(sub,2)],
+ sub([?x|?i],?j))
+).
+
+:- lemma(sub:cons:both,
+all [x,i,j]: sub(?i,?j) => sub([?x|?i],[?x|?j]),
+assume(sub(?i,?j),
+ [sub(?j,[?x|?j]) by lemma(sub:cons),
+  sub(?i,[?x|?j]) by lemma(sub:transitive),
+  succeeds member(?x,[?x|?j]),
+  sub([?x|?i],[?x|?j]) by lemma(sub:member)],
+ sub([?x|?i],[?x|?j]))
+).
+
+:- lemma(member:append,
+all [x,l3]: succeeds member(?x,?l3) => 
+ (ex [l1,l2]: succeeds append(?l1,[?x|?l2],?l3)),
+induction(
+ [all [x,l3]: succeeds member(?x,?l3) => 
+   (ex [l1,l2]: succeeds append(?l1,[?x|?l2],?l3))],
+ [step([x,l3],
+   [],
+   [succeeds append([],[?x|?l3],[?x|?l3]),
+    ex [l1,l2]: succeeds append(?l1,[?x|?l2],[?x|?l3])],
+   ex [l1,l2]: succeeds append(?l1,[?x|?l2],[?x|?l3])),
+  step([x,y,l3],
+   [ex [l1,l2]: succeeds append(?l1,[?x|?l2],?l3),
+    succeeds member(?x,?l3)],
+   exist([l1,l2],
+    succeeds append(?l1,[?x|?l2],?l3),
+    [succeeds append([?y|?l1],[?x|?l2],[?y|?l3]),
+     ex [l1,l2]: succeeds append(?l1,[?x|?l2],[?y|?l3])],
+    ex [l1,l2]: succeeds append(?l1,[?x|?l2],[?y|?l3])),
+   ex [l1,l2]: succeeds append(?l1,[?x|?l2],[?y|?l3]))])
+).
+
+:- lemma(append:member:1,
+all [x,l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l1) 
+ => succeeds member(?x,?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds member(?x,?l1)
+    => succeeds member(?x,?l3)],
+  [step([l],
+    [],
+    assume(succeeds member(?x,[]),
+     [fails member(?x,[]) by completion,
+      ff],
+     succeeds member(?x,?l)),
+    succeeds member(?x,[]) => succeeds member(?x,?l)),
+   step([y,l1,l2,l3],
+    [succeeds member(?x,?l1) => succeeds member(?x,?l3),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds member(?x,[?y|?l1]),
+     [def succeeds member(?x,[?y|?l1]) by completion,
+      cases(?x = ?y,
+       [succeeds member(?x,[?x|?l3]),
+        succeeds member(?x,[?y|?l3])],
+       succeeds member(?x,?l1),
+       [succeeds member(?x,?l3),
+        succeeds member(?x,[?y|?l3])],
+       succeeds member(?x,[?y|?l3]))],
+     succeeds member(?x,[?y|?l3])),
+    succeeds member(?x,[?y|?l1]) => succeeds member(?x,[?y|?l3]))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l1),
+  [succeeds member(?x,?l1) => succeeds member(?x,?l3),
+   succeeds member(?x,?l3)],
+  succeeds member(?x,?l3))]
+).
+
+:- lemma(append:member:2,
+all [x,l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l2) 
+ => succeeds member(?x,?l3),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds member(?x,?l2)
+    => succeeds member(?x,?l3)],
+  [step([l],[],[],succeeds member(?x,?l) => succeeds member(?x,?l)),
+   step([y,l1,l2,l3],
+    [succeeds member(?x,?l2) => succeeds member(?x,?l3),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds member(?x,?l2),
+     [succeeds member(?x,?l3),
+      succeeds member(?x,[?y|?l3])],
+     succeeds member(?x,[?y|?l3])),
+    succeeds member(?x,?l2) => succeeds member(?x,[?y|?l3]))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l2),
+  [succeeds member(?x,?l2) => succeeds member(?x,?l3),
+   succeeds member(?x,?l3)],
+  succeeds member(?x,?l3))]
+).
+
+:- corollary(app:member:1,
+all [x,l1,l2]: succeeds member(?x,?l1) & succeeds list(?l1) => 
+ succeeds member(?x,?l1 ** ?l2),
+assume(succeeds member(?x,?l1) & succeeds list(?l1),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds member(?x,?l1 ** ?l2) by lemma(append:member:1)],
+ succeeds member(?x,?l1 ** ?l2))
+).
+
+:- corollary(app:member:2,
+all [x,l1,l2]: succeeds member(?x,?l2) & succeeds list(?l1) => 
+ succeeds member(?x,?l1 ** ?l2),
+assume(succeeds member(?x,?l2) & succeeds list(?l1),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds member(?x,?l1 ** ?l2) by lemma(append:member:2)],
+ succeeds member(?x,?l1 ** ?l2))
+).
+
+:- corollary(append:member,
+all [x,l1,l2,l3]: succeeds append(?l1,[?x|?l2],?l3) => 
+ succeeds member(?x,?l3),
+assume(succeeds append(?l1,[?x|?l2],?l3),
+ [succeeds append(?l1,[?x|?l2],?l3) & succeeds member(?x,[?x|?l2]),
+  succeeds member(?x,?l3) by lemma(append:member:2)],
+ succeeds member(?x,?l3))
+).
+
+:- lemma(append:member:3,
+all [x,l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l3) 
+ => succeeds member(?x,?l1) \/ succeeds member(?x,?l2),
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds member(?x,?l3)
+    => succeeds member(?x,?l1) \/ succeeds member(?x,?l2)],
+  [step([l],
+    [],
+    assume(succeeds member(?x,?l),
+     [],
+     succeeds member(?x,[]) \/ succeeds member(?x,?l)),
+    succeeds member(?x,?l) => succeeds member(?x,[]) \/ 
+    succeeds member(?x,?l)),
+   step([y,l1,l2,l3],
+    [succeeds member(?x,?l3) => succeeds member(?x,?l1) \/ 
+     succeeds member(?x,?l2),
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds member(?x,[?y|?l3]),
+     [def succeeds member(?x,[?y|?l3]) by completion,
+      cases(?x = ?y,
+       [succeeds member(?x,[?x|?l1]),
+        succeeds member(?x,[?y|?l1]),
+        succeeds member(?x,[?y|?l1]) \/ succeeds member(?x,?l2)],
+       succeeds member(?x,?l3),
+       [succeeds member(?x,?l1) \/ succeeds member(?x,?l2),
+        cases(succeeds member(?x,?l1),
+         [],
+         succeeds member(?x,?l2),
+         [],
+         succeeds member(?x,[?y|?l1]) \/ succeeds member(?x,?l2))],
+       succeeds member(?x,[?y|?l1]) \/ succeeds member(?x,?l2))],
+     succeeds member(?x,[?y|?l1]) \/ succeeds member(?x,?l2)),
+    succeeds member(?x,[?y|?l3]) => succeeds member(?x,[?y|?l1]) \/ 
+    succeeds member(?x,?l2))]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds member(?x,?l3),
+  [succeeds member(?x,?l3) => succeeds member(?x,?l1) \/ 
+   succeeds member(?x,?l2),
+   succeeds member(?x,?l1) \/ succeeds member(?x,?l2)],
+  succeeds member(?x,?l1) \/ succeeds member(?x,?l2))]
+).
+
+:- corollary(app:member:3,
+all [x,l1,l2]: succeeds list(?l1) & succeeds member(?x,?l1 ** ?l2) => 
+ succeeds member(?x,?l1) \/ succeeds member(?x,?l2),
+assume(succeeds list(?l1) & succeeds member(?x,?l1 ** ?l2),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds member(?x,?l1) \/ succeeds member(?x,?l2) by 
+   lemma(append:member:3)],
+ succeeds member(?x,?l1) \/ succeeds member(?x,?l2))
+).
+
+:- lemma(sub:app:1,
+all [l1,l2]: succeeds list(?l1) => sub(?l1,?l1 ** ?l2),
+assume(succeeds list(?l1),
+ [assume(succeeds member(?x,?l1),
+   succeeds member(?x,?l1 ** ?l2) by corollary(app:member:1),
+   succeeds member(?x,?l1 ** ?l2)),
+  sub(?l1,?l1 ** ?l2) by introduction(sub,2)],
+ sub(?l1,?l1 ** ?l2))
+).
+
+:- lemma(sub:app:2,
+all [l1,l2]: succeeds list(?l1) => sub(?l2,?l1 ** ?l2),
+assume(succeeds list(?l1),
+ [assume(succeeds member(?x,?l2),
+   succeeds member(?x,?l1 ** ?l2) by corollary(app:member:2),
+   succeeds member(?x,?l1 ** ?l2)),
+  sub(?l2,?l1 ** ?l2) by introduction(sub,2)],
+ sub(?l2,?l1 ** ?l2))
+).
+
+:- lemma(append:cons:different,
+all [x,l1,l2,l3]: succeeds append(?l1,?l2,?l3) & succeeds list(?l3) => 
+ ?l2 <> [?x|?l3],
+assume(succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+ [succeeds lh(?l2) @=< lh(?l3) by corollary(append:lh:leq:second),
+  contra(?l2 = [?x|?l3],
+   [succeeds lh([?x|?l3]) @=< lh(?l3),
+    lh([?x|?l3]) = s(lh(?l3)) by corollary(lh:cons),
+    succeeds s(lh(?l3)) @=< lh(?l3),
+    succeeds nat(lh(?l3)) by corollary(lh:types),
+    fails s(lh(?l3)) @=< lh(?l3) by lemma(leq:one:failure),
+    ff]),
+  ?l2 <> [?x|?l3]],
+ ?l2 <> [?x|?l3])
+).
+
+:- lemma(append:equal:nil,
+all [l1,l2]: succeeds append(?l1,?l2,?l2) & succeeds list(?l2) => ?l1 = [],
+assume(succeeds append(?l1,?l2,?l2) & succeeds list(?l2),
+ [def succeeds append(?l1,?l2,?l2) by completion,
+  cases(?l1 = [],
+   [],
+   ex [x,l3,l4]: ?l1 = [?x|?l3] & ?l2 = [?x|?l4] & 
+    succeeds append(?l3,[?x|?l4],?l4),
+   exist([x,l3,l4],
+    ?l1 = [?x|?l3] & ?l2 = [?x|?l4] & succeeds append(?l3,[?x|?l4],?l4),
+    [succeeds list([?x|?l4]),
+     succeeds list(?l4) by lemma(list:cons),
+     succeeds append(?l3,[?x|?l4],?l4) & succeeds list(?l4),
+     [?x|?l4] <> [?x|?l4] by lemma(append:cons:different),
+     ff],
+    ?l1 = []),
+   ?l1 = [])],
+ ?l1 = [])
+).
+
+:- lemma(append:uniqueness:1,
+all [l1,l2,l3,l4]: succeeds append(?l1,?l2,?l3) & 
+ succeeds append(?l4,?l2,?l3) & succeeds list(?l3) => ?l1 = ?l4,
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => 
+    (all l4: succeeds append(?l4,?l2,?l3) & succeeds list(?l3) => 
+      ?l1 = ?l4)],
+  [step([l],
+    [],
+    assume(succeeds append(?l4,?l,?l) & succeeds list(?l),
+     [?l4 = [] by lemma(append:equal:nil),
+      [] = ?l4],
+     [] = ?l4),
+    all l4: succeeds append(?l4,?l,?l) & succeeds list(?l) => [] = ?l4),
+   step([x,l1,l2,l3],
+    [all l4: succeeds append(?l4,?l2,?l3) & succeeds list(?l3) => 
+      ?l1 = ?l4,
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds append(?l4,?l2,[?x|?l3]) & succeeds list([?x|?l3]),
+     [succeeds list(?l3) by lemma(list:cons),
+      def succeeds append(?l4,?l2,[?x|?l3]) by completion,
+      cases(?l4 = [] & ?l2 = [?x|?l3],
+       [succeeds append(?l1,?l2,?l3) & succeeds list(?l3),
+        ?l2 <> [?x|?l3] by lemma(append:cons:different),
+        ff],
+       ex l5: ?l4 = [?x|?l5] & succeeds append(?l5,?l2,?l3),
+       exist(l5,
+        ?l4 = [?x|?l5] & succeeds append(?l5,?l2,?l3),
+        [succeeds append(?l5,?l2,?l3) & succeeds list(?l3),
+         ?l1 = ?l5,
+         [?x|?l1] = ?l4],
+        [?x|?l1] = ?l4),
+       [?x|?l1] = ?l4)],
+     [?x|?l1] = ?l4),
+    all l4: succeeds append(?l4,?l2,[?x|?l3]) & succeeds list([?x|?l3]) =>
+     [?x|?l1] = ?l4)]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds append(?l4,?l2,?l3) & 
+  succeeds list(?l3),
+  [all l4: succeeds append(?l4,?l2,?l3) & succeeds list(?l3) => ?l1 = ?l4,
+   succeeds append(?l4,?l2,?l3) & succeeds list(?l3) => ?l1 = ?l4,
+   ?l1 = ?l4],
+  ?l1 = ?l4)]
+).
+
+:- corollary(app:uniqueness:1,
+all [l1,l2,l3]: succeeds list(?l1) & succeeds list(?l2) & 
+ succeeds list(?l3) & ?l1 ** ?l3 = ?l2 ** ?l3 => ?l1 = ?l2,
+assume(succeeds list(?l1) & succeeds list(?l2) & succeeds list(?l3) & 
+ ?l1 ** ?l3 = ?l2 ** ?l3,
+ [succeeds append(?l1,?l3,?l1 ** ?l3) by existence(**,2),
+  succeeds append(?l2,?l3,?l2 ** ?l3) by existence(**,2),
+  succeeds append(?l2,?l3,?l1 ** ?l3),
+  succeeds list(?l1 ** ?l3) by lemma(append:types:2),
+  ?l1 = ?l2 by lemma(append:uniqueness:1)],
+ ?l1 = ?l2)
+).
+
+:- lemma(append:uniqueness:2,
+all [l1,l2,l3,l4]: succeeds append(?l1,?l2,?l3) & 
+ succeeds append(?l1,?l4,?l3) => ?l2 = ?l4,
+[induction(
+  [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => 
+    (all l4: succeeds append(?l1,?l4,?l3) => ?l2 = ?l4)],
+  [step([l],
+    [],
+    assume(succeeds append([],?l4,?l),
+     [def succeeds append([],?l4,?l) by completion,
+      ?l = ?l4],
+     ?l = ?l4),
+    all l4: succeeds append([],?l4,?l) => ?l = ?l4),
+   step([x,l1,l2,l3],
+    [all l4: succeeds append(?l1,?l4,?l3) => ?l2 = ?l4,
+     succeeds append(?l1,?l2,?l3)],
+    assume(succeeds append([?x|?l1],?l4,[?x|?l3]),
+     [def succeeds append([?x|?l1],?l4,[?x|?l3]) by completion,
+      succeeds append(?l1,?l4,?l3),
+      ?l2 = ?l4],
+     ?l2 = ?l4),
+    all l4: succeeds append([?x|?l1],?l4,[?x|?l3]) => ?l2 = ?l4)]),
+ assume(succeeds append(?l1,?l2,?l3) & succeeds append(?l1,?l4,?l3),
+  [all l4: succeeds append(?l1,?l4,?l3) => ?l2 = ?l4,
+   succeeds append(?l1,?l4,?l3) => ?l2 = ?l4,
+   ?l2 = ?l4],
+  ?l2 = ?l4)]
+).
+
+:- lemma(nat_list:list,
+all l: succeeds nat_list(?l) => succeeds list(?l),
+induction([all l: succeeds nat_list(?l) => succeeds list(?l)],
+ [step([],[],[],succeeds list([])),
+  step([x,l],
+   [succeeds list(?l),
+    succeeds nat(?x),
+    succeeds nat_list(?l)],
+   [],
+   succeeds list([?x|?l]))])
+).
+
+:- lemma(nat_list:termination,
+all l: succeeds nat_list(?l) => terminates nat_list(?l),
+induction([all l: succeeds nat_list(?l) => terminates nat_list(?l)],
+ [step([],
+   [],
+   terminates nat_list([]) by completion,
+   terminates nat_list([])),
+  step([x,l],
+   [terminates nat_list(?l),
+    succeeds nat(?x),
+    succeeds nat_list(?l)],
+   [terminates nat(?x) by lemma(nat:termination),
+    terminates (nat(?x) & nat_list(?l)),
+    terminates nat_list([?x|?l]) by completion],
+   terminates nat_list([?x|?l]))])
+).
+
+:- lemma(nat_list:ground,
+all x: succeeds nat_list(?x) => gr(?x),
+induction([all x: succeeds nat_list(?x) => gr(?x)],
+ [step([],[],[],gr([])),
+  step([x,l],
+   [gr(?l),
+    succeeds nat(?x),
+    succeeds nat_list(?l)],
+   [gr(?x) by lemma(nat:ground),
+    gr([?x|?l])],
+   gr([?x|?l]))])
+).
+
+:- lemma(lh:cons:first,
+all [x,l1,l2,n]: succeeds list(?l1) & succeeds list(?l2) &
+ succeeds lh([?x|?l1]) @+ lh(?l2) @< s(?n) =>
+  succeeds lh(?l1) @+ lh(?l2) @< ?n,
+assume(succeeds list(?l1) & succeeds list(?l2) &
+ succeeds lh([?x|?l1]) @+ lh(?l2) @< s(?n),
+ [lh([?x|?l1]) = s(lh(?l1)) by corollary(lh:cons),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  s(lh(?l1)) @+ lh(?l2) = s(lh(?l1) @+ lh(?l2)) by 
+   corollary(plus:successor),
+  lh([?x|?l1]) @+ lh(?l2) = s(lh(?l1)) @+ lh(?l2) =
+  s(lh(?l1) @+ lh(?l2)),
+  def  succeeds s(lh(?l1) @+ lh(?l2)) @< s(?n) by completion,
+  succeeds lh(?l1) @+ lh(?l2) @< ?n],
+ succeeds lh(?l1) @+ lh(?l2) @< ?n)
+).
+
+:- lemma(lh:cons:second,
+all [l1,y,l2,n]: succeeds list(?l1) & succeeds list(?l2) &
+ succeeds lh(?l1) @+ lh([?y|?l2]) @< s(?n) =>
+  succeeds lh(?l1) @+ lh(?l2) @< ?n,
+assume(succeeds list(?l1) & succeeds list(?l2) &
+ succeeds lh(?l1) @+ lh([?y|?l2]) @< s(?n),
+ [succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  lh([?y|?l2]) = s(lh(?l2)) by corollary(lh:cons),
+  lh(?l1) @+ lh([?y|?l2]) = lh([?y|?l2]) @+ lh(?l1) by 
+   theorem(plus:commutative),
+  s(lh(?l2)) @+ lh(?l1) = s(lh(?l2) @+ lh(?l1)) by 
+   corollary(plus:successor),
+  lh(?l1) @+ lh([?y|?l2]) = lh([?y|?l2]) @+ lh(?l1) =
+  s(lh(?l2)) @+ lh(?l1) = s(lh(?l2) @+ lh(?l1)),
+  def succeeds s(lh(?l2) @+ lh(?l1)) @< s(?n) by completion,
+  lh(?l2) @+ lh(?l1) = lh(?l1) @+ lh(?l2) by theorem(plus:commutative),
+  succeeds lh(?l1) @+ lh(?l2) @< ?n],
+ succeeds lh(?l1) @+ lh(?l2) @< ?n)
+).
+
+:- lemma(delete:termination:1,
+all [x,l1,l2]: succeeds list(?l1) => terminates delete(?x,?l1,?l2),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    (all [x,l2]: terminates delete(?x,?l1,?l2))],
+  [step([],
+    [],
+    terminates delete(?x,[],?l2) by completion,
+    all [x,l2]: terminates delete(?x,[],?l2)),
+   step([y,l1],
+    [all [x,l2]: terminates delete(?x,?l1,?l2),
+     succeeds list(?l1)],
+    [?l2 = [?y|?l3] => terminates delete(?x,?l1,?l3),
+     all l3: ?l2 = [?y|?l3] => terminates delete(?x,?l1,?l3),
+     terminates delete(?x,[?y|?l1],?l2) by completion],
+    all [x,l2]: terminates delete(?x,[?y|?l1],?l2))]),
+ assume(succeeds list(?l1),
+  [all [x,l2]: terminates delete(?x,?l1,?l2),
+   terminates delete(?x,?l1,?l2)],
+  terminates delete(?x,?l1,?l2))]
+).
+
+:- lemma(delete:termination:2,
+all [x,l1,l2]: succeeds list(?l2) => terminates delete(?x,?l1,?l2),
+[induction(
+  [all l2: succeeds list(?l2) => 
+    (all [x,l1]: terminates delete(?x,?l1,?l2))],
+  [step([],
+    [],
+    terminates delete(?x,?l1,[]) by completion,
+    all [x,l1]: terminates delete(?x,?l1,[])),
+   step([y,l2],
+    [all [x,l1]: terminates delete(?x,?l1,?l2),
+     succeeds list(?l2)],
+    [?l1 = [?y|?l3] => terminates delete(?x,?l3,?l2),
+     all l3: ?l1 = [?y|?l3] => terminates delete(?x,?l3,?l2),
+     terminates delete(?x,?l1,[?y|?l2]) by completion],
+    all [x,l1]: terminates delete(?x,?l1,[?y|?l2]))]),
+ assume(succeeds list(?l2),
+  [all [x,l1]: terminates delete(?x,?l1,?l2),
+   terminates delete(?x,?l1,?l2)],
+  terminates delete(?x,?l1,?l2))]
+).
+
+:- lemma(delete:types:1,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds list(?l1) => 
+ succeeds list(?l2),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds list(?l1) => 
+    succeeds list(?l2)],
+  [step([x,l],
+    [],
+    assume(succeeds list([?x|?l]),
+     [def succeeds list([?x|?l]) by completion,
+      succeeds list(?l)],
+     succeeds list(?l)),
+    succeeds list([?x|?l]) => succeeds list(?l)),
+   step([x,y,l1,l2],
+    [succeeds list(?l1) => succeeds list(?l2),
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds list([?y|?l1]),
+     [def succeeds list([?y|?l1]) by completion,
+      succeeds list(?l1),
+      succeeds list(?l2),
+      succeeds list([?y|?l2])],
+     succeeds list([?y|?l2])),
+    succeeds list([?y|?l1]) => succeeds list([?y|?l2]))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds list(?l1),
+  [succeeds list(?l1) => succeeds list(?l2),
+   succeeds list(?l2)],
+  succeeds list(?l2))]
+).
+
+:- lemma(delete:types:2,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds list(?l2) => 
+ succeeds list(?l1),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds list(?l2) => 
+    succeeds list(?l1)],
+  [step([x,l],
+    [],
+    assume(succeeds list(?l),
+     [],
+     succeeds list([?x|?l])),
+    succeeds list(?l) => succeeds list([?x|?l])),
+   step([x,y,l1,l3],
+    [succeeds list(?l3) => succeeds list(?l1),
+     succeeds delete(?x,?l1,?l3)],
+    assume(succeeds list([?y|?l3]),
+     [def succeeds list([?y|?l3]) by completion,
+      succeeds list(?l3),
+      succeeds list(?l1),
+      succeeds list([?y|?l1])],
+     succeeds list([?y|?l1])),
+    succeeds list([?y|?l3]) => succeeds list([?y|?l1]))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds list(?l2),
+  [succeeds list(?l2) => succeeds list(?l1),
+   succeeds list(?l1)],
+  succeeds list(?l1))]
+).
+
+:- theorem(delete:length,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds list(?l1) => 
+ lh(?l1) = s(lh(?l2)),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds list(?l1) => 
+    lh(?l1) = s(lh(?l2))],
+  [step([x,l],
+    [],
+    assume(succeeds list([?x|?l]),
+     [def succeeds list([?x|?l]) by completion,
+      succeeds list(?l),
+      lh([?x|?l]) = s(lh(?l)) by corollary(lh:cons)],
+     lh([?x|?l]) = s(lh(?l))),
+    succeeds list([?x|?l]) => lh([?x|?l]) = s(lh(?l))),
+   step([x,y,l1,l2],
+    [succeeds list(?l1) => lh(?l1) = s(lh(?l2)),
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds list([?y|?l1]),
+     [def succeeds list([?y|?l1]) by completion,
+      succeeds list(?l1),
+      lh(?l1) = s(lh(?l2)),
+      lh([?y|?l1]) = s(lh(?l1)) by corollary(lh:cons),
+      succeeds list(?l2) by lemma(delete:types:1),
+      lh([?y|?l2]) = s(lh(?l2)) by corollary(lh:cons),
+      lh([?y|?l1]) = s(lh(?l1)) = s(s(lh(?l2))) = s(lh([?y|?l2]))],
+     lh([?y|?l1]) = s(lh([?y|?l2]))),
+    succeeds list([?y|?l1]) => lh([?y|?l1]) = s(lh([?y|?l2])))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds list(?l1),
+  [succeeds list(?l1) => lh(?l1) = s(lh(?l2)),
+   lh(?l1) = s(lh(?l2))],
+  lh(?l1) = s(lh(?l2)))]
+).
+
+:- theorem(delete:app:1,
+all [x,l1,l2]: succeeds list(?l1) => 
+ succeeds delete(?x,?l1 ** [?x|?l2],?l1 ** ?l2),
+[induction(
+  [all l1: succeeds list(?l1) => 
+    succeeds delete(?x,?l1 ** [?x|?l2],?l1 ** ?l2)],
+  [step([],
+    [],
+    [[] ** [?x|?l2] = [?x|?l2] by corollary(app:nil),
+     [] ** ?l2 = ?l2 by corollary(app:nil),
+     succeeds delete(?x,[?x|?l2],?l2),
+     succeeds delete(?x,[] ** [?x|?l2],[] ** ?l2)],
+    succeeds delete(?x,[] ** [?x|?l2],[] ** ?l2)),
+   step([y,l1],
+    [succeeds delete(?x,?l1 ** [?x|?l2],?l1 ** ?l2),
+     succeeds list(?l1)],
+    [[?y|?l1] ** [?x|?l2] = [?y|?l1 ** [?x|?l2]] by corollary(app:cons),
+     [?y|?l1] ** ?l2 = [?y|?l1 ** ?l2] by corollary(app:cons),
+     succeeds delete(?x,[?y|?l1 ** [?x|?l2]],[?y|?l1 ** ?l2]),
+     succeeds delete(?x,[?y|?l1] ** [?x|?l2],[?y|?l1] ** ?l2)],
+    succeeds delete(?x,[?y|?l1] ** [?x|?l2],[?y|?l1] ** ?l2))]),
+ assume(succeeds list(?l1),
+  succeeds delete(?x,?l1 ** [?x|?l2],?l1 ** ?l2),
+  succeeds delete(?x,?l1 ** [?x|?l2],?l1 ** ?l2))]
+).
+
+:- theorem(delete:app:2,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => 
+ (ex [l3,l4]: succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & 
+   ?l2 = ?l3 ** ?l4),
+induction(
+ [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => 
+   (ex [l3,l4]: succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & 
+     ?l2 = ?l3 ** ?l4)],
+ [step([x,l],
+   [],
+   [[] ** [?x|?l] = [?x|?l] by corollary(app:nil),
+    [] ** ?l = ?l by corollary(app:nil),
+    succeeds list([]) & [?x|?l] = [] ** [?x|?l] & ?l = [] ** ?l,
+    ex [l3,l4]: succeeds list(?l3) & [?x|?l] = ?l3 ** [?x|?l4] & 
+     ?l = ?l3 ** ?l4],
+   ex [l3,l4]: succeeds list(?l3) & [?x|?l] = ?l3 ** [?x|?l4] & 
+    ?l = ?l3 ** ?l4),
+  step([x,y,l1,l2],
+   [ex [l3,l4]: succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & 
+     ?l2 = ?l3 ** ?l4,
+    succeeds delete(?x,?l1,?l2)],
+   exist([l3,l4],
+    succeeds list(?l3) & ?l1 = ?l3 ** [?x|?l4] & ?l2 = ?l3 ** ?l4,
+    [[?y|?l3] ** [?x|?l4] = [?y|?l3 ** [?x|?l4]] by corollary(app:cons),
+     [?y|?l3] ** ?l4 = [?y|?l3 ** ?l4] by corollary(app:cons),
+     [?y|?l1] = [?y|?l3 ** [?x|?l4]] = [?y|?l3] ** [?x|?l4],
+     [?y|?l2] = [?y|?l3 ** ?l4] = [?y|?l3] ** ?l4,
+     succeeds list([?y|?l3]) & [?y|?l1] = [?y|?l3] ** [?x|?l4] & 
+     [?y|?l2] = [?y|?l3] ** ?l4,
+     ex [l3,l4]: succeeds list(?l3) & [?y|?l1] = ?l3 ** [?x|?l4] & 
+      [?y|?l2] = ?l3 ** ?l4],
+    ex [l3,l4]: succeeds list(?l3) & [?y|?l1] = ?l3 ** [?x|?l4] & 
+     [?y|?l2] = ?l3 ** ?l4),
+   ex [l3,l4]: succeeds list(?l3) & [?y|?l1] = ?l3 ** [?x|?l4] & 
+    [?y|?l2] = ?l3 ** ?l4)])
+).
+
+:- lemma(delete:nat_list,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds nat_list(?l1) => 
+ succeeds nat(?x) & succeeds nat_list(?l2),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds nat_list(?l1) =>
+    succeeds nat(?x) & succeeds nat_list(?l2)],
+  [step([x,l],
+    [],
+    assume(succeeds nat_list([?x|?l]),
+     [def succeeds nat_list([?x|?l]) by completion,
+      succeeds nat(?x) & succeeds nat_list(?l)],
+     succeeds nat(?x) & succeeds nat_list(?l)),
+    succeeds nat_list([?x|?l]) => succeeds nat(?x) & succeeds nat_list(?l)),
+   step([x,y,l1,l2],
+    [succeeds nat_list(?l1) => succeeds nat(?x) & succeeds nat_list(?l2),
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds nat_list([?y|?l1]),
+     [def succeeds nat_list([?y|?l1]) by completion,
+      succeeds nat(?y) & succeeds nat_list(?l1),
+      succeeds nat(?x) & succeeds nat_list(?l2),
+      succeeds nat_list([?y|?l2])],
+     succeeds nat(?x) & succeeds nat_list([?y|?l2])),
+    succeeds nat_list([?y|?l1]) => succeeds nat(?x) & 
+    succeeds nat_list([?y|?l2]))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds nat_list(?l1),
+  [succeeds nat_list(?l1) => succeeds nat(?x) & succeeds nat_list(?l2),
+   succeeds nat(?x) & succeeds nat_list(?l2)],
+  succeeds nat(?x) & succeeds nat_list(?l2))]
+).
+
+:- lemma(delete:ground,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) & gr(?l1) => gr(?x) & gr(?l2),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => gr(?l1) => gr(?x) & 
+    gr(?l2)],
+  [step([x,l],
+    [],
+    assume(gr([?x|?l]),
+     [],
+     gr(?x) & gr(?l)),
+    gr([?x|?l]) => gr(?x) & gr(?l)),
+   step([x,y,l1,l2],
+    [gr(?l1) => gr(?x) & gr(?l2),
+     succeeds delete(?x,?l1,?l2)],
+    assume(gr([?y|?l1]),
+     [gr(?x) & gr(?l2),
+      gr(?x),
+      gr([?y|?l2])],
+     gr(?x) & gr([?y|?l2])),
+    gr([?y|?l1]) => gr(?x) & gr([?y|?l2]))]),
+ assume(succeeds delete(?x,?l1,?l2) & gr(?l1),
+  [gr(?l1) => gr(?x) & gr(?l2),
+   gr(?l1) => gr(?x) & gr(?l2),
+   gr(?x) & gr(?l2)],
+  gr(?x) & gr(?l2))]
+).
+
+:- lemma(delete:member:1,
+all [x,y,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l1) =>
+  succeeds member(?y,?l2) \/ ?y = ?x,
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => 
+     (all y: succeeds member(?y,?l1) => succeeds member(?y,?l2) \/ ?y = ?x)],
+  [step([x,l],
+    [],
+    assume(succeeds member(?y,[?x|?l]),
+     [def succeeds member(?y,[?x|?l]) by completion,
+      cases(?y = ?x,
+       [],
+       succeeds member(?y,?l),
+       [],
+       succeeds member(?y,?l) \/ ?y = ?x)],
+     succeeds member(?y,?l) \/ ?y = ?x),
+    all y: succeeds member(?y,[?x|?l]) => succeeds member(?y,?l) \/ ?y = ?x),
+   step([x,y,l1,l2],
+    [all y: succeeds member(?y,?l1) => succeeds member(?y,?l2) \/ ?y = ?x,
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds member(?z,[?y|?l1]),
+     [def succeeds member(?z,[?y|?l1]) by completion,
+      cases(?z = ?y,
+       [],
+       succeeds member(?z,?l1),
+       [succeeds member(?z,?l2) \/ ?z = ?x,
+	cases(succeeds member(?z,?l2),
+         [],
+         ?z = ?x,
+         [],
+         succeeds member(?z,[?y|?l2]) \/ ?z = ?x)],
+       succeeds member(?z,[?y|?l2]) \/ ?z = ?x)],
+     succeeds member(?z,[?y|?l2]) \/ ?z = ?x),
+    all z: succeeds member(?z,[?y|?l1]) => succeeds member(?z,[?y|?l2]) \/
+      ?z = ?x)]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l1),
+  [all y: succeeds member(?y,?l1) => succeeds member(?y,?l2) \/ ?y = ?x,
+   succeeds member(?y,?l1) => succeeds member(?y,?l2) \/ ?y = ?x,
+   succeeds member(?y,?l2) \/ ?y = ?x],
+  succeeds member(?y,?l2) \/ ?y = ?x)]
+).
+
+:- lemma(delete:member:2,
+all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds member(?x,?l1),
+induction(
+ [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds member(?x,?l1)],
+ [step([x,l],[],[],succeeds member(?x,[?x|?l])),
+  step([x,y,l1,l2],
+   [succeeds member(?x,?l1),
+    succeeds delete(?x,?l1,?l2)],
+   [],
+   succeeds member(?x,[?y|?l1]))])
+).
+
+:- lemma(delete:member:3,
+all [x,y,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l2) =>
+  succeeds member(?y,?l1),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => 
+     (all y: succeeds member(?y,?l2) => succeeds member(?y,?l1))],
+  [step([x,l],
+    [],
+    assume(succeeds member(?y,?l),
+     [],
+     succeeds member(?y,[?x|?l])),
+    all y: succeeds member(?y,?l) => succeeds member(?y,[?x|?l])),
+   step([x,y,l1,l2],
+    [all y: succeeds member(?y,?l2) => succeeds member(?y,?l1),
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds member(?z,[?y|?l2]),
+     [def succeeds member(?z,[?y|?l2]) by completion,
+      cases(?z = ?y,
+       [],
+       succeeds member(?z,?l2),
+       [],
+       succeeds member(?z,[?y|?l1]))],
+     succeeds member(?z,[?y|?l1])),
+    all z: succeeds member(?z,[?y|?l2]) => succeeds member(?z,[?y|?l1]))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l2),
+  [all y: succeeds member(?y,?l2) => succeeds member(?y,?l1),
+   succeeds member(?y,?l2) => succeeds member(?y,?l1),
+   succeeds member(?y,?l1)],
+  succeeds member(?y,?l1))]
+).
+
+:- lemma(delete:member:existence,
+all [x,l1]: succeeds member(?x,?l1) =>
+  (ex l2: succeeds delete(?x,?l1,?l2)),
+induction(
+ [all [x,l1]: succeeds member(?x,?l1) => 
+    (ex l2: succeeds delete(?x,?l1,?l2))],
+ [step([x,l],
+   [],
+   [succeeds delete(?x,[?x|?l],?l) by sld,
+    ex l2: succeeds delete(?x,[?x|?l],?l2)],
+   ex l2: succeeds delete(?x,[?x|?l],?l2)),
+  step([x,y,l],
+   [ex l2: succeeds delete(?x,?l,?l2),
+    succeeds member(?x,?l)],
+   exist(l2,
+    succeeds delete(?x,?l,?l2),
+    [succeeds delete(?x,[?y|?l],[?y|?l2]) by sld,
+     ex l2: succeeds delete(?x,[?y|?l],?l2)],
+    ex l2: succeeds delete(?x,[?y|?l],?l2)),
+   ex l2: succeeds delete(?x,[?y|?l],?l2))])
+).
+
+:- lemma(delete:member:different,
+all [x,y,l1,l2]: succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l1) &
+ ?x <> ?y => succeeds member(?y,?l2),
+assume(succeeds delete(?x,?l1,?l2) & succeeds member(?y,?l1) & ?x <> ?y,
+ [succeeds member(?y,?l2) \/ ?y = ?x by lemma(delete:member:1),
+  cases(succeeds member(?y,?l2),
+   [],
+   ?y = ?x,
+   [?x = ?y,
+    ff],
+   succeeds member(?y,?l2))],
+ succeeds member(?y,?l2))
+).
+
+:- bye(list).
