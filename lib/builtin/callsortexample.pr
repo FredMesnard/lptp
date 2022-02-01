@@ -1,0 +1,550 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Sun Feb 25 17:05:37 1996 */
+/* Filename: callsortexample.pr */
+
+:- initialize.
+
+:- tex_file($(tmp)/callsortexample).
+:- thm_file($(tmp)/callsortexample).
+
+:- needs_gr($(lib)/nat/nat).
+:- needs_thm($(lib)/nat/nat).
+
+:- needs_thm($(lib)/builtin/integeraxioms).
+
+:- needs_gr($(lib)/builtin/callsort).
+:- needs_thm($(lib)/builtin/callsort).
+
+:- lemma(call:nat:leq:terminating,
+terminating(nat,@=<),
+[assume(succeeds call(nat,?x) & succeeds call(nat,?y) & gr(?x) & gr(?y),
+  [def succeeds call(nat,?x) by builtin,
+   def succeeds call(nat,?y) by builtin,
+   terminates ?x @=< ?y by lemma(leq:termination:1),
+   terminates call(@=<,?x,?y) by builtin],
+  terminates call(@=<,?x,?y)),
+ terminating(nat,@=<) by introduction(terminating,2)]
+).
+
+:- lemma(call:nat:leq:total,
+total(nat,@=<),
+[assume(succeeds call(nat,?x) & succeeds call(nat,?y) & gr(?x) & gr(?y),
+  [def succeeds call(nat,?x) by builtin,
+   def succeeds call(nat,?y) by builtin,
+   succeeds ?x @=< ?y \/ succeeds ?y @=< ?x by theorem(leq:totality),
+   cases(succeeds ?x @=< ?y,
+    [succeeds call(@=<,?x,?y) by builtin],
+    succeeds ?y @=< ?x,
+    [succeeds call(@=<,?y,?x) by builtin],
+    succeeds call(@=<,?x,?y) \/ ?x = ?y \/ succeeds call(@=<,?y,?x))],
+  succeeds call(@=<,?x,?y) \/ ?x = ?y \/ succeeds call(@=<,?y,?x)),
+ total(nat,@=<) by introduction(total,2)]
+).
+
+:- lemma(d_list:ground,
+all [l,d]: succeeds d_list(?l,?d) & 
+ (all x: succeeds call(?d,?x) => gr(?x)) => gr(?l),
+[induction(
+  [all [l,d]: succeeds d_list(?l,?d) => 
+    (all x: succeeds call(?d,?x) => gr(?x)) => gr(?l)],
+  [step([d],[],[],(all x: succeeds call(?d,?x) => gr(?x)) => gr([])),
+   step([x,l,d],
+    [(all x: succeeds call(?d,?x) => gr(?x)) => gr(?l),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(all 0: succeeds call(?d,?0) => gr(?0),
+     [],
+     gr([?x|?l])),
+    (all 0: succeeds call(?d,?0) => gr(?0)) => gr([?x|?l]))]),
+ assume(succeeds d_list(?l,?d) & (all x: succeeds call(?d,?x) => gr(?x)),
+  [(all x: succeeds call(?d,?x) => gr(?x)) => gr(?l),
+   (all x: succeeds call(?d,?x) => gr(?x)) => gr(?l),
+   gr(?l)],
+  gr(?l))]
+).
+
+:- corollary(d_list:nat:ground,
+all l: succeeds d_list(?l,nat) => gr(?l),
+assume(succeeds d_list(?l,nat),
+ [assume(succeeds call(nat,?x),
+   [def succeeds call(nat,?x) by builtin,
+    gr(?x) by lemma(nat:ground)],
+   gr(?x)),
+  all x: succeeds call(nat,?x) => gr(?x),
+  gr(?l) by lemma(d_list:ground)],
+ gr(?l))
+).
+
+:- corollary(permutation_sort:nat:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates permutation_sort(?l1,?l2,@=<),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@=<) by lemma(call:nat:leq:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  terminates permutation_sort(?l1,?l2,@=<) by 
+   theorem(permutation_sort:termination)],
+ terminates permutation_sort(?l1,?l2,@=<))
+).
+
+:- corollary(insert_sort:nat:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates insert_sort(?l1,?l2,@=<),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@=<) by lemma(call:nat:leq:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  gr(@=<),
+  terminates insert_sort(?l1,?l2,@=<) by 
+   theorem(insert_sort:termination)],
+ terminates insert_sort(?l1,?l2,@=<))
+).
+
+:- corollary(insert_sort:nat:leq:permutation_sort,
+all [l1,l2]: succeeds d_list(?l1,nat) & succeeds insert_sort(?l1,?l2,@=<)
+ => succeeds permutation_sort(?l1,?l2,@=<),
+assume(succeeds d_list(?l1,nat) & succeeds insert_sort(?l1,?l2,@=<),
+ [total(nat,@=<) by lemma(call:nat:leq:total),
+  gr(?l1) by corollary(d_list:nat:ground),
+  succeeds permutation_sort(?l1,?l2,@=<) by 
+   theorem(insert_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,@=<))
+).
+
+:- corollary(insert_sort:nat:leq:existence,
+all l1: succeeds d_list(?l1,nat) => 
+ (ex l2: succeeds insert_sort(?l1,?l2,@=<)),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@=<) by lemma(call:nat:leq:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  ex l2: succeeds insert_sort(?l1,?l2,@=<) by 
+   theorem(insert_sort:existence)],
+ ex l2: succeeds insert_sort(?l1,?l2,@=<))
+).
+
+:- corollary(insert_sort:nat:leq:uniqueness,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,@=<) & 
+ succeeds insert_sort(?l1,?l3,@=<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,@=<) & 
+ succeeds insert_sort(?l1,?l3,@=<) => ?l2 = ?l3 by 
+ theorem(insert_sort:uniqueness)
+).
+
+:- corollary(quick_sort:nat:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates quick_sort(?l1,?l2,@=<),
+assume(succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  terminating(nat,@=<) by lemma(call:nat:leq:terminating),
+  gr(@=<),
+  terminates quick_sort(?l1,?l2,@=<) by theorem(quick_sort:termination)],
+ terminates quick_sort(?l1,?l2,@=<))
+).
+
+:- corollary(quick_sort:nat:leq:permutation_sort,
+all [l1,l2]: succeeds quick_sort(?l1,?l2,@=<) & succeeds d_list(?l1,nat) 
+ => succeeds permutation_sort(?l1,?l2,@=<),
+assume(succeeds quick_sort(?l1,?l2,@=<) & succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  total(nat,@=<) by lemma(call:nat:leq:total),
+  succeeds permutation_sort(?l1,?l2,@=<) by 
+   theorem(quick_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,@=<))
+).
+
+:- corollary(quick_sort:nat:leq:existence,
+all l1: succeeds d_list(?l1,nat) => 
+ (ex l2: succeeds quick_sort(?l1,?l2,@=<)),
+assume(succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  terminating(nat,@=<) by lemma(call:nat:leq:terminating),
+  ex l2: succeeds quick_sort(?l1,?l2,@=<) by 
+   theorem(quick_sort:existence)],
+ ex l2: succeeds quick_sort(?l1,?l2,@=<))
+).
+
+:- corollary(quick_sort:nat:leq:uniqueness,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,@=<) & 
+ succeeds quick_sort(?l1,?l3,@=<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,@=<) & 
+ succeeds quick_sort(?l1,?l3,@=<) => ?l2 = ?l3 by 
+ theorem(quick_sort:uniqueness)
+).
+
+:- lemma(call:nat:less:terminating,
+terminating(nat,@<),
+[assume(succeeds call(nat,?x) & succeeds call(nat,?y) & gr(?x) & gr(?y),
+  [def succeeds call(nat,?x) by builtin,
+   def succeeds call(nat,?y) by builtin,
+   terminates ?x @< ?y by lemma(less:termination:1),
+   terminates call(@<,?x,?y) by builtin],
+  terminates call(@<,?x,?y)),
+ terminating(nat,@<) by introduction(terminating,2)]
+).
+
+:- lemma(call:nat:less:total,
+total(nat,@<),
+[assume(succeeds call(nat,?x) & succeeds call(nat,?y) & gr(?x) & gr(?y),
+  [def succeeds call(nat,?x) by builtin,
+   def succeeds call(nat,?y) by builtin,
+   succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x by 
+    theorem(less:totality),
+   cases(
+    [case(succeeds ?x @< ?y,[succeeds call(@<,?x,?y) by builtin]),
+     case(?x = ?y,
+      []),
+     case(succeeds ?y @< ?x,
+      [succeeds call(@<,?y,?x) by builtin])],
+    succeeds call(@<,?x,?y) \/ ?x = ?y \/ succeeds call(@<,?y,?x))],
+  succeeds call(@<,?x,?y) \/ ?x = ?y \/ succeeds call(@<,?y,?x)),
+ total(nat,@<) by introduction(total,2)]
+).
+
+:- corollary(permutation_sort:nat:less:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates permutation_sort(?l1,?l2,@<),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@<) by lemma(call:nat:less:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  terminates permutation_sort(?l1,?l2,@<) by 
+   theorem(permutation_sort:termination)],
+ terminates permutation_sort(?l1,?l2,@<))
+).
+
+:- corollary(insert_sort:nat:less:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates insert_sort(?l1,?l2,@<),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@<) by lemma(call:nat:less:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  gr(@<),
+  terminates insert_sort(?l1,?l2,@<) by theorem(insert_sort:termination)],
+ terminates insert_sort(?l1,?l2,@<))
+).
+
+:- corollary(insert_sort:nat:less:permutation_sort,
+all [l1,l2]: succeeds d_list(?l1,nat) & succeeds insert_sort(?l1,?l2,@<) 
+ => succeeds permutation_sort(?l1,?l2,@<),
+assume(succeeds d_list(?l1,nat) & succeeds insert_sort(?l1,?l2,@<),
+ [total(nat,@<) by lemma(call:nat:less:total),
+  gr(?l1) by corollary(d_list:nat:ground),
+  succeeds permutation_sort(?l1,?l2,@<) by 
+   theorem(insert_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,@<))
+).
+
+:- corollary(insert_sort:nat:less:existence,
+all l1: succeeds d_list(?l1,nat) => 
+ (ex l2: succeeds insert_sort(?l1,?l2,@<)),
+assume(succeeds d_list(?l1,nat),
+ [terminating(nat,@<) by lemma(call:nat:less:terminating),
+  gr(?l1) by corollary(d_list:nat:ground),
+  ex l2: succeeds insert_sort(?l1,?l2,@<) by 
+   theorem(insert_sort:existence)],
+ ex l2: succeeds insert_sort(?l1,?l2,@<))
+).
+
+:- corollary(insert_sort:nat:less:uniqueness,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,@<) & 
+ succeeds insert_sort(?l1,?l3,@<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,@<) & 
+ succeeds insert_sort(?l1,?l3,@<) => ?l2 = ?l3 by 
+ theorem(insert_sort:uniqueness)
+).
+
+:- corollary(quick_sort:nat:less:termination,
+all [l1,l2]: succeeds d_list(?l1,nat) => 
+ terminates quick_sort(?l1,?l2,@<),
+assume(succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  terminating(nat,@<) by lemma(call:nat:less:terminating),
+  gr(@<),
+  terminates quick_sort(?l1,?l2,@<) by theorem(quick_sort:termination)],
+ terminates quick_sort(?l1,?l2,@<))
+).
+
+:- corollary(quick_sort:nat:less:permutation_sort,
+all [l1,l2]: succeeds quick_sort(?l1,?l2,@<) & succeeds d_list(?l1,nat) 
+ => succeeds permutation_sort(?l1,?l2,@<),
+assume(succeeds quick_sort(?l1,?l2,@<) & succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  total(nat,@<) by lemma(call:nat:less:total),
+  succeeds permutation_sort(?l1,?l2,@<) by 
+   theorem(quick_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,@<))
+).
+
+:- corollary(quick_sort:nat:less:existence,
+all l1: succeeds d_list(?l1,nat) => 
+ (ex l2: succeeds quick_sort(?l1,?l2,@<)),
+assume(succeeds d_list(?l1,nat),
+ [gr(?l1) by corollary(d_list:nat:ground),
+  terminating(nat,@<) by lemma(call:nat:less:terminating),
+  ex l2: succeeds quick_sort(?l1,?l2,@<) by 
+   theorem(quick_sort:existence)],
+ ex l2: succeeds quick_sort(?l1,?l2,@<))
+).
+
+:- corollary(quick_sort:nat:less:uniqueness,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,@<) & 
+ succeeds quick_sort(?l1,?l3,@<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,@<) & 
+ succeeds quick_sort(?l1,?l3,@<) => ?l2 = ?l3 by 
+ theorem(quick_sort:uniqueness)
+).
+
+:- corollary(d_list:integer:ground,
+all l: succeeds d_list(?l,integer) => gr(?l),
+assume(succeeds d_list(?l,integer),
+ [assume(succeeds call(integer,?x),
+   [def succeeds call(integer,?x) by builtin,
+    gr(?x) by axiom(integer:ground)],
+   gr(?x)),
+  all x: succeeds call(integer,?x) => gr(?x),
+  gr(?l) by lemma(d_list:ground)],
+ gr(?l))
+).
+
+:- lemma(call:integer:leq:terminating,
+terminating(integer,=<),
+[assume(succeeds call(integer,?x) & succeeds call(integer,?y) & gr(?x) & 
+  gr(?y),
+  [def succeeds call(integer,?x) by builtin,
+   def succeeds call(integer,?y) by builtin,
+   terminates ?x =< ?y by axiom(integer:leq:termination),
+   terminates call(=<,?x,?y) by builtin],
+  terminates call(=<,?x,?y)),
+ terminating(integer,=<) by introduction(terminating,2)]
+).
+
+:- lemma(call:integer:leq:total,
+total(integer,=<),
+[assume(succeeds call(integer,?x) & succeeds call(integer,?y) & gr(?x) & 
+  gr(?y),
+  [def succeeds call(integer,?x) by builtin,
+   def succeeds call(integer,?y) by builtin,
+   succeeds ?x =< ?y \/ succeeds ?y =< ?x by axiom(integer:leq:total),
+   cases(succeeds ?x =< ?y,
+    [succeeds call(=<,?x,?y) by builtin],
+    succeeds ?y =< ?x,
+    [succeeds call(=<,?y,?x) by builtin],
+    succeeds call(=<,?x,?y) \/ ?x = ?y \/ succeeds call(=<,?y,?x))],
+  succeeds call(=<,?x,?y) \/ ?x = ?y \/ succeeds call(=<,?y,?x)),
+ total(integer,=<) by introduction(total,2)]
+).
+
+:- corollary(permutation_sort:integer:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates permutation_sort(?l1,?l2,=<),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,=<) by lemma(call:integer:leq:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  terminates permutation_sort(?l1,?l2,=<) by 
+   theorem(permutation_sort:termination)],
+ terminates permutation_sort(?l1,?l2,=<))
+).
+
+:- corollary(insert_sort:integer:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates insert_sort(?l1,?l2,=<),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,=<) by lemma(call:integer:leq:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  gr(=<),
+  terminates insert_sort(?l1,?l2,=<) by theorem(insert_sort:termination)],
+ terminates insert_sort(?l1,?l2,=<))
+).
+
+:- corollary(insert_sort:integer:leq:permutation_sort,
+all [l1,l2]: succeeds d_list(?l1,integer) & 
+ succeeds insert_sort(?l1,?l2,=<) => succeeds permutation_sort(?l1,?l2,=<),
+assume(succeeds d_list(?l1,integer) & succeeds insert_sort(?l1,?l2,=<),
+ [total(integer,=<) by lemma(call:integer:leq:total),
+  gr(?l1) by corollary(d_list:integer:ground),
+  succeeds permutation_sort(?l1,?l2,=<) by 
+   theorem(insert_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,=<))
+).
+
+:- corollary(insert_sort:integer:leq:existence,
+all l1: succeeds d_list(?l1,integer) => 
+ (ex l2: succeeds insert_sort(?l1,?l2,=<)),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,=<) by lemma(call:integer:leq:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  ex l2: succeeds insert_sort(?l1,?l2,=<) by 
+   theorem(insert_sort:existence)],
+ ex l2: succeeds insert_sort(?l1,?l2,=<))
+).
+
+:- corollary(insert_sort:integer:leq:uniqueness,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,=<) & 
+ succeeds insert_sort(?l1,?l3,=<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,=<) & 
+ succeeds insert_sort(?l1,?l3,=<) => ?l2 = ?l3 by 
+ theorem(insert_sort:uniqueness)
+).
+
+:- corollary(quick_sort:integer:leq:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates quick_sort(?l1,?l2,=<),
+assume(succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  terminating(integer,=<) by lemma(call:integer:leq:terminating),
+  gr(=<),
+  terminates quick_sort(?l1,?l2,=<) by theorem(quick_sort:termination)],
+ terminates quick_sort(?l1,?l2,=<))
+).
+
+:- corollary(quick_sort:integer:leq:permutation_sort,
+all [l1,l2]: succeeds quick_sort(?l1,?l2,=<) & 
+ succeeds d_list(?l1,integer) => succeeds permutation_sort(?l1,?l2,=<),
+assume(succeeds quick_sort(?l1,?l2,=<) & succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  total(integer,=<) by lemma(call:integer:leq:total),
+  succeeds permutation_sort(?l1,?l2,=<) by 
+   theorem(quick_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,=<))
+).
+
+:- corollary(quick_sort:integer:leq:existence,
+all l1: succeeds d_list(?l1,integer) => 
+ (ex l2: succeeds quick_sort(?l1,?l2,=<)),
+assume(succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  terminating(integer,=<) by lemma(call:integer:leq:terminating),
+  ex l2: succeeds quick_sort(?l1,?l2,=<) by 
+   theorem(quick_sort:existence)],
+ ex l2: succeeds quick_sort(?l1,?l2,=<))
+).
+
+:- corollary(quick_sort:integer:leq:uniqueness,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,=<) & 
+ succeeds quick_sort(?l1,?l3,=<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,=<) & 
+ succeeds quick_sort(?l1,?l3,=<) => ?l2 = ?l3 by 
+ theorem(quick_sort:uniqueness)
+).
+
+:- lemma(call:integer:less:terminating,
+terminating(integer,<),
+[assume(succeeds call(integer,?x) & succeeds call(integer,?y) & gr(?x) & 
+  gr(?y),
+  [def succeeds call(integer,?x) by builtin,
+   def succeeds call(integer,?y) by builtin,
+   terminates ?x < ?y by axiom(integer:less:termination),
+   terminates call(<,?x,?y) by builtin],
+  terminates call(<,?x,?y)),
+ terminating(integer,<) by introduction(terminating,2)]
+).
+
+:- lemma(call:integer:less:total,
+total(integer,<),
+[assume(succeeds call(integer,?x) & succeeds call(integer,?y) & gr(?x) & 
+  gr(?y),
+  [def succeeds call(integer,?x) by builtin,
+   def succeeds call(integer,?y) by builtin,
+   succeeds ?x < ?y \/ ?x = ?y \/ succeeds ?y < ?x by 
+    axiom(integer:less:total),
+   cases(
+    [case(succeeds ?x < ?y,[succeeds call(<,?x,?y) by builtin]),
+     case(?x = ?y,
+      []),
+     case(succeeds ?y < ?x,
+      [succeeds call(<,?y,?x) by builtin])],
+    succeeds call(<,?x,?y) \/ ?x = ?y \/ succeeds call(<,?y,?x))],
+  succeeds call(<,?x,?y) \/ ?x = ?y \/ succeeds call(<,?y,?x)),
+ total(integer,<) by introduction(total,2)]
+).
+
+:- corollary(permutation_sort:integer:less:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates permutation_sort(?l1,?l2,<),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,<) by lemma(call:integer:less:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  terminates permutation_sort(?l1,?l2,<) by 
+   theorem(permutation_sort:termination)],
+ terminates permutation_sort(?l1,?l2,<))
+).
+
+:- corollary(insert_sort:integer:less:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates insert_sort(?l1,?l2,<),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,<) by lemma(call:integer:less:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  gr(<),
+  terminates insert_sort(?l1,?l2,<) by theorem(insert_sort:termination)],
+ terminates insert_sort(?l1,?l2,<))
+).
+
+:- corollary(insert_sort:integer:less:permutation_sort,
+all [l1,l2]: succeeds d_list(?l1,integer) & 
+ succeeds insert_sort(?l1,?l2,<) => succeeds permutation_sort(?l1,?l2,<),
+assume(succeeds d_list(?l1,integer) & succeeds insert_sort(?l1,?l2,<),
+ [total(integer,<) by lemma(call:integer:less:total),
+  gr(?l1) by corollary(d_list:integer:ground),
+  succeeds permutation_sort(?l1,?l2,<) by 
+   theorem(insert_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,<))
+).
+
+:- corollary(insert_sort:integer:less:existence,
+all l1: succeeds d_list(?l1,integer) => 
+ (ex l2: succeeds insert_sort(?l1,?l2,<)),
+assume(succeeds d_list(?l1,integer),
+ [terminating(integer,<) by lemma(call:integer:less:terminating),
+  gr(?l1) by corollary(d_list:integer:ground),
+  ex l2: succeeds insert_sort(?l1,?l2,<) by 
+   theorem(insert_sort:existence)],
+ ex l2: succeeds insert_sort(?l1,?l2,<))
+).
+
+:- corollary(insert_sort:integer:less:uniqueness,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,<) & 
+ succeeds insert_sort(?l1,?l3,<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds insert_sort(?l1,?l2,<) & 
+ succeeds insert_sort(?l1,?l3,<) => ?l2 = ?l3 by 
+ theorem(insert_sort:uniqueness)
+).
+
+:- corollary(quick_sort:integer:less:termination,
+all [l1,l2]: succeeds d_list(?l1,integer) => 
+ terminates quick_sort(?l1,?l2,<),
+assume(succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  terminating(integer,<) by lemma(call:integer:less:terminating),
+  gr(<),
+  terminates quick_sort(?l1,?l2,<) by theorem(quick_sort:termination)],
+ terminates quick_sort(?l1,?l2,<))
+).
+
+:- corollary(quick_sort:integer:less:permutation_sort,
+all [l1,l2]: succeeds quick_sort(?l1,?l2,<) & succeeds d_list(?l1,integer)
+ => succeeds permutation_sort(?l1,?l2,<),
+assume(succeeds quick_sort(?l1,?l2,<) & succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  total(integer,<) by lemma(call:integer:less:total),
+  succeeds permutation_sort(?l1,?l2,<) by 
+   theorem(quick_sort:permutation_sort)],
+ succeeds permutation_sort(?l1,?l2,<))
+).
+
+:- corollary(quick_sort:integer:less:existence,
+all l1: succeeds d_list(?l1,integer) => 
+ (ex l2: succeeds quick_sort(?l1,?l2,<)),
+assume(succeeds d_list(?l1,integer),
+ [gr(?l1) by corollary(d_list:integer:ground),
+  terminating(integer,<) by lemma(call:integer:less:terminating),
+  ex l2: succeeds quick_sort(?l1,?l2,<) by theorem(quick_sort:existence)],
+ ex l2: succeeds quick_sort(?l1,?l2,<))
+).
+
+:- corollary(quick_sort:integer:less:uniqueness,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,<) & 
+ succeeds quick_sort(?l1,?l3,<) => ?l2 = ?l3,
+all [l1,l2,l3]: succeeds quick_sort(?l1,?l2,<) & 
+ succeeds quick_sort(?l1,?l3,<) => ?l2 = ?l3 by 
+ theorem(quick_sort:uniqueness)
+).
+
+:- bye(callsortexample).

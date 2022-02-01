@@ -1,0 +1,18 @@
+Minimaxi and Alpha_Beta prunning
+================================
+
+Author: Dritan Berzati <dritan.berzati@unifr.ch>
+
+Files: 
+
+code.pl         Specification and implementation of both algorithms
+                min_max/3 and alpha_beta/5. 
+
+valueaxioms.pr  Axioms for a total ordering on the values (val/1),
+                axioms for the generic predicate static_value/2 and
+                axioms for the generic predicate moves/2.
+                Some obvious lemmas for static_value/2 and moves/2.
+
+alpha.pr        Lemmas for all functions defined in code.pl and
+                the main theorem for equivalence of 
+                min_max/3 and alpha_beta/5.

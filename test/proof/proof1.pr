@@ -1,0 +1,391 @@
+:- initialize.
+:- tex_file($(tmp)/proof1).
+:- thm_file($(tmp)/proof1).
+
+:- theorem(1:1,
+p => p,
+assume(p,[],p)
+).
+
+:- theorem(1:2,
+p & q => q & p,
+assume(p & q,[p,q,q & p],q & p)
+).
+
+:- theorem(1:3,
+p & q <=> q & p,
+[assume(p & q,[p,q,q & p],q & p),assume(q & p,[q,p,p & q],p & q)]
+).
+
+:- theorem(1:4,
+p \/ q => q \/ p,
+assume(p \/ q,cases(p,q \/ p,q,q \/ p,q \/ p),q \/ p)
+).
+
+:- theorem(1:5,
+p & (q \/ r) => p & q \/ p & r,
+[assume(p & (q \/ r),
+  [p,
+   q \/ r,
+   cases(q,
+    p & q,
+    r,
+    p & r,
+    p & q \/ p & r)],
+  p & q \/ p & r),
+ assume(p & q \/ p & r,
+  cases(p & q,
+   [p,
+    q,
+    q \/ r],
+   p & r,
+   [p,
+    r,
+    q \/ r],
+   p & (q \/ r)),
+  p & (q \/ r))]
+).
+
+:- theorem(1:6,
+~ ~ p => p,
+assume(~ ~ p,indirect(~ p,ff),p)
+).
+
+:- theorem(1:7,
+p \/ ~ p,
+[]
+).
+
+:- theorem(1:8,
+p \/ q \/ r \/ ~ q,
+[]
+).
+
+:- theorem(1:9,
+p & (q1 \/ q2 \/ q3) => p & q1 \/ p & q2 \/ p & q3,
+assume(p & (q1 \/ q2 \/ q3),
+ cases([case(q1,p & q1),case(q2,p & q2),case(q3,p & q3)],
+  p & q1 \/ p & q2 \/ p & q3),
+ p & q1 \/ p & q2 \/ p & q3)
+).
+
+:- theorem(1:10,
+p & (q1 \/ q2 \/ q3) => p & q1 \/ p & q2 \/ p & q3,
+assume(p & (q1 \/ q2 \/ q3),
+ cases([case(q1,[]),case(q2,[]),case(q3,[])],
+  p & q1 \/ p & q2 \/ p & q3),
+ p & q1 \/ p & q2 \/ p & q3)
+).
+
+:- theorem(1:11,
+p & ~ p => q,
+assume(p & ~ p,[p,~ p],q)
+).
+
+:- theorem(1:12,
+p & ~ p => q,
+assume(p & ~ p,ff,q)
+).
+
+:- theorem(1:13,
+p & ~ p <=> ff,
+[assume(p & ~ p,[p,~ p],ff),assume(ff,[],p & ~ p)]
+).
+
+:- theorem(1:14,
+p \/ q1 & q2 & q3 <=> (p \/ q1) & (p \/ q2) & (p \/ q3),
+[assume(p \/ q1 & q2 & q3,
+  cases(p,
+   [p \/ q1,
+    p \/ q2,
+    p \/ q3],
+   q1 & q2 & q3,
+   [q1,
+    q2,
+    q3,
+    p \/ q1,
+    p \/ q2,
+    p \/ q3],
+   (p \/ q1) & (p \/ q2) & (p \/ q3)),
+  (p \/ q1) & (p \/ q2) & (p \/ q3)),
+ assume((p \/ q1) & (p \/ q2) & (p \/ q3),
+  [p \/ q1,
+   p \/ q2,
+   p \/ q3,
+   cases(p,
+    [],
+    q1,
+    cases(p,
+     [],
+     q2,
+     cases(p,
+      [],
+      q3,
+      q1 & q2 & q3,
+      p \/ q1 & q2 & q3),
+     p \/ q1 & q2 & q3),
+    p \/ q1 & q2 & q3)],
+  p \/ q1 & q2 & q3)]
+).
+
+:- theorem(1:15,
+p <=> q <=> (p => q) & (q => p),
+[assume(p <=> q,[p => q,q => p],(p => q) & (q => p)),
+ assume((p => q) & (q => p),
+  [p => q,
+   q => p],
+  p <=> q)]
+).
+
+:- theorem(1:16,
+~ p <=> p => ff,
+[assume(~ p,assume(p,ff,ff),p => ff),assume(p => ff,contra(p,ff),~ p)]
+).
+
+:- theorem(1:17,
+p \/ p \/ p \/ p \/ p <=> p,
+[assume(p \/ p \/ p \/ p \/ p,
+  cases([case(p,[]),case(p,[]),case(p,[]),case(p,[]),case(p,[])],
+   p),
+  p),
+ assume(p,
+  [],
+  p \/ p \/ p \/ p \/ p)]
+).
+
+:- theorem(1:18,
+~ ~ (p \/ ~ p),
+contra(~ (p \/ ~ p),[contra(p,p \/ ~ p),contra(~ p,p \/ ~ p),ff])
+).
+
+:- theorem(1:19,
+~ ~ (p \/ ~ p),
+contra(~ (p \/ ~ p),p \/ ~ p)
+).
+
+:- theorem(1:20,
+~ p \/ ~ q => ~ (p & q),
+assume(~ p \/ ~ q,
+ cases(~ p,
+  contra(p & q,
+   p),
+  ~ q,
+  contra(p & q,
+   q),
+  ~ (p & q)),
+ ~ (p & q))
+).
+
+:- theorem(1:21,
+~ p \/ ~ q \/ ~ r => ~ (p & q & r),
+assume(~ p \/ ~ q \/ ~ r,
+ cases(
+  [case(~ p,contra(p & q & r,[p,ff])),
+   case(~ q,
+    contra(p & q & r,
+     [q,
+      ff])),
+   case(~ r,
+    contra(p & q & r,
+     [r,
+      ff]))],
+  ~ (p & q & r)),
+ ~ (p & q & r))
+).
+
+:- theorem(1:22,
+~ (p \/ q \/ r) <=> ~ p & ~ q & ~ r,
+[assume(~ (p \/ q \/ r),
+  [contra(p,[p \/ q \/ r,ff]),
+   contra(q,
+    [p \/ q \/ r,
+     ff]),
+   contra(r,
+    [p \/ q \/ r,
+     ff])],
+  ~ p & ~ q & ~ r),
+ assume(~ p & ~ q & ~ r,
+  contra(p \/ q \/ r,
+   cases([case(p,[~ p,ff]),case(q,[~ q,ff]),case(r,[~ r,ff])],
+    ff)),
+  ~ (p \/ q \/ r))]
+).
+
+:- theorem(1:23,
+~ ~ ~ p <=> ~ p,
+[assume(~ ~ ~ p,contra(p,contra(~ p,ff)),~ p),
+ assume(~ p,
+  contra(~ ~ p,
+   ff),
+  ~ ~ ~ p)]
+).
+
+:- theorem(1:24,
+(p => q) => ~ q => ~ p,
+assume(p => q,assume(~ q,contra(p,[q,ff]),~ p),~ q => ~ p)
+).
+
+:- theorem(1:25,
+~ ~ (p & q) <=> ~ ~ p & ~ ~ q,
+[assume(~ ~ (p & q),
+  [contra(~ p,[contra(p & q,[p,ff]),ff]),
+   contra(~ q,
+    [contra(p & q,[q,ff]),
+     ff])],
+  ~ ~ p & ~ ~ q),
+ assume(~ ~ p & ~ ~ q,
+  contra(~ (p & q),
+   [contra(p,[contra(q,[p & q,ff]),~ ~ q]),
+    ~ ~ p]),
+  ~ ~ (p & q))]
+).
+
+:- theorem(1:26,
+~ ~ (p => q) => p => ~ ~ q,
+[assume(~ ~ (p => q),
+  assume(p,
+   contra(~ q,
+    contra(p => q,
+     [q])),
+   ~ ~ q),
+  p => ~ ~ q),
+ assume(p => ~ ~ q,
+  contra(~ (p => q),
+   [contra(q,assume(p,[q],q)),
+    assume(p,
+     [~ ~ q],
+     q)]),
+  ~ ~ (p => q))]
+).
+
+:- theorem(1:27,
+a & (a => b) => b,
+assume(a & (a => b),[a,a => b,b],b)
+).
+
+:- theorem(1:28,
+a & (a => b) => b,
+assume(a & (a => b),[a,a => b],b)
+).
+
+:- theorem(1:29,
+a & (a => b) => b,
+assume(a & (a => b),a => b,b)
+).
+
+:- theorem(1:30,
+a => ~ ~ b <=> ~ ~ a => ~ ~ b,
+[assume(a => ~ ~ b,
+  assume(~ ~ a,
+   contra(~ b,
+    contra(a,
+     ~ ~ b)),
+   ~ ~ b),
+  ~ ~ a => ~ ~ b),
+ assume(~ ~ a => ~ ~ b,
+  assume(a,
+   contra(~ b,
+    [contra(~ a,[]),
+     ~ ~ b]),
+   ~ ~ b),
+  a => ~ ~ b)]
+).
+
+:- theorem(1:31,
+~ ~ p => p,
+assume(~ ~ p,indirect(~ p,[ff]),p)
+).
+
+:- theorem(1:32,
+p \/ ~ p,
+[]
+).
+
+:- theorem(1:33,
+p \/ ~ p,
+indirect(~ (p \/ ~ p),
+ [contra(p,[p \/ ~ p,ff]),
+  contra(~ p,
+   [p \/ ~ p,
+    ff]),
+  ff])
+).
+
+:- theorem(1:34,
+p => q <=> ~ q => ~ p,
+[assume(p => q,assume(~ q,contra(p,[q,ff]),~ p),~ q => ~ p),
+ assume(~ q => ~ p,
+  assume(p,
+   indirect(~ q,
+    [~ p,
+     ff]),
+   q),
+  p => q)]
+).
+
+:- theorem(1:35,
+~ (a1 & a2 & a3) <=> ~ a1 \/ ~ a2 \/ ~ a3,
+[assume(~ (a1 & a2 & a3),
+  indirect(~ (~ a1 \/ ~ a2 \/ ~ a3),
+   [indirect(~ a1,[~ a1 \/ ~ a2 \/ ~ a3,ff]),
+    indirect(~ a2,
+     [~ a1 \/ ~ a2 \/ ~ a3,
+      ff]),
+    indirect(~ a3,
+     [~ a1 \/ ~ a2 \/ ~ a3,
+      ff]),
+    a1 & a2 & a3,
+    ff]),
+  ~ a1 \/ ~ a2 \/ ~ a3),
+ assume(~ a1 \/ ~ a2 \/ ~ a3,
+  cases(
+   [case(~ a1,contra(a1 & a2 & a3,a1)),
+    case(~ a2,
+     contra(a1 & a2 & a3,
+      a2)),
+    case(~ a3,
+     contra(a1 & a2 & a3,
+      a3))],
+   ~ (a1 & a2 & a3)),
+  ~ (a1 & a2 & a3))]
+).
+
+:- theorem(1:36,
+~ (b1 \/ b2 \/ b3) <=> ~ b1 & ~ b2 & ~ b3,
+[assume(~ (b1 \/ b2 \/ b3),
+  [contra(b1,b1 \/ b2 \/ b3),
+   contra(b2,
+    b1 \/ b2 \/ b3),
+   contra(b3,
+    b1 \/ b2 \/ b3)],
+  ~ b1 & ~ b2 & ~ b3),
+ assume(~ b1 & ~ b2 & ~ b3,
+  contra(b1 \/ b2 \/ b3,
+   cases([case(b1,~ b1),case(b2,~ b2),case(b3,~ b3)],
+    ff)),
+  ~ (b1 \/ b2 \/ b3))]
+).
+
+:- theorem(1:37,
+~ (p => q) <=> p & ~ q,
+[assume(~ (p => q),
+  [indirect(~ p,assume(p,[ff,q],q)),
+   contra(q,
+    assume(p,
+     [],
+     q))],
+  p & ~ q),
+ assume(p & ~ q,
+  contra(p => q,
+   [p,
+    q,
+    ~ q]),
+  ~ (p => q))]
+).
+
+:- theorem(1:38,
+~ (p => q) => p & ~ q,
+[assume(~ (p => q),[indirect(~ p,p => q),contra(q,p => q)],p & ~ q)]
+).
+
+:- bye(proof1).

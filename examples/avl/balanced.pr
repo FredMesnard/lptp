@@ -1,0 +1,752 @@
+%   Author: Rene Lehmann  <rene.lehmann@unifr.ch> & 
+%           Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+%  Created: Tue Mar 11 09:08:27 1997 
+% Filename: balanced.pr 
+
+
+:- initialize.
+
+:-needs_gr($(lib)/nat/nat).
+:-needs_thm($(lib)/nat/nat).
+:-needs_gr($(examples)/avl/avl).
+:-thm_file($(tmp)/balanced).
+:-tex_file($(tmp)/balanced).
+:-needs_thm($(tmp)/termination).
+
+
+
+/** A few lemmas needed in the proof of lemma(left_combine:balanced) 
+and lemma(right_combine:balanced).*/
+
+
+:- lemma(diff:1,
+all [n1,n2,n]: succeeds diff(?n1,?n2,1,?n) =>
+  succeeds diff(s(?n1),?n2,0,?n),
+assume(succeeds diff(?n1,?n2,1,?n),
+ [def succeeds diff(?n1,?n2,1,?n) by completion,
+  succeeds diff(s(?n1),?n2,0,?n) by completion],
+ succeeds diff(s(?n1),?n2,0,?n))
+).
+
+:- lemma(diff:2,
+all [n1,n2,n]: succeeds diff(?n1,?n2,0,?n) =>
+  succeeds diff(s(?n1),?n2,-1,s(?n)),
+assume(succeeds diff(?n1,?n2,0,?n),
+ [def succeeds diff(?n1,?n2,0,?n) by completion,
+  succeeds diff(s(?n1),?n2,-1,s(?n)) by completion],
+ succeeds diff(s(?n1),?n2,-1,s(?n)))
+).
+
+:- lemma(diff:3,
+all [n1,n2,n]: succeeds diff(?n1,?n2,-1,?n) =>
+   succeeds diff(?n1,s(?n2),0,?n),
+assume(succeeds diff(?n1,?n2,-1,?n),
+ [def succeeds diff(?n1,?n2,-1,?n) by completion,
+  succeeds diff(?n1,s(?n2),0,?n)],
+ succeeds diff(?n1,s(?n2),0,?n))
+).
+
+:- lemma(diff:4,
+all [n1,n2,n]: succeeds diff(?n1,?n2,0,?n) =>
+  succeeds diff(?n1,s(?n2),1,s(?n)),
+assume(succeeds diff(?n1,?n2,0,?n),
+ [def succeeds diff(?n1,?n2,0,?n) by completion,
+  succeeds diff(?n1,s(?n2),1,s(?n)) by completion],
+ succeeds diff(?n1,s(?n2),1,s(?n)))
+).
+
+:- lemma(balanced:minus,
+all [u,s1,s2,m]: succeeds balanced(t(?u,-1,?s1,?s2),s(?m)) =>
+ succeeds balanced(?s1,?m) &
+ (ex k: ?m = s(?k) & succeeds balanced(?s2,?k)),
+assume(succeeds balanced(t(?u,-1,?s1,?s2),s(?m)),
+ [def succeeds balanced(t(?u,-1,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,-1,s(?m)),
+   [def succeeds balanced(?s1,?n1) by completion,
+    def succeeds diff(?n1,?n2,-1,s(?m)) by completion],
+   ?s1 = t & ?m = 0 \/
+   (ex [0,x,t1,t2,n1,n2]: ?s1 = t(?0,?x,?t1,?t2) &
+     succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+     succeeds diff(?n1,?n2,?x,?m))),
+  succeeds balanced(?s1,?m) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,-1,s(?m)),
+   def succeeds diff(?n1,?n2,-1,s(?m)) by completion,
+   ex k: ?m = s(?k) & succeeds balanced(?s2,?k))],
+ succeeds balanced(?s1,?m) & 
+ (ex k: ?m = s(?k) & succeeds balanced(?s2,?k)))
+).
+
+:- lemma(balanced:zero,
+all [u,s1,s2,m]: succeeds balanced(t(?u,0,?s1,?s2),s(?m)) =>
+ succeeds balanced(?s2,?m) & succeeds balanced(?s1,?m),
+assume(succeeds balanced(t(?u,0,?s1,?s2),s(?m)),
+ [def succeeds balanced(t(?u,0,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,0,s(?m)),
+   [def succeeds diff(?n1,?n2,0,s(?m)) by completion,
+    succeeds balanced(?s2,?m)],
+   succeeds balanced(?s2,?m)),
+  def succeeds balanced(t(?u,0,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,0,s(?m)),
+   [def succeeds diff(?n1,?n2,0,s(?m)) by completion,
+    succeeds balanced(?s1,?m)],
+   succeeds balanced(?s1,?m))],
+ succeeds balanced(?s2,?m) & succeeds balanced(?s1,?m))
+).
+
+:- lemma(balanced:plus,
+all [u,s1,s2,m]: succeeds balanced(t(?u,1,?s1,?s2),s(?m)) =>
+ succeeds balanced(?s2,?m) &
+ (ex k: ?m = s(?k) & succeeds balanced(?s1,?k)),
+assume(succeeds balanced(t(?u,1,?s1,?s2),s(?m)),
+ [def succeeds balanced(t(?u,1,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,1,s(?m)),
+   [def succeeds diff(?n1,?n2,1,s(?m)) by completion,
+    succeeds balanced(?s2,?m)],
+   succeeds balanced(?s2,?m)),
+  def succeeds balanced(t(?u,1,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,1,s(?m)),
+   [def succeeds balanced(t(?u,1,?s1,?s2),s(?m)) by completion,
+    exist([0,1],
+     succeeds balanced(?s1,?0) & succeeds balanced(?s2,?1) &
+     succeeds diff(?0,?1,1,s(?m)),
+     [def succeeds diff(?0,?1,1,s(?m)) by completion,
+      ex k: ?m = s(?k) & succeeds balanced(?s1,?k)],
+     ex k: ?m = s(?k) & succeeds balanced(?s1,?k))],
+   ex k: ?m = s(?k) & succeeds balanced(?s1,?k))],
+ succeeds balanced(?s2,?m) & 
+ (ex k: ?m = s(?k) & succeeds balanced(?s1,?k)))
+).
+
+
+:- lemma(balanced:1,
+all [v,t1,t2,n]: succeeds balanced(t(?v,1,?t1,?t2),s(s(?n))) =>
+  succeeds balanced(?t1,?n) & succeeds balanced(?t2,s(?n)),
+assume(succeeds balanced(t(?v,1,?t1,?t2),s(s(?n))),
+ [def succeeds balanced(t(?v,1,?t1,?t2),s(s(?n))) by completion,
+  exist([n1,n2],
+   succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+   succeeds diff(?n1,?n2,1,s(s(?n))),
+   [def succeeds diff(?n1,?n2,1,s(s(?n))) by completion,
+    succeeds balanced(?t1,?n),
+    succeeds balanced(?t2,s(?n))],
+   succeeds balanced(?t1,?n) & succeeds balanced(?t2,s(?n)))],
+ succeeds balanced(?t1,?n) & succeeds balanced(?t2,s(?n)))
+).
+
+:- lemma(balanced:2,
+all [v,t1,t2,n]: succeeds balanced(t(?v,-1,?t1,?t2),s(s(?n))) =>
+  succeeds balanced(?t1,s(?n)) & succeeds balanced(?t2,?n),
+assume(succeeds balanced(t(?v,-1,?t1,?t2),s(s(?n))),
+ [succeeds balanced(?t1,s(?n)) &
+  (ex k: s(?n) = s(?k) & succeeds balanced(?t2,?k)) by 
+   lemma(balanced:minus),
+  exist(k,
+   s(?n) = s(?k) & succeeds balanced(?t2,?k),
+   def succeeds balanced(?t2,?k) by completion,
+   ?t2 = t & ?n = 0 \/
+   (ex [0,x,t1,1,n1,n2]: ?t2 = t(?0,?x,?t1,?1) & 
+     succeeds balanced(?t1,?n1) & succeeds balanced(?1,?n2) &
+     succeeds diff(?n1,?n2,?x,?n))),
+  succeeds balanced(?t2,?n) by completion],
+ succeeds balanced(?t1,s(?n)) & succeeds balanced(?t2,?n))
+).
+
+
+:- lemma(double:rotate:left,
+all [u,v,w,s1,s2,s3,t2,m,b,b1,b2]:
+ succeeds balanced(t(?u,1,?s1,t(?w,?b,?s2,?s3)),s(s(?m))) &
+ succeeds balanced(?t2,?m) & succeeds flip(?b,?b1,?b2) =>
+  succeeds balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m))),
+assume(succeeds balanced(t(?u,1,?s1,t(?w,?b,?s2,?s3)),s(s(?m))) &
+ succeeds balanced(?t2,?m) & succeeds flip(?b,?b1,?b2),
+ [def succeeds balanced(t(?u,1,?s1,t(?w,?b,?s2,?s3)),s(s(?m))) by completion,
+  succeeds balanced(?s1,?m) & succeeds balanced(t(?w,?b,?s2,?s3),s(?m)) by 
+   lemma(balanced:1),
+  def succeeds balanced(t(?w,?b,?s2,?s3),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s2,?n1) & succeeds balanced(?s3,?n2) &
+   succeeds diff(?n1,?n2,?b,s(?m)),
+   [def succeeds diff(?n1,?n2,?b,s(?m)) by completion,
+    cases(
+     [case(?b = 0 & ?n1 = ?n2 & ?n1 = ?m,
+       [def succeeds flip(0,?b1,?b2) by completion,
+	?b1 = 0 & ?b2 = 0,
+	succeeds balanced(?s1,?m), succeeds balanced(?s2,?m),
+	succeeds diff(?m,?m,0,s(?m)),
+	succeeds balanced(t(?u,0,?s1,?s2),s(?m)) by sld,
+	succeeds balanced(?s3,?m),
+	succeeds balanced(t(?v,0,?s3,?t2),s(?m)) by sld,
+	succeeds balanced(t(?u,?b1,?s1,?s2),s(?m)),
+	succeeds balanced(t(?v,?b2,?s3,?t2),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m)))
+	 by sld]),
+      case(?b = 1 & ?n2 = s(?n1) & ?m = s(?n1),
+       [def succeeds flip(1,?b1,?b2) by completion,
+	?b1 = -1 & ?b2 = 0,
+	succeeds balanced(?s1,s(?n1)),
+	succeeds diff(s(?n1),?n1,-1,s(s(?n1))) by sld,
+	succeeds balanced(t(?u,-1,?s1,?s2),s(s(?n1))) by sld,
+	succeeds balanced(t(?u,?b1,?s1,?s2),s(?m)),
+	succeeds balanced(?s3,?m),
+	succeeds diff(?m,?m,0,s(?m)) by sld,
+	succeeds balanced(t(?v,0,?s3,?t2),s(?m)) by sld,
+	succeeds balanced(t(?v,?b2,?s3,?t2),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m)))
+	 by sld]),
+      case(?b = -1 & ?n1 = s(?n2) & ?m = s(?n2),
+       [def succeeds flip(-1,?b1,?b2) by completion,
+	?b1 = 0 & ?b2 = 1,
+	succeeds balanced(?s2,?m),
+	succeeds diff(?m,?m,0,s(?m)) by sld,
+	succeeds balanced(t(?u,0,?s1,?s2),s(?m)) by sld,
+	succeeds balanced(t(?u,?b1,?s1,?s2),s(?m)),
+	succeeds balanced(?t2,s(?n2)),
+	succeeds diff(?n2,s(?n2),1,s(s(?n2))) by sld,
+	succeeds balanced(t(?v,1,?s3,?t2),s(s(?n2))) by sld,
+	succeeds balanced(t(?v,?b2,?s3,?t2),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m)))
+	 by sld])],
+     succeeds 
+     balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m))))],
+   succeeds balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m))))],
+ succeeds balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?m)))) 
+).
+
+:- lemma(double:rotate:right,
+all [u,v,w,s1,s2,s3,t1,m,b,b1,b2]:
+ succeeds balanced(t(?u,-1,t(?w,?b,?s1,?s2),?s3),s(s(?m))) &
+ succeeds balanced(?t1,?m) & succeeds flip(?b,?b1,?b2) =>
+  succeeds balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))),
+assume(succeeds balanced(t(?u,-1,t(?w,?b,?s1,?s2),?s3),s(s(?m))) &
+ succeeds balanced(?t1,?m) & succeeds flip(?b,?b1,?b2),
+ [def succeeds balanced(t(?u,-1,t(?w,?b,?s1,?s2),?s3),s(s(?m))) by completion,
+  succeeds balanced(t(?w,?b,?s1,?s2),s(?m)) & succeeds balanced(?s3,?m) by 
+   lemma(balanced:2),
+  def succeeds balanced(t(?w,?b,?s1,?s2),s(?m)) by completion,
+  exist([n1,n2],
+   succeeds balanced(?s1,?n1) & succeeds balanced(?s2,?n2) &
+   succeeds diff(?n1,?n2,?b,s(?m)),
+   [def succeeds diff(?n1,?n2,?b,s(?m)) by completion,
+    cases(
+     [case(?b = 0 & ?n1 = ?n2 & ?n1 = ?m,
+       [def succeeds flip(0,?b1,?b2) by completion,
+	?b1 = 0 & ?b2 = 0,
+	succeeds balanced(?s1,?m), succeeds balanced(?s2,?m),
+	succeeds balanced(?s3,?m),
+	succeeds diff(?m,?m,0,s(?m)),
+	succeeds balanced(t(?v,0,?t1,?s1),s(?m)) by sld,
+	succeeds balanced(?s3,?m),
+	succeeds balanced(t(?u,0,?s2,?s3),s(?m)) by sld,
+	succeeds balanced(t(?v,?b1,?t1,?s1),s(?m)),
+	succeeds balanced(t(?u,?b2,?s2,?s3),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))) by sld]),
+      case(?b = 1 & ?n2 = s(?n1) & ?m = s(?n1),
+       [def succeeds flip(1,?b1,?b2) by completion,
+	?b1 = -1 & ?b2 = 0,
+	succeeds balanced(?t1,s(?n1)),
+	succeeds diff(s(?n1),?n1,-1,s(s(?n1))) by sld,
+	succeeds balanced(t(?v,-1,?t1,?s1),s(s(?n1))) by sld,
+	succeeds balanced(t(?v,?b1,?t1,?s1),s(s(?n1))),
+	succeeds balanced(t(?v,?b1,?t1,?s1),s(?m)),
+	succeeds balanced(?s2,?m),
+	succeeds diff(?m,?m,0,s(?m)) by sld,
+	succeeds balanced(t(?u,0,?s2,?s3),s(?m)),
+	succeeds balanced(t(?u,?b2,?s2,?s3),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))) by sld]),
+      case(?b = -1 & ?n1 = s(?n2) & ?m = s(?n2),
+       [def succeeds flip(-1,?b1,?b2) by completion,
+	?b1 = 0 & ?b2 = 1,
+	succeeds balanced(?s1,?m),
+	succeeds diff(?m,?m,0,s(?m)) by sld,
+	succeeds balanced(t(?v,0,?t1,?s1),s(?m)) by sld,
+	succeeds balanced(t(?v,?b1,?t1,?s1),s(?m)),
+	succeeds balanced(?s3,s(?n2)),
+	succeeds diff(?n2,s(?n2),1,s(s(?n2))) by sld,
+	succeeds balanced(t(?u,1,?s2,?s3),s(s(?n2))) by sld,
+	succeeds balanced(t(?u,?b2,?s2,?s3),s(?m)),
+	succeeds diff(s(?m),s(?m),0,s(s(?m))) by sld,
+	succeeds 
+	balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))) by sld])],
+     succeeds 
+     balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))))],
+   succeeds balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))))],
+ succeeds balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?m))))
+).
+
+
+% Im Beweis des Lemma braucht man:
+
+:- lemma(left_combine:balanced,
+all [b,t1,v,t2,t,g,n1,n2,n]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds balanced(?t1,s(?n1)) & succeeds balanced(?t2,?n2) &
+ succeeds diff(?n1,?n2,?b,?n) =>
+  ?g = stable & succeeds balanced(?t,?n) \/
+  ?g = grows & succeeds balanced(?t,s(?n)),
+assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds balanced(?t1,s(?n1)) & succeeds balanced(?t2,?n2) &
+ succeeds diff(?n1,?n2,?b,?n),
+ [def succeeds left_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = 1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,
+     [?t = t(?v,0,?t1,?t2),
+      succeeds balanced(?t1,s(?n1)),
+      succeeds balanced(?t2,?n2),
+      succeeds diff(s(?n1),?n2,0,?n) by lemma(diff:1),
+      ?t = t & ?n = 0 \/
+      (ex [0,x,t1,t2,sn1,n2]: ?t = t(?0,?x,?t1,?t2) &
+        succeeds balanced(?t1,?sn1) & succeeds balanced(?t2,?n2) &
+        succeeds diff(?sn1,?n2,?x,?n)),
+      succeeds balanced(?t,?n) by completion,
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))]),
+    case(?b = 0 & ?t = t(?v,-1,?t1,?t2) & ?g = grows,
+     [?t = t(?v,-1,?t1,?t2),
+      succeeds balanced(?t1,s(?n1)),
+      succeeds balanced(?t2,?n2),
+      succeeds diff(s(?n1),?n2,-1,s(?n)) by lemma(diff:2),
+      ex [0,x,t1,t2,sn1,n2]: ?t = t(?0,?x,?t1,?t2) &
+       succeeds balanced(?t1,?sn1) & succeeds balanced(?t2,?n2) &
+      succeeds diff(?sn1,?n2,?x,s(?n)),
+      succeeds balanced(?t,s(?n)) by completion,
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))]),
+    case(
+     ex [u,s1,s2]: ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) &
+      ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+     exist([u,s1,s2],
+      ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) & ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) &
+      ?g = stable,
+      [?t = t(?u,0,?s1,t(?v,0,?s2,?t2)),
+       succeeds balanced(?t1,s(?n1)),
+       succeeds balanced(t(?u,-1,?s1,?s2),s(?n1)),
+       succeeds balanced(?s1,?n1) &
+       (ex k: ?n1 = s(?k) & succeeds balanced(?s2,?k)) by 
+	lemma(balanced:minus),
+       succeeds balanced(?s1,?n1),
+       succeeds balanced(?t2,?n2),
+       succeeds diff(?n1,?n2,-1,?n),
+       def succeeds diff(?n1,?n2,-1,?n) by completion,s(?n2) = ?n1,
+       s(?n1) = ?n,
+       ex k: ?n1 = s(?k) & succeeds balanced(?s2,?k),
+       exist(k,
+	?n1 = s(?k) & succeeds balanced(?s2,?k),
+	def succeeds balanced(?s2,?k) by completion,
+	?s2 = t & ?n2 = 0 \/
+	(ex [0,x,t1,t2,n1,1]: ?s2 = t(?0,?x,?t1,?t2) &
+	  succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?1) &
+	  succeeds diff(?n1,?1,?x,?n2))),
+       succeeds balanced(?s2,?n2) by completion,
+       succeeds balanced(?s2,?n2) & succeeds balanced(?t2,?n2) &
+       succeeds diff(?n2,?n2,0,?n1),
+       succeeds balanced(t(?v,0,?s2,?t2),?n1) by completion,
+       succeeds balanced(t(?v,0,?s2,?t2),s(?n2)),
+       succeeds diff(?n1,?n2,-1,?n),
+       succeeds diff(?n1,s(?n2),0,?n) by lemma(diff:3),
+       ?t = t & ?n = 0 \/
+       (ex [0,x,t1,nt2,n1,sn2]: ?t = t(?0,?x,?t1,?nt2) &
+         succeeds balanced(?t1,?n1) & succeeds balanced(?nt2,?sn2) &
+         succeeds diff(?n1,?sn2,?x,?n)),
+       succeeds balanced(?t,?n) by completion,
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n))],
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n)))),
+    case(
+     ex [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 & 
+      ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+     exist([u,s1,w,0,s2,s3,b1,b2],
+      ?b = -1 & ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+      [succeeds balanced(?t1,s(?n1)),
+       succeeds balanced(?t2,?n2),
+       succeeds balanced(t(?u,1,?s1,t(?w,?0,?s2,?s3)),s(?n1)),
+       succeeds balanced(t(?w,?0,?s2,?s3),?n1) &
+       (ex k: ?n1 = s(?k) & succeeds balanced(?s1,?k)) by 
+        lemma(balanced:plus),
+       def succeeds diff(?n1,?n2,?b,?n) by completion,
+       cases(
+	[case(?n2 = ?n1 & ?b = 0 & ?n = s(?n1),[]),
+	 case(?n2 = s(?n1) & ?b = 1 & ?n = s(s(?n1)),
+	  []),
+	 case(?n1 = s(?n2) & ?b = -1 & ?n = s(s(?n2)),
+	  [])],
+	?n1 = s(?n2)),
+       def succeeds diff(?n1,?n2,?b,?n) by completion,
+       cases(
+	[case(?n2 = ?n1 & ?b = 0 & ?n = s(?n1),[]),
+	 case(?n2 = s(?n1) & ?b = 1 & ?n = s(s(?n1)),
+	  []),
+	 case(?n1 = s(?n2) & ?b = -1 & ?n = s(s(?n2)),
+	  [])],
+	?n = s(?n1)),
+       ?n = s(s(?n2)),
+       succeeds balanced(t(?u,1,?s1,t(?w,?0,?s2,?s3)),s(s(?n2))),
+       succeeds balanced(?t2,?n2),
+       succeeds flip(?0,?b1,?b2),
+       succeeds 
+       balanced(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),s(s(?n2))) by 
+        lemma(double:rotate:left),
+       succeeds balanced(?t,s(s(?n2))),
+       succeeds balanced(?t,?n),
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n))],
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))))],
+   ?g = stable & succeeds balanced(?t,?n) \/
+   ?g = grows & succeeds balanced(?t,s(?n)))],
+ ?g = stable & succeeds balanced(?t,?n) \/
+ ?g = grows & succeeds balanced(?t,s(?n)))
+).
+
+% Das Duale fuer right_combine.
+
+:- lemma(right_combine:balanced,
+all [b,t1,v,t2,t,g,n1,n2,n]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds balanced(?t1,?n1) & succeeds balanced(?t2,s(?n2)) &
+ succeeds diff(?n1,?n2,?b,?n) =>
+  ?g  = stable & succeeds balanced(?t,?n) \/
+  ?g = grows & succeeds balanced(?t,s(?n)),
+assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds balanced(?t1,?n1) & succeeds balanced(?t2,s(?n2)) &
+ succeeds diff(?n1,?n2,?b,?n),
+ [def succeeds right_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = -1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,
+     [succeeds balanced(?t1,?n1),
+      succeeds balanced(?t2,s(?n2)),
+      succeeds diff(?n1,s(?n2),0,?n) by lemma(diff:3),
+      ?t = t & ?n = 0 \/
+      (ex [0,x,t1,t2,n1,sn2]: ?t = t(?0,?x,?t1,?t2) &
+        succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?sn2) &
+        succeeds diff(?n1,?sn2,?x,?n)),
+      succeeds balanced(?t,?n) by completion,
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))]),
+    case(?b = 0 & ?t = t(?v,1,?t1,?t2) & ?g = grows,
+     [?t = t(?v,1,?t1,?t2), 
+      succeeds balanced(?t2,s(?n2)),
+      succeeds balanced(?t1,?n1),
+      succeeds diff(?n1,?n2,0,?n),
+      succeeds diff(?n1,s(?n2),1,s(?n)) by lemma(diff:4),
+      ex [0,x,t1,t2,n1,sn2]: ?t = t(?0,?x,?t1,?t2) &
+       succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?sn2) &
+       succeeds diff(?n1,?sn2,?x,s(?n)),
+      succeeds balanced(?t,s(?n)) by completion,
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))]),
+    case(
+     ex [u,s1,s2]: ?b = 1 & ?t2 = t(?u,1,?s1,?s2) &
+      ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) & ?g = stable,
+     exist([u,s1,s2],
+      ?b = 1 & ?t2 = t(?u,1,?s1,?s2) & ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) &
+      ?g = stable,
+      [?t = t(?u,0,t(?v,0,?t1,?s1),?s2),
+       succeeds balanced(?t2,s(?n2)),
+       succeeds balanced(t(?u,1,?s1,?s2),s(?n2)),
+       succeeds balanced(?s2,?n2) &
+       (ex k: ?n2 = s(?k) & succeeds balanced(?s1,?k)) by 
+        lemma(balanced:plus),
+       succeeds balanced(?s2,?n2),
+       succeeds balanced(?t2,s(?n2)),
+       succeeds diff(?n1,?n2,1,?n),
+       def succeeds diff(?n1,?n2,1,?n) by completion,s(?n1) = ?n2,
+       s(?n2) = ?n,
+       ex k: ?n2 = s(?k) & succeeds balanced(?s1,?k),
+       exist(k,
+	?n2 = s(?k) & succeeds balanced(?s1,?k),
+	def succeeds balanced(?s1,?k) by completion,
+	?s1 = t & ?n1 = 0 \/
+	(ex [0,x,t1,t2,1,n2]: ?s1 = t(?0,?x,?t1,?t2) &
+	  succeeds balanced(?t1,?1) & succeeds balanced(?t2,?n2) &
+	  succeeds diff(?1,?n2,?x,?n1))),
+       succeeds balanced(?s1,?n1), 
+       succeeds balanced(?s1,?n1) & succeeds balanced(?t1,?n1) &
+       succeeds diff(?n1,?n1,0,?n2),
+       succeeds balanced(t(?v,0,?t1,?s1),?n2),
+       succeeds balanced(t(?v,0,?t1,?s1),s(?n1)),
+       succeeds diff(?n1,?n2,1,?n),
+       succeeds diff(s(?n1),?n2,0,?n),
+       ?t = t & ?n = 0 \/
+       (ex [0,x,nt1,nt2,n1,n2]: ?t = t(?0,?x,?nt1,?nt2) &
+         succeeds balanced(?nt1,?n1) & succeeds balanced(?nt2,?n2) &
+         succeeds diff(?n1,?n2,?x,?n)),
+       succeeds balanced(?t,?n) by completion,
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n))],
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n)))),
+    case(
+     ex [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 & 
+      ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+     exist([u,w,2,s1,s2,s3,b1,b2],
+      ?b = 1 & ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+      [succeeds balanced(?t1,?n1),
+       succeeds balanced(?t2,s(?n2)),
+       succeeds balanced(t(?u,-1,t(?w,?2,?s1,?s2),?s3),s(?n2)),
+       succeeds balanced(t(?w,?2,?s1,?s2),?n2) &
+       (ex k: ?n2 = s(?k) & succeeds balanced(?s3,?k)) by 
+        lemma(balanced:minus),
+       def succeeds diff(?n1,?n2,?b,?n) by completion,
+       cases(
+	[case(?n2 = ?n1 & ?b = 0 & ?n = s(?n1),[]),
+	 case(?n2 = s(?n1) & ?b = 1 & ?n = s(s(?n1)),
+	  []),
+	 case(?n1 = s(?n2) & ?b = -1 & ?n = s(s(?n2)),
+	  [])],
+	?n2 = s(?n1)),
+       def succeeds diff(?n1,?n2,?b,?n) by completion,
+       cases(
+	[case(?n2 = ?n1 & ?b = 0 & ?n = s(?n1),[]),
+	 case(?n2 = s(?n1) & ?b = 1 & ?n = s(s(?n1)),
+	  []),
+	 case(?n1 = s(?n2) & ?b = -1 & ?n = s(s(?n2)),
+	  [])],
+	?n = s(?n2)),
+       succeeds balanced(t(?u,-1,t(?w,?2,?s1,?s2),?s3),s(s(?n1))),
+       succeeds balanced(?t1,?n1),
+       succeeds flip(?2,?b1,?b2),
+       succeeds 
+       balanced(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)),s(s(?n1))) by 
+        lemma(double:rotate:right),
+       succeeds balanced(?t,s(s(?n1))),
+       succeeds balanced(?t,?n),
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n))],
+      ?g = stable & succeeds balanced(?t,?n) \/
+      ?g = grows & succeeds balanced(?t,s(?n))))],
+   ?g = stable & succeeds balanced(?t,?n) \/
+   ?g = grows & succeeds balanced(?t,s(?n)))],
+ ?g = stable & succeeds balanced(?t,?n) \/
+ ?g = grows & succeeds balanced(?t,s(?n)))
+).
+
+
+% Dazu braucht man ein Lemma, das man mit Induktion nach insert/4 beweist.
+
+/** If we add an element into a balanced tree of height n, then the new tree
+is balanced, and either it grows and has height n+1, or it doesn't and 
+still has height n. */
+
+
+:- lemma(insert:balanced,
+all [v,t1,t2,g,n]: succeeds insert(?v,?t1,?t2,?g) &
+ succeeds balanced(?t1,?n) =>
+  (?g = stable & succeeds balanced(?t2,?n)) \/
+  (?g = grows & succeeds balanced(?t2,s(?n))),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => 
+     (all n: succeeds balanced(?t1,?n) => ?g = stable &
+        succeeds balanced(?t2,?n) \/
+        ?g = grows & succeeds balanced(?t2,s(?n)))],
+  [step([u],
+    [],
+    assume(succeeds balanced(t,?n),
+     [def succeeds balanced(t,?n) by completion,
+      ?n = 0 by theorem(leq:antisymmetric),
+      succeeds balanced(t,0),
+      succeeds diff(0,0,0,s(0)),
+      ex [n1,n2]: succeeds balanced(t,?n1) & succeeds balanced(t,?n2) &
+       succeeds diff(?n1,?n2,0,s(0)),
+      succeeds balanced(t(?u,0,t,t),s(0)) by completion,
+      succeeds balanced(t(?u,0,t,t),s(?n)),
+      grows = stable & succeeds balanced(t(?u,0,t,t),?n) \/
+      grows = grows & succeeds balanced(t(?u,0,t,t),s(?n))],
+     grows = stable & succeeds balanced(t(?u,0,t,t),?n) \/
+     grows = grows & succeeds balanced(t(?u,0,t,t),s(?n))),
+    all n: succeeds balanced(t,?n) => grows = stable &
+      succeeds balanced(t(?u,0,t,t),?n) \/
+      grows = grows & succeeds balanced(t(?u,0,t,t),s(?n))),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all n: succeeds balanced(?t1,?n) => ?g1 = stable &
+       succeeds balanced(?t3,?n) \/
+       ?g1 = grows & succeeds balanced(?t3,s(?n)),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds balanced(t(?v,?b,?t1,?t2),?n),
+     [?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+      ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+      cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+       [def succeeds balanced(t(?v,?b,?t1,?t2),?n) by completion,
+	exist([n1,n2],
+	 succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+	 succeeds diff(?n1,?n2,?b,?n),
+	 [succeeds insert(?u,?t1,?t3,stable),
+	  succeeds balanced(?t1,?n1),
+	  ?g1 = stable & succeeds balanced(?t3,?n1) \/
+	  ?g1 = grows & succeeds balanced(?t3,s(?n1)),
+	  cases(?g1 = stable & succeeds balanced(?t3,?n1),
+	   [],
+	   ?g1 = grows & succeeds balanced(?t3,s(?n1)),
+	   [],
+	   succeeds balanced(?t3,?n1)),
+	  ex [n1,n2]: succeeds balanced(?t3,?n1) &
+           succeeds balanced(?t2,?n2) & succeeds diff(?n1,?n2,?b,?n)],
+	 ex [n1,n2]: succeeds balanced(?t3,?n1) &
+	  succeeds balanced(?t2,?n2) & succeeds diff(?n1,?n2,?b,?n)),
+	succeeds balanced(t(?v,?b,?t3,?t2),?n) by completion,
+	succeeds balanced(?t,?n),
+	?g = stable & succeeds balanced(?t,?n) \/
+        ?g = grows & succeeds balanced(?t,s(?n))],
+       ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+       [succeeds insert(?u,?t1,?t3,?g1),
+	?g1 = grows \/ ?g1 = stable by lemma(insert:grows),
+	cases(?g1 = grows,
+         [def succeeds balanced(t(?v,?b,?t1,?t2),?n) by completion,
+          exist([n1,n2],
+           succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+           succeeds diff(?n1,?n2,?b,?n),
+           [succeeds insert(?u,?t1,?t3,grows),
+	    succeeds balanced(?t1,?n1),
+	    ?g1 = grows,
+	    ?g1 = stable &
+	    succeeds balanced(?t3,?n1) \/
+	    ?g1 = grows & succeeds balanced(?t3,s(?n1)),
+	    cases(?g1 = stable & succeeds balanced(?t3,?n1),
+             [],
+             ?g1 = grows & succeeds balanced(?t3,s(?n1)),
+             [],
+             succeeds balanced(?t3,s(?n1))),
+	    ?g = stable & succeeds balanced(?t,?n) \/
+            ?g = grows & succeeds balanced(?t,s(?n)) by 
+             lemma(left_combine:balanced)],
+           ?g = stable & succeeds balanced(?t,?n) \/
+           ?g = grows & succeeds balanced(?t,s(?n)))],
+         ?g1 = stable,
+         [],
+         ?g = stable & succeeds balanced(?t,?n) \/
+         ?g = grows & succeeds balanced(?t,s(?n)))],
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n)))],
+     ?g = stable & succeeds balanced(?t,?n) \/
+     ?g = grows & succeeds balanced(?t,s(?n))),
+    all n: succeeds balanced(t(?v,?b,?t1,?t2),?n) => ?g = stable &
+      succeeds balanced(?t,?n) \/ ?g = grows & succeeds balanced(?t,s(?n))),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all n: succeeds balanced(?t2,?n) => ?g1 = stable &
+       succeeds balanced(?t3,?n) \/
+       ?g1 = grows & succeeds balanced(?t3,s(?n)),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds balanced(t(?v,?b,?t1,?t2),?n),
+     [cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+       [def succeeds balanced(t(?v,?b,?t1,?t2),?n) by completion,
+	exist([n1,n2],
+	 succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+	 succeeds diff(?n1,?n2,?b,?n),
+	 [succeeds insert(?u,?t2,?t3,stable),
+	  succeeds balanced(?t2,?n2),
+	  ?g1 = stable & succeeds balanced(?t3,?n2) \/
+	  ?g1 = grows & succeeds balanced(?t3,s(?n2)),
+	  cases(?g1 = stable & succeeds balanced(?t3,?n2),
+           [],
+           ?g1 = grows & succeeds balanced(?t3,s(?n2)),
+           [],
+           ?g = stable & succeeds balanced(?t,?n) \/
+           ?g = grows & succeeds balanced(?t,s(?n)))],
+	 ?g = stable & succeeds balanced(?t,?n) \/
+	 ?g = grows & succeeds balanced(?t,s(?n)))],
+       ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+       [succeeds insert(?u,?t2,?t3,?g1),
+	?g1 = grows \/ ?g1 = stable by lemma(insert:grows),
+	cases(?g1 = grows,
+         [def succeeds balanced(t(?v,?b,?t1,?t2),?n) by completion,
+	  exist([n1,n2],
+	   succeeds balanced(?t1,?n1) & succeeds balanced(?t2,?n2) &
+	   succeeds diff(?n1,?n2,?b,?n),
+	   [succeeds insert(?u,?t2,?t3,grows),
+	    ?g1 = stable & succeeds balanced(?t3,?n2) \/
+	    ?g1 = grows & succeeds balanced(?t3,s(?n2)),
+	    cases(?g1 = stable & succeeds balanced(?t3,?n2),
+             [],
+             ?g1 = grows & succeeds balanced(?t3,s(?n2)),
+             [],
+             succeeds balanced(?t3,s(?n2))),
+	    ?g = stable & succeeds balanced(?t,?n) \/
+            ?g = grows & succeeds balanced(?t,s(?n)) by 
+             lemma(right_combine:balanced)],
+	   ?g = stable & succeeds balanced(?t,?n) \/
+	   ?g = grows & succeeds balanced(?t,s(?n)))],
+         ?g1 = stable,
+         [],
+         ?g = stable & succeeds balanced(?t,?n) \/
+         ?g = grows & succeeds balanced(?t,s(?n)))],
+       ?g = stable & succeeds balanced(?t,?n) \/
+       ?g = grows & succeeds balanced(?t,s(?n)))],
+     ?g = stable & succeeds balanced(?t,?n) \/
+     ?g = grows & succeeds balanced(?t,s(?n))),
+    all n: succeeds balanced(t(?v,?b,?t1,?t2),?n) => ?g = stable &
+      succeeds balanced(?t,?n) \/ ?g = grows & succeeds balanced(?t,s(?n)))]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds balanced(?t1,?n),
+  [all n: succeeds balanced(?t1,?n) => ?g = stable &
+     succeeds balanced(?t2,?n) \/ ?g = grows & succeeds balanced(?t2,s(?n)),
+   succeeds balanced(?t1,?n) => ?g = stable & succeeds balanced(?t2,?n) \/
+    ?g = grows & succeeds balanced(?t2,s(?n)),
+   ?g = stable & succeeds balanced(?t2,?n) \/
+   ?g = grows & succeeds balanced(?t2,s(?n))],
+  ?g = stable & succeeds balanced(?t2,?n) \/
+  ?g = grows & succeeds balanced(?t2,s(?n)))]
+).  	
+
+
+% Man moechte folgendes Theorem beweisen:
+
+/** If we add an element in a balanced tree, then the resulting tree is also
+balanced. */
+
+:- theorem(addavl:balanced,
+all [v,t1,t2]: succeeds addavl(?v,?t1,?t2) &
+ succeeds balanced(?t1) => succeeds balanced(?t2),
+assume(succeeds addavl(?v,?t1,?t2) & succeeds balanced(?t1),
+ [def succeeds addavl(?v,?t1,?t2) by completion,
+  exist(0,
+   succeeds insert(?v,?t1,?t2,?0),
+   [def succeeds balanced(?t1) by completion,
+    exist(1,
+     succeeds balanced(?t1,?1),
+     [?0 = stable & succeeds balanced(?t2,?1) \/
+      ?0 = grows & succeeds balanced(?t2,s(?1)) by lemma(insert:balanced),
+      cases(?0 = stable & succeeds balanced(?t2,?1),
+       [],
+       ?0 = grows & succeeds balanced(?t2,s(?1)),
+       [],
+       ex 0: succeeds balanced(?t2,?0))],
+     ex 0: succeeds balanced(?t2,?0))],
+   ex 0: succeeds balanced(?t2,?0)),
+  succeeds balanced(?t2) by completion],
+ succeeds balanced(?t2))
+).
+:-bye(balanced).
+

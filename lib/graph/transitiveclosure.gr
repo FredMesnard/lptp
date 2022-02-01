@@ -1,0 +1,39 @@
+
+:- assert_clauses(n(cycle_free,1),[
+ clause([n(cycle_free,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(cycle_free,1),[n('.',2),$(x),$(l)]],
+  [&,[~,[n(member,2),$(x),$(l)]],[n(cycle_free,1),$(l)]],
+  [x,l]/0)
+]).
+
+:- assert_clauses(n(disjoint,2),[
+ clause([n(disjoint,2),$(l1),$(l2)],
+  [~,[n(not_disjoint,2),$(l1),$(l2)]],
+  [l1,l2]/0)
+]).
+
+:- assert_clauses(n(not_disjoint,2),[
+ clause([n(not_disjoint,2),$(l1),$(l2)],
+  [&,[n(member,2),$(x),$(l1)],[n(member,2),$(x),$(l2)]],
+  [l1,l2,x]/0)
+]).
+
+:- assert_clauses(n(path,4),[
+ clause([n(path,4),$(x),[n([],0)],$(y),$(e)],
+  [n(member,2),[n(e,2),$(x),$(y)],$(e)],
+  [x,y,e]/0),
+ clause([n(path,4),$(x),[n('.',2),$(y),$(p)],$(z),$(e)],
+  [&,[n(member,2),[n(e,2),$(x),$(y)],$(e)],[n(path,4),$(y),$(p),$(z),$(e)]],
+  [x,y,p,z,e]/0)
+]).
+
+:- assert_clauses(n(tc,4),[
+ clause([n(tc,4),$(x),$(y),$(e),$(0)],
+  [n(member,2),[n(e,2),$(x),$(y)],$(e)],
+  [x,y,e,0]/1),
+ clause([n(tc,4),$(x),$(z),$(e),$(v)],
+  [&,[n(member,2),[n(e,2),$(x),$(y)],$(e)],[~,[n(member,2),$(y),$(v)]],[n(tc,4),$(y),$(z),$(e),[n('.',2),$(y),$(v)]]],
+  [x,z,e,v,y]/0)
+]).

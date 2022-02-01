@@ -1,0 +1,213 @@
+/*   Author: Robert Staerk <staerk@math.stanford.edu> */
+/*  Created: 8/13/95, 11:57 PM */
+/* Filename: axioms.pr */
+/* Abstract: Axioms for builtin predicates integer/1, is/2, =</2 and </2. */
+
+:- initialize.
+:- thm_file($(tmp)/axioms).
+:- tex_file($(tmp)/axioms).
+
+:- needs_gr($(examples)/parser/pr/axioms).
+
+:- axiom((is):integer,
+all [x,y]: succeeds ?x is ?y & succeeds arithmetic(?y) => 
+ succeeds integer(?x)
+).
+
+:- axiom((is):number,
+all [x,y]: succeeds ?x is ?y & succeeds numeric(?y) => 
+ succeeds number(?x)
+).
+
+:- axiom((is):function,
+all [x1,x2,y]: succeeds ?x1 is ?y & succeeds ?x2 is ?y => ?x1 = ?x2
+).
+
+:- axiom((is):existence,
+all y: succeeds arithmetic(?y) => (ex x: succeeds ?x is ?y)
+).
+
+:- axiom((is):termination,
+all [x,y]: succeeds arithmetic(?y) => terminates ?x is ?y
+).
+
+:- axiom((is):termination:numeric,
+all [x,y]: succeeds numeric(?y) => terminates ?x is ?y
+).
+ 
+:- axiom((is):leq:zero,
+all [x,y]: succeeds ?x is ?y - 1 & succeeds 1 =< ?y => succeeds 0 =< ?x
+).
+
+:- axiom((is):predecessor,
+all x: succeeds integer(?x) => fails ?x is ?x - 1
+).
+
+:- axiom(atom:gr,
+all x: succeeds atom(?x) => gr(?x)
+).
+
+:- axiom(atomic:gr,
+all x: succeeds atomic(?x) => gr(?x)
+).
+
+:- axiom(integer:gr,
+all x: succeeds integer(?x) => gr(?x)
+).
+
+:- axiom(number:gr,
+all x: succeeds number(?x) => gr(?x)
+).
+
+:- axiom(char_code_list:gr,
+all x: succeeds char_code_list(?x) => gr(?x)
+).
+
+:- axiom(current_op:integer,
+all [x,y,z]: succeeds current_op(?x,?y,?z) => succeeds integer(?x)
+).
+
+:- axiom(current_op:atom,
+all [x,y,z]: succeeds current_op(?x,?y,?z) => succeeds atom(?z)
+).
+
+:- axiom(current_op:precedence,
+all [x,y,z]: succeeds current_op(?x,?y,?z) =>
+ succeeds 1 =< ?x & succeeds ?x =< 1200
+).
+
+:- axiom(current_op:termination,
+all [x,y,z]: succeeds atom(?z) => terminates current_op(?x,?y,?z)
+).
+
+:- axiom(leq:termination,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ terminates ?x =< ?y
+).
+
+:- axiom(less:termination,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ terminates ?x < ?y
+).
+
+:- axiom(leq:reflexive,
+all x: succeeds integer(?x) => succeeds ?x =< ?x
+).
+
+:- axiom(less:leq,
+all [x,y]: succeeds ?x < ?y => succeeds ?x =< ?y
+).
+
+:- axiom(leq:less,
+all [x,y]: succeeds ?x =< ?y => ?x = ?y \/ succeeds ?x < ?y
+).
+
+:- axiom(less:success:leq:failure,
+all [x,y]: succeeds ?x < ?y => fails ?y =< ?x
+).
+
+:- axiom(less:failure:leq:success,
+all [x,y]: fails ?x < ?y => succeeds ?y =< ?x
+).
+
+:- axiom(leq:different,
+all [x,y]: succeeds ?x =< ?y & ?x <> ?y => succeeds ?x < ?y
+).
+
+:- axiom(less:predecessor,
+all [x,y]: succeeds ?x is ?y - 1 => succeeds ?x < ?y
+).
+ 
+:- axiom(less:assymmetric,
+all x: succeeds integer(?x) => fails ?x < ?x
+).
+
+:- axiom(leq:leq:transitive,
+all [x,y,z]: succeeds ?x =< ?y & succeeds ?y =< ?z => succeeds ?x =< ?z
+).
+
+:- axiom(leq:less:transitive,
+all [x,y,z]: succeeds ?x =< ?y & succeeds ?y < ?z => succeeds ?x < ?z
+).
+
+:- axiom(less:leq:transitive,
+all [x,y,z]: succeeds ?x < ?y & succeeds ?y =< ?z => succeeds ?x < ?z
+).
+
+:- axiom(less:less:transitive,
+all [x,y,z]: succeeds ?x < ?y & succeeds ?y < ?z => succeeds ?x < ?z
+).
+
+:- lemma((is):integer:predecessor,
+all [x,y]: succeeds ?x is ?y - 1 & succeeds integer(?y) =>
+ succeeds integer(?x),
+assume(succeeds ?x is ?y - 1 & succeeds integer(?y),
+ [succeeds arithmetic(?y) by sld,
+  succeeds integer(1) by builtin,
+  succeeds arithmetic(1) by sld,
+  succeeds arithmetic(?y - 1) by sld,
+  succeeds integer(?x) by axiom((is):integer)],
+ succeeds integer(?x))
+).
+
+:- lemma((is):integer:predecessor:existence,
+all y: succeeds integer(?y) => (ex x: succeeds ?x is ?y - 1),
+assume(succeeds integer(?y),
+ [succeeds arithmetic(?y) by sld,
+  succeeds integer(1) by builtin,
+  succeeds arithmetic(1) by sld,
+  succeeds arithmetic(?y - 1) by sld,
+  ex x: succeeds ?x is ?y - 1 by axiom((is):existence)],
+ ex x: succeeds ?x is ?y - 1)
+).
+
+:- lemma((is):termination:predecessor,
+all [m,n]: succeeds integer(?n) => terminates ?m is ?n - 1,
+assume(succeeds integer(?n),
+ [succeeds integer(1) by builtin,
+  succeeds arithmetic(1) by sld,
+  succeeds arithmetic(?n) by sld,
+  succeeds arithmetic(?n - 1) by sld,
+  terminates ?m is ?n - 1 by axiom((is):termination)],
+ terminates ?m is ?n - 1)
+).
+
+:- lemma((is):integer:minus,
+all [x,y]: succeeds ?x is -(?y) & succeeds integer(?y) =>
+ succeeds integer(?x),
+assume(succeeds ?x is - ?y & succeeds integer(?y),
+ [succeeds arithmetic(?y) by sld,
+  succeeds arithmetic(- ?y) by sld,
+  succeeds integer(?x) by axiom((is):integer)],
+ succeeds integer(?x))
+).
+
+:- lemma((is):number:minus,
+all [x,y]: succeeds ?x is -(?y) & succeeds number(?y) =>
+ succeeds number(?x),
+assume(succeeds ?x is - ?y & succeeds number(?y),
+ [succeeds numeric(?y) by sld,
+  succeeds numeric(- ?y) by sld,
+  succeeds number(?x) by axiom((is):number)],
+ succeeds number(?x))
+).
+
+:- lemma((is):integer:minus:termination,
+all [x,y]: succeeds integer(?y) => terminates ?x is - ?y,
+assume(succeeds integer(?y),
+ [succeeds arithmetic(?y) by sld,
+  succeeds arithmetic(- ?y) by sld,
+  terminates ?x is - ?y by axiom((is):termination)],
+ terminates ?x is - ?y)
+).
+
+:- lemma((is):number:minus:termination,
+all [x,y]: succeeds number(?y) => terminates ?x is - ?y,
+assume(succeeds number(?y),
+ [succeeds numeric(?y) by sld,
+  succeeds numeric(- ?y) by sld,
+  terminates ?x is - ?y by axiom((is):termination:numeric)],
+ terminates ?x is - ?y)
+).
+
+:- bye(axioms).

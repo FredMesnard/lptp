@@ -1,0 +1,426 @@
+:- initialize.
+:- tex_file($(tmp)/proof2).
+:- thm_file($(tmp)/proof2).
+
+:- lemma(2:1,
+(all x: r(?x)) => r(0),
+assume(all x: r(?x),[],r(0))
+).
+
+:- lemma(2:2,
+(all [x,y,z]: r(?x,?y,?z)) => r(c1,c2,c3),
+assume(all [x,y,z]: r(?x,?y,?z),[],r(c1,c2,c3))
+).
+
+:- lemma(2:3,
+(all x: all y: rel(?x,?y)) => rel(c1,c2),
+assume(all x: all y: rel(?x,?y),[],rel(c1,c2))
+).
+
+:- lemma(2:4,
+(all [x,y]: r(?x,?y)) => (all [y,z]: r(?y,?z)),
+assume(all [x,y]: r(?x,?y),[],all [y,z]: r(?y,?z))
+).
+
+:- lemma(2:5,
+(all [x0,x1,x2,x3,x4]: r(?x0,?x1,?x2,?x3,?x4)) => r(c0,c1,c2,c3,c4),
+assume(all [x0,x1,x2,x3,x4]: r(?x0,?x1,?x2,?x3,?x4),
+ [r(c0,c1,c2,c3,c4)],
+ r(c0,c1,c2,c3,c4))
+).
+
+:- lemma(2:6,
+all y: (all [x,y]: r(?x,?y)) => r(c,?y),
+assume(all [x,y]: r(?x,?y),[],r(c,?y))
+).
+
+:- lemma(2:7,
+(all [x,y]: r(?x,?y)) => (all z: r(?z,?z)),
+assume(all [x,y]: r(?x,?y),[],all z: r(?z,?z))
+).
+
+:- lemma(2:8,
+(all x: r(?x)) => (all y: r(f(?y))),
+assume(all x: r(?x),[],all y: r(f(?y)))
+).
+
+:- lemma(2:9,
+(all [x,y,z]: r(?x,?y,?z)) => (all x: r(c0,?x,f(f(?x,?x)))),
+assume(all [x,y,z]: r(?x,?y,?z),[],all x: r(c0,?x,f(f(?x,?x))))
+).
+
+:- lemma(2:10,
+r(c0,c1,c2) => (ex [x,y,z]: r(?x,?y,?z)),
+assume(r(c0,c1,c2),[],ex [x,y,z]: r(?x,?y,?z))
+).
+
+:- lemma(2:11,
+all [x,y]: r(?x,f(?y)) => (ex x: ex y: r(?x,?y)),
+assume(r(?x,f(?y)),[],ex x: ex y: r(?x,?y))
+).
+
+%:- lemma(2:12,
+%(ex x: r(?x,constant)) => (ex [x,y]: r(?x,?y)),
+%assume(ex x: r(?x,constant),[],ex [x,y]: r(?x,?y))
+%).
+
+%:- lemma(2:13,
+%(ex x: r(c0,?x,f(?x))) => (ex [x,y,z]: r(?x,?y,?z)),
+%assume(ex x: r(c0,?x,f(?x)),[],ex [x,y,z]: r(?x,?y,?z))
+%).
+
+:- lemma(2:14,
+(all x: r(?x)) & (all x: r(?x) => q(?x)) => (all x: q(?x)),
+assume((all x: r(?x)) & (all x: r(?x) => q(?x)),
+ [all x: r(?x),
+  r(?x),
+  all x: r(?x) => q(?x),
+  r(?x) => q(?x),
+  q(?x),
+  all x: q(?x)],
+ all x: q(?x))
+).
+
+:- lemma(2:15,
+(all x: r(?x)) & (all x: r(?x) => q(?x)) => (all x: q(f(?x))),
+assume((all x: r(?x)) & (all x: r(?x) => q(?x)),
+ [all x: r(?x),
+  r(?x),
+  all x: r(?x) => q(?x),
+  r(?x) => q(?x),
+  q(?x),
+  all x: q(f(?x))],
+ all x: q(f(?x)))
+).
+
+:- lemma(2:16,
+(all x: r(?x)) & (all x: r(?x) => q(?x)) => (all x: q(f(?x))),
+assume((all x: r(?x)) & (all x: r(?x) => q(?x)),
+ [all x: r(?x),
+  r(f(?x)),
+  all x: r(?x) => q(?x),
+  r(f(?x)) => q(f(?x)),
+  q(f(?x)),
+  all x: q(f(?x))],
+ all x: q(f(?x)))
+).
+
+:- lemma(2:17,
+(all x: p => r(?x)) <=> p => (all x: r(?x)),
+[assume(all x: p => r(?x),
+  [p => r(?x),
+   assume(p,
+    [r(?x),
+     all x: r(?x)],
+    all x: r(?x))],
+  p => (all x: r(?x))),
+ assume(p => (all x: r(?x)),
+  [assume(p,[all x: r(?x),r(?x)],r(?x)),
+   all x: p => r(?x)],
+  all x: p => r(?x))]
+).
+
+:- lemma(2:18,
+(all x: p & r(?x)) <=> p & (all x: r(?x)),
+[assume(all x: p & r(?x),
+  [p & r(?x),
+   p,
+   r(?x),
+   all x: r(?x)],
+  p & (all x: r(?x))),
+ assume(p & (all x: r(?x)),
+  [p,
+   all x: r(?x),
+   r(?x),
+   p & r(?x),
+   all x: p & r(?x)],
+  all x: p & r(?x))]
+).
+
+:- lemma(2:19,
+(all x: p \/ r(?x)) <=> p \/ (all x: r(?x)),
+[assume(all x: p \/ r(?x),
+  [p \/ r(?x),
+   cases(p,
+    [],
+    ~ p,
+    [cases(p,ff,r(?x),[],r(?x)),
+     all x: r(?x)],
+    p \/ (all x: r(?x)))],
+  p \/ (all x: r(?x))),
+ assume(p \/ (all x: r(?x)),
+  [cases(p,[],all x: r(?x),r(?x),p \/ r(?x)),
+   all x: p \/ r(?x)],
+  all x: p \/ r(?x))]
+).
+
+:- lemma(2:20,
+(all x: r(?x)) & (all x: r(?x) => (all y: r(?x,?y))) => 
+(all [x,y]: r(?x,?y)),
+assume((all x: r(?x)) & (all x: r(?x) => (all y: r(?x,?y))),
+ [all x: r(?x),
+  r(?x),
+  all x: r(?x) => (all y: r(?x,?y)),
+  r(?x) => (all y: r(?x,?y)),
+  all y: r(?x,?y),
+  all [x,y]: r(?x,?y)],
+ all [x,y]: r(?x,?y))
+).
+
+:- lemma(2:21,
+(ex x: r(?x)) & (all x: r(?x) => p) => p,
+assume((ex x: r(?x)) & (all x: r(?x) => p),
+ [ex x: r(?x),
+  all x: r(?x) => p,
+  exist(u,
+   r(?u),
+   [r(?u) => p,
+    p],
+   p)],
+ p)
+).
+
+:- lemma(2:22,
+(ex [x,y]: r(?x,?y)) & (all [x,y]: r(?x,?y) => p) => p,
+assume((ex [x,y]: r(?x,?y)) & (all [x,y]: r(?x,?y) => p),
+ [ex [x,y]: r(?x,?y),
+  all [x,y]: r(?x,?y) => p,
+  exist([a,b],
+   r(?a,?b),
+   [r(?a,?b) => p,
+    p],
+   p)],
+ p)
+).
+
+:- lemma(2:23,
+(all x: r(?x) => p) <=> (ex x: r(?x)) => p,
+[assume(all x: r(?x) => p,
+  assume(ex x: r(?x),
+   exist(x,
+    r(?x),
+    [r(?x) => p,
+     p],
+    p),
+   p),
+  (ex x: r(?x)) => p),
+ assume((ex x: r(?x)) => p,
+  [assume(r(?x),[ex x: r(?x),p],p),
+   all x: r(?x) => p],
+  all x: r(?x) => p)]
+).
+
+:- lemma(2:24,
+(ex [x,y,z]: p & r(?x,?y,?z)) <=> p & (ex [x,y,z]: r(?x,?y,?z)),
+[assume(ex [x,y,z]: p & r(?x,?y,?z),
+  exist([a,b,c],
+   p & r(?a,?b,?c),
+   [p,
+    r(?a,?b,?c),
+    ex [x,y,z]: r(?x,?y,?z)],
+   p & (ex [x,y,z]: r(?x,?y,?z))),
+  p & (ex [x,y,z]: r(?x,?y,?z))),
+ assume(p & (ex [x,y,z]: r(?x,?y,?z)),
+  [p,
+   ex [x,y,z]: r(?x,?y,?z),
+   exist([a,b,c],
+    r(?a,?b,?c),
+    [p & r(?a,?b,?c),
+     ex [x,y,z]: p & r(?x,?y,?z)],
+    ex [x,y,z]: p & r(?x,?y,?z))],
+  ex [x,y,z]: p & r(?x,?y,?z))]
+).
+
+:- lemma(2:25,
+(ex x: p \/ r(?x)) <=> p \/ (ex x: r(?x)),
+[assume(ex x: p \/ r(?x),
+  exist(a,
+   p \/ r(?a),
+   cases(p,
+    [],
+    r(?a),
+    [ex x: r(?x)],
+    p \/ (ex x: r(?x))),
+   p \/ (ex x: r(?x))),
+  p \/ (ex x: r(?x))),
+ assume(p \/ (ex x: r(?x)),
+  cases(p,
+   [p \/ r(?a),
+    ex x: p \/ r(?x)],
+   ex x: r(?x),
+   exist(a,
+    r(?a),
+    [p \/ r(?a),
+     ex x: p \/ r(?x)],
+    ex x: p \/ r(?x)),
+   ex x: p \/ r(?x)),
+  ex x: p \/ r(?x))]
+).
+
+:- lemma(2:26,
+(ex x: r(?x) \/ q(?x)) <=> (ex x: r(?x)) \/ (ex x: q(?x)),
+[assume(ex x: r(?x) \/ q(?x),
+  exist(a,
+   r(?a) \/ q(?a),
+   cases(r(?a),
+    ex x: r(?x),
+    q(?a),
+    ex x: q(?x),
+    (ex x: r(?x)) \/ (ex x: q(?x))),
+   (ex x: r(?x)) \/ (ex x: q(?x))),
+  (ex x: r(?x)) \/ (ex x: q(?x))),
+ assume((ex x: r(?x)) \/ (ex x: q(?x)),
+  cases(ex x: r(?x),
+   exist(a,
+    r(?a),
+    [r(?a) \/ q(?a),
+     ex x: r(?x) \/ q(?x)],
+    ex x: r(?x) \/ q(?x)),
+   ex x: q(?x),
+   exist(a,
+    q(?a),
+    [r(?a) \/ q(?a),
+     ex x: r(?x) \/ q(?x)],
+    ex x: r(?x) \/ q(?x)),
+   ex x: r(?x) \/ q(?x)),
+  ex x: r(?x) \/ q(?x))]
+).
+
+:- lemma(2:27,
+(all x: r(?x) & q(?x)) <=> (all y: r(?y)) & (all z: q(?z)),
+[assume(all x: r(?x) & q(?x),
+  [r(?a) & q(?a),
+   r(?a),
+   all y: r(?y),
+   q(?a),
+   all z: q(?z)],
+  (all y: r(?y)) & (all z: q(?z))),
+ assume((all y: r(?y)) & (all z: q(?z)),
+  [all y: r(?y),
+   all z: q(?z),
+   r(?a),
+   q(?a),
+   r(?a) & q(?a)],
+  all x: r(?x) & q(?x))]
+).
+
+:- lemma(2:28,
+all [x1,x2,y1,y2]: ?x1 = ?y1 & ?x2 = ?y2 => f(?x1,?x2) = f(?y1,?y2),
+assume(?x1 = ?y1 & ?x2 = ?y2,
+ [?x1 = ?y1,
+  ?x2 = ?y2,
+  f(?x1,?x2) = f(?y1,?y2)],
+ f(?x1,?x2) = f(?y1,?y2))
+).
+
+:- lemma(2:29,
+all [x,y]: f(?x) = f(?y) => ?x = ?y,
+assume(f(?x) = f(?y),?x = ?y,?x = ?y)
+).
+
+:- lemma(2:30,
+all [x1,x2,y1,y2]: f(?x1,?x2) = f(?y1,?y2) => ?x1 = ?y1 & ?x2 = ?y2,
+assume(f(?x1,?x2) = f(?y1,?y2),[?x1 = ?y1,?x2 = ?y2],?x1 = ?y1 & ?x2 = ?y2)
+).
+
+:- lemma(2:31,
+all x: ?x = ?x,
+[?x = ?x]
+).
+
+:- lemma(2:32,
+all [x,y]: ?x = ?y => ?y = ?x,
+assume(?x = ?y,?y = ?x,?y = ?x)
+).
+
+:- lemma(2:33,
+all [x,y,z]: ?x = ?y & ?y = ?z => ?x = ?z,
+assume(?x = ?y & ?y = ?z,[?x = ?y,?y = ?z,?x = ?z],?x = ?z)
+).
+
+:- lemma(2:34,
+all x: ?x <> f(?x),
+?x <> f(?x)
+).
+
+:- lemma(2:35,
+all [x,y]: f(?x,c0) <> f(?y),
+f(?x,c0) <> f(?y)
+).
+
+:- lemma(2:36,
+all [x0,x1,x2]: f(?x0,?x1,?x2) <> c0,
+f(?x0,?x1,?x2) <> c0
+).
+
+:- lemma(2:37,
+all [x,y]: f(?x,?y) <> g(?x,?y),
+f(?x,?y) <> g(?x,?y)
+).
+
+:- lemma(2:38,
+all [x,l]: [?x|?l] <> [],
+[?x|?l] <> []
+).
+
+:- lemma(2:39,
+all [x1,x2,l1,l2]: [?x1|?l1] = [?x2|?l2] => ?x1 = ?x2 & ?l1 = ?l2,
+assume([?x1|?l1] = [?x2|?l2],[?x1 = ?x2,?l1 = ?l2],?x1 = ?x2 & ?l1 = ?l2)
+).
+
+:- lemma(2:40,
+all [x,y]: ~ ?x = ?y <=> ?x <> ?y,
+[assume(~ ?x = ?y,?x <> ?y,?x <> ?y),
+ assume(?x <> ?y,
+  ~ ?x = ?y,
+  ~ ?x = ?y),
+ ~ ?x = ?y <=> ?x <> ?y]
+).
+
+:- lemma(2:41,
+all [x,y]: f(?x) = f(g(?y)) & (all z: r(?z,?x)) => (all z: r(?z,g(?y))),
+assume(f(?x) = f(g(?y)) & (all z: r(?z,?x)),
+ [f(?x) = f(g(?y)),
+  all z: r(?z,?x),
+  all z: r(?z,g(?y))],
+ all z: r(?z,g(?y)))
+).
+
+:- lemma(2:42,
+all [x,y]: f(?x) = f(?y) => ?x = ?y,
+assume(f(?x) = f(?y),?x = ?y by comment('CET'),?x = ?y)
+).
+
+:- lemma(2:43,
+~ (succeeds l & fails l),
+contra(succeeds l & fails l,[succeeds l,fails l,ff])
+).
+
+:- lemma(2:44,
+all x: def succeeds r(?x) => def succeeds r(?x),
+assume(def succeeds r(?x),def succeeds r(?x),def succeeds r(?x))
+).
+
+:- lemma(2:45,
+terminates a & terminates b & terminates c & fails c => 
+terminates (a & b & c & d),
+assume(terminates a & terminates b & terminates c & fails c,
+ [],
+ terminates (a & b & c & d))
+).
+
+:- lemma(2:46,
+(all x1: r1(?x1) =>
+ (all x2: r2(?x1,?x2) =>
+    r3(?x1,?x2) =>
+     (all x3: q1(?x1) & q2(?x2,?x3)))) &
+r1(1) & r2(1,2) & r3(1,2) => q2(2,3),
+assume(
+ (all x1: r1(?x1) => 
+    (all x2: r2(?x1,?x2) => r3(?x1,?x2) => (all x3: q1(?x1) & q2(?x2,?x3)))) &
+ r1(1) & r2(1,2) & r3(1,2),
+ [],
+ q2(2,3))
+).
+
+:- bye(proof2).

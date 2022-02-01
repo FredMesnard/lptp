@@ -1,0 +1,624 @@
+%   Author: Rene Lehmann  <rene.lehmann@unifr.ch> & 
+%           Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+%  Created: Tue Mar 11 09:09:28 1997 
+% Filename: ordered.pr 
+
+:- initialize.
+
+:- needs_thm($(tmp)/axioms).
+:- needs_gr($(examples)/avl/avl).
+:- thm_file($(tmp)/ordered).
+:- tex_file($(tmp)/ordered).
+
+/** If we insert an element into an avl-tree, then the resulting tree is ordered.
+To prove this fact, we need some additional lemmas about lower- and upper bounds: */
+
+/** lemma(left_combine:upper_bound) is proved by case-splitting according to the
+Definition of <tt>left_combine(?b,?t1,?v,?t2,?t,?g)</tt>. */
+
+:- lemma(left_combine:upper_bound,
+all [b,t1,v,t2,t,g,u]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds upper_bound(?t1,?u) & succeeds upper_bound(?t2,?u) &
+ succeeds r(?v,?u) => succeeds upper_bound(?t,?u),
+assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds upper_bound(?t1,?u) & succeeds upper_bound(?t2,?u) &
+ succeeds r(?v,?u),
+ [def succeeds left_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = 1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,-1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) &
+      ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+     exist([0,s1,s2],
+      ?b = -1 & ?t1 = t(?0,-1,?s1,?s2) & ?t = t(?0,0,?s1,t(?v,0,?s2,?t2)) &
+      ?g = stable,
+      [succeeds upper_bound(t(?0,-1,?s1,?s2),?u),
+       def succeeds upper_bound(t(?0,-1,?s1,?s2),?u) by completion,
+       succeeds upper_bound(t(?0,0,?s1,t(?v,0,?s2,?t2)),?u) ,
+       succeeds upper_bound(?t,?u)],
+      succeeds upper_bound(?t,?u))),
+    case(
+     ex [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 & 
+      ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+     exist([1,s1,w,0,s2,s3,b1,b2],
+      ?b = -1 & ?t1 = t(?1,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?1,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+      [succeeds upper_bound(t(?1,1,?s1,t(?w,?0,?s2,?s3)),?u),
+       def succeeds upper_bound(t(?1,1,?s1,t(?w,?0,?s2,?s3)),?u) by 
+	completion,
+       def succeeds upper_bound(t(?w,?0,?s2,?s3),?u) by completion,
+       succeeds 
+       upper_bound(t(?w,0,t(?1,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),?u) by 
+	completion,
+       succeeds upper_bound(?t,?u)],
+      succeeds upper_bound(?t,?u)))],
+   succeeds upper_bound(?t,?u))],
+ succeeds upper_bound(?t,?u))).
+
+
+/** The same for right combine: */
+
+:- lemma(right_combine:upper_bound,
+all [b,t1,v,t2,t,g,u]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds upper_bound(?t1,?u) & succeeds upper_bound(?t2,?u) &
+ succeeds r(?v,?u) => succeeds upper_bound(?t,?u),
+assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds upper_bound(?t1,?u) & succeeds upper_bound(?t2,?u) &
+ succeeds r(?v,?u),
+ [def succeeds right_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = -1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = 1 & ?t2 = t(?u,1,?s1,?s2) &
+      ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) & ?g = stable,
+     exist([0,s1,s2],
+      ?b = 1 & ?t2 = t(?0,1,?s1,?s2) & ?t = t(?0,0,t(?v,0,?t1,?s1),?s2) &
+      ?g = stable,
+      [succeeds upper_bound(t(?0,1,?s1,?s2),?u),
+       def succeeds upper_bound(t(?0,1,?s1,?s2),?u) by completion,
+       succeeds upper_bound(t(?v,0,?t1,?s1),?u) by completion,
+       succeeds upper_bound(t(?0,0,t(?v,0,?t1,?s1),?s2),?u) by completion,
+       succeeds upper_bound(?t,?u)],
+      succeeds upper_bound(?t,?u))),
+    case(
+     ex [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 & 
+      ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+     exist([3,w,2,s1,s2,s3,b1,b2],
+      ?b = 1 & ?t2 = t(?3,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?3,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+      [succeeds upper_bound(t(?3,-1,t(?w,?2,?s1,?s2),?s3),?u),
+       def succeeds upper_bound(t(?3,-1,t(?w,?2,?s1,?s2),?s3),?u) by 
+	completion,
+       def succeeds upper_bound(t(?w,?2,?s1,?s2),?u) by completion,
+       succeeds 
+       upper_bound(t(?w,0,t(?v,?b1,?t1,?s1),t(?3,?b2,?s2,?s3)),?u) by 
+	completion,
+       succeeds upper_bound(?t,?u)],
+      succeeds upper_bound(?t,?u)))],
+   succeeds upper_bound(?t,?u))],
+ succeeds upper_bound(?t,?u))).
+
+/** We redo the whole story for the <tt>lower_bound</tt> predicate: */
+
+:- lemma(left_combine:lower_bound,
+all [b,t1,v,t2,t,g,u]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds lower_bound(?t1,?u) & succeeds lower_bound(?t2,?u) &
+ succeeds r(?u,?v) => succeeds lower_bound(?t,?u),
+assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds lower_bound(?t1,?u) & succeeds lower_bound(?t2,?u) &
+ succeeds r(?u,?v),
+ [def succeeds left_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = 1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,-1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) &
+      ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+     exist([0,s1,s2],
+      ?b = -1 & ?t1 = t(?0,-1,?s1,?s2) & ?t = t(?0,0,?s1,t(?v,0,?s2,?t2)) &
+      ?g = stable,
+      [succeeds lower_bound(t(?0,-1,?s1,?s2),?u),
+       def succeeds lower_bound(t(?0,-1,?s1,?s2),?u) by completion,
+       succeeds lower_bound(t(?v,0,?s2,?t2),?u) by completion,
+       succeeds lower_bound(t(?0,0,?s1,t(?v,0,?s2,?t2)),?u) by completion,
+       succeeds lower_bound(?t,?u)],
+      succeeds lower_bound(?t,?u))),
+    case(
+     ex [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 & 
+      ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+     exist([1,s1,w,0,s2,s3,b1,b2],
+      ?b = -1 & ?t1 = t(?1,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?1,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+      [succeeds lower_bound(t(?1,1,?s1,t(?w,?0,?s2,?s3)),?u),
+       def succeeds lower_bound(t(?1,1,?s1,t(?w,?0,?s2,?s3)),?u) by 
+	completion,
+       def succeeds lower_bound(t(?w,?0,?s2,?s3),?u) by completion,
+       succeeds 
+       lower_bound(t(?w,0,t(?1,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)),?u) by 
+	completion,
+       succeeds lower_bound(?t,?u)],
+      succeeds lower_bound(?t,?u)))],
+   succeeds lower_bound(?t,?u))],
+ succeeds lower_bound(?t,?u))).
+
+:- lemma(right_combine:lower_bound,
+all [b,t1,v,t2,t,g,u]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds lower_bound(?t1,?u) & succeeds lower_bound(?t2,?u) &
+ succeeds r(?u,?v) => succeeds lower_bound(?t,?u),
+assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds lower_bound(?t1,?u) & succeeds lower_bound(?t2,?u) &
+ succeeds r(?u,?v),
+ [def succeeds right_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = -1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = 1 & ?t2 = t(?u,1,?s1,?s2) &
+      ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) & ?g = stable,
+     exist([0,s1,s2],
+      ?b = 1 & ?t2 = t(?0,1,?s1,?s2) & ?t = t(?0,0,t(?v,0,?t1,?s1),?s2) &
+      ?g = stable,
+      [succeeds lower_bound(t(?0,1,?s1,?s2),?u),
+       def succeeds lower_bound(t(?0,1,?s1,?s2),?u) by completion,
+       succeeds lower_bound(t(?v,0,?t1,?s1),?u) by completion,
+       succeeds lower_bound(t(?0,0,t(?v,0,?t1,?s1),?s2),?u) by completion,
+       succeeds lower_bound(?t,?u)],
+      succeeds lower_bound(?t,?u))),
+    case(
+     ex [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 & 
+      ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+     exist([3,w,2,s1,s2,s3,b1,b2],
+      ?b = 1 & ?t2 = t(?3,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?3,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+      [succeeds lower_bound(t(?3,-1,t(?w,?2,?s1,?s2),?s3),?u),
+       def succeeds lower_bound(t(?3,-1,t(?w,?2,?s1,?s2),?s3),?u) by 
+	completion,
+       def succeeds lower_bound(t(?w,?2,?s1,?s2),?u) by completion,
+       succeeds 
+       lower_bound(t(?w,0,t(?v,?b1,?t1,?s1),t(?3,?b2,?s2,?s3)),?u) by 
+	completion,
+       succeeds lower_bound(?t,?u)],
+      succeeds lower_bound(?t,?u)))],
+   succeeds lower_bound(?t,?u))],
+ succeeds lower_bound(?t,?u))).
+
+/** lemma(insert:upper_bound) is proved by induction on insert and needs the previous 
+lemmas: lemma(left_combine:upper_bound), lemma(right_combine:upper_bound) */
+
+:- lemma(insert:upper_bound,
+all [u,v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) & succeeds r(?v,?u) &
+ succeeds upper_bound(?t1,?u) => succeeds upper_bound(?t2,?u),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => 
+     (all u: succeeds r(?v,?u) & succeeds upper_bound(?t1,?u) => 
+        succeeds upper_bound(?t2,?u))],
+  [step([u],
+    [],
+    assume(succeeds r(?u,?w) & succeeds upper_bound(t,?w),
+     [],
+     succeeds upper_bound(t(?u,0,t,t),?w)),
+    all w: succeeds r(?u,?w) & succeeds upper_bound(t,?w) => 
+      succeeds upper_bound(t(?u,0,t,t),?w)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all w: succeeds r(?u,?w) & succeeds upper_bound(?t1,?w) => 
+       succeeds upper_bound(?t3,?w),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds r(?u,?w) & succeeds upper_bound(t(?v,?b,?t1,?t2),?w),
+     cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+      [def succeeds upper_bound(t(?v,?b,?t1,?t2),?w) by completion,
+       succeeds upper_bound(?t3,?w),
+       succeeds upper_bound(t(?v,?b,?t3,?t2),?w) by completion,
+       succeeds upper_bound(?t,?w)],
+      ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+      [def succeeds upper_bound(t(?v,?b,?t1,?t2),?w) by completion,
+       succeeds upper_bound(?t3,?w),
+       succeeds upper_bound(?t,?w) by lemma(left_combine:upper_bound)],
+      succeeds upper_bound(?t,?w)),
+     succeeds upper_bound(?t,?w)),
+    all w: succeeds r(?u,?w) & succeeds upper_bound(t(?v,?b,?t1,?t2),?w) =>
+      succeeds upper_bound(?t,?w)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all w: succeeds r(?u,?w) & succeeds upper_bound(?t2,?w) => 
+       succeeds upper_bound(?t3,?w),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds r(?u,?w) & succeeds upper_bound(t(?v,?b,?t1,?t2),?w),
+     cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+      [def succeeds upper_bound(t(?v,?b,?t1,?t2),?w) by completion,
+       succeeds upper_bound(?t3,?w),
+       succeeds upper_bound(t(?v,?b,?t1,?t3),?w) by completion,
+       succeeds upper_bound(?t,?w)],
+      ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+      [def succeeds upper_bound(t(?v,?b,?t1,?t2),?w) by completion,
+       succeeds upper_bound(?t3,?w),
+       succeeds upper_bound(?t,?w) by lemma(right_combine:upper_bound)],
+      succeeds upper_bound(?t,?w)),
+     succeeds upper_bound(?t,?w)),
+    all w: succeeds r(?u,?w) & succeeds upper_bound(t(?v,?b,?t1,?t2),?w) =>
+      succeeds upper_bound(?t,?w))]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds r(?v,?u) &
+  succeeds upper_bound(?t1,?u),
+  [all u: succeeds r(?v,?u) & succeeds upper_bound(?t1,?u) => 
+     succeeds upper_bound(?t2,?u),
+   succeeds r(?v,?u) & succeeds upper_bound(?t1,?u) => 
+    succeeds upper_bound(?t2,?u),
+   succeeds upper_bound(?t2,?u)],
+  succeeds upper_bound(?t2,?u))]).
+
+:- lemma(insert:lower_bound,
+all [u,v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) & succeeds r(?u,?v) &
+ succeeds lower_bound(?t1,?u) => succeeds lower_bound(?t2,?u),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => 
+     (all u: succeeds r(?u,?v) & succeeds lower_bound(?t1,?u) => 
+        succeeds lower_bound(?t2,?u))],
+  [step([u],
+    [],
+    assume(succeeds r(?w,?u) & succeeds lower_bound(t,?w),
+     [],
+     succeeds lower_bound(t(?u,0,t,t),?w)),
+    all w: succeeds r(?w,?u) & succeeds lower_bound(t,?w) => 
+      succeeds lower_bound(t(?u,0,t,t),?w)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all w: succeeds r(?w,?u) & succeeds lower_bound(?t1,?w) => 
+       succeeds lower_bound(?t3,?w),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds r(?w,?u) & succeeds lower_bound(t(?v,?b,?t1,?t2),?w),
+     [def succeeds lower_bound(t(?v,?b,?t1,?t2),?w) by completion,
+      succeeds lower_bound(?t3,?w),
+      cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+       [],
+       ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+       succeeds lower_bound(?t,?w) by lemma(left_combine:lower_bound),
+       succeeds lower_bound(?t,?w))],
+     succeeds lower_bound(?t,?w)),
+    all w: succeeds r(?w,?u) & succeeds lower_bound(t(?v,?b,?t1,?t2),?w) =>
+      succeeds lower_bound(?t,?w)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [all w: succeeds r(?w,?u) & succeeds lower_bound(?t2,?w) => 
+       succeeds lower_bound(?t3,?w),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds r(?w,?u) & succeeds lower_bound(t(?v,?b,?t1,?t2),?w),
+     [def succeeds lower_bound(t(?v,?b,?t1,?t2),?w) by completion,
+      succeeds lower_bound(?t3,?w),
+      cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+       [],
+       ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+       succeeds lower_bound(?t,?w) by lemma(right_combine:lower_bound),
+       succeeds lower_bound(?t,?w))],
+     succeeds lower_bound(?t,?w)),
+    all w: succeeds r(?w,?u) & succeeds lower_bound(t(?v,?b,?t1,?t2),?w) =>
+      succeeds lower_bound(?t,?w))]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds r(?u,?v) &
+  succeeds lower_bound(?t1,?u),
+  [all u: succeeds r(?u,?v) & succeeds lower_bound(?t1,?u) => 
+     succeeds lower_bound(?t2,?u),
+   succeeds r(?u,?v) & succeeds lower_bound(?t1,?u) => 
+    succeeds lower_bound(?t2,?u),
+   succeeds lower_bound(?t2,?u)],
+  succeeds lower_bound(?t2,?u))]).
+
+
+/** If a tree is ordered, then succeeds a_tree:
+this is proved by induction: */
+
+:- lemma(ordered:a_tree,
+all t: succeeds ordered(?t) => succeeds a_tree(?t),
+induction([all t: succeeds ordered(?t) => succeeds a_tree(?t)],
+ [step([],[],[],succeeds a_tree(t)),
+  step([v,0,t1,t2],
+   [succeeds a_tree(?t1),
+    succeeds a_tree(?t2),
+    succeeds a(?v),
+    succeeds ordered(?t1),
+    succeeds ordered(?t2),
+    succeeds upper_bound(?t1,?v),
+    succeeds lower_bound(?t2,?v)],
+   [],
+   succeeds a_tree(t(?v,?0,?t1,?t2)))])).
+
+:- lemma(lower_bound:transitive,
+all [u,v,t]: succeeds lower_bound(?t,?v) & succeeds a(?u) & succeeds a(?v) &
+ succeeds a_tree(?t) & succeeds r(?u,?v) => succeeds lower_bound(?t,?u),
+[induction(
+  [all [t,v]: succeeds lower_bound(?t,?v) => 
+     (all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) &
+       succeeds r(?u,?v) => succeeds lower_bound(?t,?u))],
+  [step([0],
+    [],
+    succeeds a(?u) & succeeds a(?0) & succeeds a_tree(t) & 
+    succeeds r(?u,?0) => succeeds lower_bound(t,?u),
+    all u: succeeds a(?u) & succeeds a(?0) & succeeds a_tree(t) &
+     succeeds r(?u,?0) => succeeds lower_bound(t,?u)),
+   step([u,0,t1,t2,v],
+    [all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t1) &
+      succeeds r(?u,?v) => succeeds lower_bound(?t1,?u),
+     all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t2) &
+      succeeds r(?u,?v) => succeeds lower_bound(?t2,?u),
+     succeeds r(?v,?u),
+     succeeds lower_bound(?t1,?v),
+     succeeds lower_bound(?t2,?v)],
+    assume(succeeds a(?w) & succeeds a(?v) &
+     succeeds a_tree(t(?u,?0,?t1,?t2)) & succeeds r(?w,?v),
+     [def succeeds a_tree(t(?u,?0,?t1,?t2)) by completion,
+      succeeds r(?w,?u) by axiom(ordering:transitive),
+      succeeds lower_bound(t(?u,?0,?t1,?t2),?w)],
+     succeeds lower_bound(t(?u,?0,?t1,?t2),?w)),
+    all w: succeeds a(?w) & succeeds a(?v) &
+     succeeds a_tree(t(?u,?0,?t1,?t2)) & succeeds r(?w,?v) => 
+      succeeds lower_bound(t(?u,?0,?t1,?t2),?w))]),
+ assume(succeeds lower_bound(?t,?v) & succeeds a(?u) & succeeds a(?v) &
+  succeeds a_tree(?t) & succeeds r(?u,?v),
+  [all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) &
+    succeeds r(?u,?v) => succeeds lower_bound(?t,?u),
+   succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) & 
+   succeeds r(?u,?v) => succeeds lower_bound(?t,?u),
+   succeeds lower_bound(?t,?u)],
+  succeeds lower_bound(?t,?u))]).
+
+:- lemma(upper_bound:transitive,
+all [u,v,t]: succeeds upper_bound(?t,?v) & succeeds a(?u) & succeeds a(?v) &
+ succeeds a_tree(?t) & succeeds r(?v,?u) => succeeds upper_bound(?t,?u),
+[induction(
+  [all [t,v]: succeeds upper_bound(?t,?v) => 
+     (all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) &
+       succeeds r(?v,?u) => succeeds upper_bound(?t,?u))],
+  [step([w],
+    [],
+    succeeds a(?u) & succeeds a(?w) & succeeds a_tree(t) & 
+    succeeds r(?w,?u) => succeeds upper_bound(t,?u),
+    all u: succeeds a(?u) & succeeds a(?w) & succeeds a_tree(t) &
+     succeeds r(?w,?u) => succeeds upper_bound(t,?u)),
+   step([u,b,t1,t2,v],
+    [all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t1) &
+      succeeds r(?v,?u) => succeeds upper_bound(?t1,?u),
+     all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t2) &
+      succeeds r(?v,?u) => succeeds upper_bound(?t2,?u),
+     succeeds r(?u,?v),
+     succeeds upper_bound(?t1,?v),
+     succeeds upper_bound(?t2,?v)],
+    assume(succeeds a(?w) & succeeds a(?v) &
+     succeeds a_tree(t(?u,?b,?t1,?t2)) & succeeds r(?v,?w),
+     [def succeeds a_tree(t(?u,?b,?t1,?t2)) by completion,
+      succeeds r(?u,?w) by axiom(ordering:transitive),
+      succeeds upper_bound(?t1,?w),
+      succeeds upper_bound(?t2,?w),
+      succeeds upper_bound(t(?u,?b,?t1,?t2),?w) by completion],
+     succeeds upper_bound(t(?u,?b,?t1,?t2),?w)),
+    all w: succeeds a(?w) & succeeds a(?v) &
+     succeeds a_tree(t(?u,?b,?t1,?t2)) & succeeds r(?v,?w) => 
+      succeeds upper_bound(t(?u,?b,?t1,?t2),?w))]),
+ assume(succeeds upper_bound(?t,?v) & succeeds a(?u) & succeeds a(?v) &
+  succeeds a_tree(?t) & succeeds r(?v,?u),
+  [all u: succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) &
+    succeeds r(?v,?u) => succeeds upper_bound(?t,?u),
+   succeeds a(?u) & succeeds a(?v) & succeeds a_tree(?t) & 
+   succeeds r(?v,?u) => succeeds upper_bound(?t,?u),
+   succeeds upper_bound(?t,?u)],
+  succeeds upper_bound(?t,?u))]).
+
+/** lemma(left_combine:ordered) is proved by case splitting on the Definition of
+<tt>left_combine(?b,?t1,?v,?t2,?t,?g)</tt> and needs the lemmas: */
+
+:- lemma(left_combine:ordered,
+all [b,t1,v,t2,t,g]: succeeds left_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds a(?v) & succeeds ordered(?t1) & succeeds ordered(?t2) &
+ succeeds upper_bound(?t1,?v) & succeeds lower_bound(?t2,?v) =>
+  succeeds ordered(?t),
+assume(succeeds left_combine(?b,?t1,?v,?t2,?t,?g) & succeeds a(?v) &
+ succeeds ordered(?t1) & succeeds ordered(?t2) &
+ succeeds upper_bound(?t1,?v) & succeeds lower_bound(?t2,?v),
+ [def succeeds left_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = 1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,-1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) &
+      ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+     exist([u,s1,s2],
+      ?b = -1 & ?t1 = t(?u,-1,?s1,?s2) & ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) &
+      ?g = stable,
+      [def succeeds ordered(t(?u,-1,?s1,?s2)) by completion,
+       succeeds a(?u),
+       def succeeds upper_bound(t(?u,-1,?s1,?s2),?v) by completion,
+       succeeds upper_bound(?s2,?v),
+       succeeds ordered(t(?v,0,?s2,?t2)) by completion,
+       succeeds r(?u,?v),
+       succeeds a_tree(?t2) by lemma(ordered:a_tree),
+       succeeds lower_bound(?t2,?u) by lemma(lower_bound:transitive),
+       succeeds lower_bound(t(?v,0,?s2,?t2),?u) by completion,
+       succeeds ordered(t(?u,0,?s1,t(?v,0,?s2,?t2))) by completion,
+       succeeds ordered(?t)],
+      succeeds ordered(?t))),
+    case(
+     ex [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 & 
+      ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+     exist([u,s1,w,0,s2,s3,b1,b2],
+      ?b = -1 & ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+      ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+      succeeds flip(?0,?b1,?b2),
+      [def succeeds ordered(t(?u,1,?s1,t(?w,?0,?s2,?s3))) by completion,
+       def succeeds ordered(t(?w,?0,?s2,?s3)) by completion,
+       succeeds a(?w),
+       def succeeds lower_bound(t(?w,?0,?s2,?s3),?u) by completion,
+       succeeds lower_bound(?s2,?u),
+       succeeds ordered(t(?u,?b1,?s1,?s2)) by completion,
+       def succeeds upper_bound(t(?u,1,?s1,t(?w,?0,?s2,?s3)),?v)
+	by completion,
+       def succeeds upper_bound(t(?w,?0,?s2,?s3),?v) by completion,
+       succeeds upper_bound(?s3,?v),
+       succeeds ordered(t(?v,?b2,?s3,?t2)) by completion,
+       succeeds a_tree(?s1) by lemma(ordered:a_tree),
+       succeeds upper_bound(?s1,?w) by lemma(upper_bound:transitive),
+       succeeds upper_bound(t(?u,?b1,?s1,?s2),?w) by completion,
+       succeeds a_tree(?t2) by lemma(ordered:a_tree),
+       succeeds lower_bound(?t2,?w) by lemma(lower_bound:transitive),
+       succeeds lower_bound(t(?v,?b2,?s3,?t2),?w) by completion,
+       succeeds ordered(t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2))) by 
+	completion,
+       succeeds ordered(?t)],
+      succeeds ordered(?t)))],
+   succeeds ordered(?t))],
+ succeeds ordered(?t))).
+
+:- lemma(right_combine:ordered,
+all [b,t1,v,t2,t,g]: succeeds right_combine(?b,?t1,?v,?t2,?t,?g) &
+ succeeds a(?v) & succeeds ordered(?t1) & succeeds ordered(?t2) &
+ succeeds upper_bound(?t1,?v) & succeeds lower_bound(?t2,?v) =>
+  succeeds ordered(?t),
+assume(succeeds right_combine(?b,?t1,?v,?t2,?t,?g) & succeeds a(?v) &
+ succeeds ordered(?t1) & succeeds ordered(?t2) &
+ succeeds upper_bound(?t1,?v) & succeeds lower_bound(?t2,?v),
+ [def succeeds right_combine(?b,?t1,?v,?t2,?t,?g) by completion,
+  cases(
+   [case(?b = -1 & ?t = t(?v,0,?t1,?t2) & ?g = stable,[]),
+    case(?b = 0 & ?t = t(?v,1,?t1,?t2) & ?g = grows,
+     []),
+    case(
+     ex [u,s1,s2]: ?b = 1 & ?t2 = t(?u,1,?s1,?s2) &
+      ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) & ?g = stable,
+     exist([u,s1,s2],
+      ?b = 1 & ?t2 = t(?u,1,?s1,?s2) & ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) &
+      ?g = stable,
+      [def succeeds ordered(t(?u,1,?s1,?s2)) by completion,
+       succeeds a(?u),
+       def succeeds lower_bound(t(?u,1,?s1,?s2),?v) by completion,
+       succeeds lower_bound(?s1,?v),
+       succeeds ordered(t(?v,0,?t1,?s1)) by completion,
+       succeeds ordered(?s2),
+       succeeds a_tree(?t1) by lemma(ordered:a_tree),
+       succeeds upper_bound(?t1,?u) by lemma(upper_bound:transitive),
+       succeeds upper_bound(t(?v,0,?t1,?s1),?u) by completion,
+       succeeds lower_bound(?s2,?u),
+       succeeds ordered(t(?u,0,t(?v,0,?t1,?s1),?s2)) by completion,
+       succeeds ordered(?t)],
+      succeeds ordered(?t))),
+    case(
+     ex [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 & 
+      ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+     exist([u,w,2,s1,s2,s3,b1,b2],
+      ?b = 1 & ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+      ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+      succeeds flip(?2,?b1,?b2),
+      [def succeeds ordered(t(?u,-1,t(?w,?2,?s1,?s2),?s3)) by completion,
+       def succeeds ordered(t(?w,?2,?s1,?s2)) by completion,
+       succeeds a(?w),
+       def succeeds lower_bound(t(?u,-1,t(?w,?2,?s1,?s2),?s3),?v)
+	by completion,
+       def succeeds lower_bound(t(?w,?2,?s1,?s2),?v) by completion,
+       succeeds lower_bound(?s1,?v),
+       succeeds ordered(t(?v,?b1,?t1,?s1)) by completion,
+       def succeeds upper_bound(t(?w,?2,?s1,?s2),?u) by completion,
+       succeeds upper_bound(?s2,?u),
+       succeeds ordered(t(?u,?b2,?s2,?s3)) by completion,
+       succeeds a_tree(?t1) by lemma(ordered:a_tree),
+       succeeds upper_bound(?t1,?w) by lemma(upper_bound:transitive),
+       succeeds upper_bound(t(?v,?b1,?t1,?s1),?w) by completion,
+       succeeds a_tree(?s3) by lemma(ordered:a_tree),
+       succeeds lower_bound(?s3,?w) by lemma(lower_bound:transitive),
+       succeeds lower_bound(t(?u,?b2,?s2,?s3),?w) by completion,
+       succeeds ordered(t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3))) by 
+	completion,
+       succeeds ordered(?t)],
+      succeeds ordered(?t)))],
+   succeeds ordered(?t))],
+ succeeds ordered(?t))).
+
+/** Finally the lemma(insert:ordered) is proved by induction on <tt>insert</tt>
+and the lemmas lemma(left_combine:ordered), lemma(right_combine:ordered),
+lemma(insert:upper_bound) are needed. */
+
+:- lemma(insert:ordered,
+all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) & succeeds a(?v) &
+ succeeds ordered(?t1) => succeeds ordered(?t2),
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => succeeds a(?v) &
+     succeeds ordered(?t1) => succeeds ordered(?t2)],
+  [step([u],
+    [],
+    assume(succeeds a(?u) & succeeds ordered(t),
+     [],
+     succeeds ordered(t(?u,0,t,t))),
+    succeeds a(?u) & succeeds ordered(t) => succeeds ordered(t(?u,0,t,t))),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [succeeds a(?u) & succeeds ordered(?t1) => succeeds ordered(?t3),
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    assume(succeeds a(?u) & succeeds ordered(t(?v,?b,?t1,?t2)),
+     [def succeeds ordered(t(?v,?b,?t1,?t2)) by completion,
+      succeeds ordered(?t3),
+      succeeds upper_bound(?t3,?v) by lemma(insert:upper_bound),
+      cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+       [succeeds ordered(t(?v,?b,?t3,?t2)) by completion,
+	succeeds ordered(?t)],
+       ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+       succeeds ordered(?t) by lemma(left_combine:ordered),
+       succeeds ordered(?t))],
+     succeeds ordered(?t)),
+    succeeds a(?u) & succeeds ordered(t(?v,?b,?t1,?t2)) => 
+     succeeds ordered(?t)),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [succeeds a(?u) & succeeds ordered(?t2) => succeeds ordered(?t3),
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    assume(succeeds a(?u) & succeeds ordered(t(?v,?b,?t1,?t2)),
+     [def succeeds ordered(t(?v,?b,?t1,?t2)) by completion,
+      succeeds ordered(?t3),
+      succeeds r(?u,?v) \/ succeeds r(?v,?u) by axiom(ordering:total),
+      cases(succeeds r(?u,?v),[],succeeds r(?v,?u),[],succeeds r(?v,?u)),
+      succeeds lower_bound(?t3,?v) by lemma(insert:lower_bound),
+      cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+       [succeeds ordered(t(?v,?b,?t1,?t3)) by completion,
+	succeeds ordered(?t)],
+       ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+       succeeds ordered(?t) by lemma(right_combine:ordered),
+       succeeds ordered(?t))],
+     succeeds ordered(?t)),
+    succeeds a(?u) & succeeds ordered(t(?v,?b,?t1,?t2)) => 
+     succeeds ordered(?t))]),
+ assume(succeeds insert(?v,?t1,?t2,?g) & succeeds a(?v) &
+  succeeds ordered(?t1),
+  [succeeds a(?v) & succeeds ordered(?t1) => succeeds ordered(?t2),
+   succeeds a(?v) & succeeds ordered(?t1) => succeeds ordered(?t2),
+   succeeds ordered(?t2)],
+  succeeds ordered(?t2))]).
+
+:- bye(ordered).

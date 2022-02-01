@@ -1,0 +1,514 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Date: 5/26/95, 8:09 PM */
+/* Filename: suffix.pr */
+
+:- initialize.
+
+:- tex_file($(tmp)/suffix).
+:- thm_file($(tmp)/suffix).
+
+:- needs_gr($(lib)/list/suffix).
+:- needs_gr($(lib)/list/list).
+:- needs_thm($(lib)/list/list).
+
+:- lemma(prefix:types,
+all [l1,l2]: succeeds prefix(?l1,?l2) => succeeds list(?l1),
+induction([all [l1,l2]: succeeds prefix(?l1,?l2) => succeeds list(?l1)],
+ [step([0],[],[],succeeds list([])),
+  step([x,l1,l2],
+   [succeeds list(?l1),
+    succeeds prefix(?l1,?l2)],
+   [],
+   succeeds list([?x|?l1]))])
+).
+
+:- lemma(prefix:termination:1,
+all [l1,l2]: succeeds list(?l1) => terminates prefix(?l1,?l2),
+[induction(
+  [all l1: succeeds list(?l1) => (all l2: terminates prefix(?l1,?l2))],
+  [step([],
+    [],
+    terminates prefix([],?l2) by completion,
+    all l2: terminates prefix([],?l2)),
+   step([x,l1],
+    [all l2: terminates prefix(?l1,?l2),
+     succeeds list(?l1)],
+    [?l2 = [?x|?l3] => terminates prefix(?l1,?l3),
+     all l3: ?l2 = [?x|?l3] => terminates prefix(?l1,?l3),
+     terminates prefix([?x|?l1],?l2) by completion],
+    all l2: terminates prefix([?x|?l1],?l2))]),
+ assume(succeeds list(?l1),
+  [all l2: terminates prefix(?l1,?l2),
+   terminates prefix(?l1,?l2)],
+  terminates prefix(?l1,?l2))]
+).
+
+:- lemma(prefix:termination:2,
+all [l1,l2]: succeeds list(?l2) => terminates prefix(?l1,?l2),
+[induction(
+  [all l2: succeeds list(?l2) => (all l1: terminates prefix(?l1,?l2))],
+  [step([],
+    [],
+    terminates prefix(?l1,[]) by completion,
+    all l1: terminates prefix(?l1,[])),
+   step([x,l2],
+    [all l1: terminates prefix(?l1,?l2),
+     succeeds list(?l2)],
+    [?l1 = [?x|?l3] => terminates prefix(?l3,?l2),
+     all l3: ?l1 = [?x|?l3] => terminates prefix(?l3,?l2),
+     terminates prefix(?l1,[?x|?l2]) by completion],
+    all l1: terminates prefix(?l1,[?x|?l2]))]),
+ assume(succeeds list(?l2),
+  [all l1: terminates prefix(?l1,?l2),
+   terminates prefix(?l1,?l2)],
+  terminates prefix(?l1,?l2))]
+).
+
+:- lemma(prefix:append,
+all [l1,l3]: succeeds prefix(?l1,?l3) => 
+ (ex l2: succeeds append(?l1,?l2,?l3)),
+induction(
+ [all [l1,l3]: succeeds prefix(?l1,?l3) => 
+   (ex l2: succeeds append(?l1,?l2,?l3))],
+ [step([l3],
+   [],
+   [succeeds append([],?l3,?l3),
+    ex l2: succeeds append([],?l2,?l3)],
+   ex l2: succeeds append([],?l2,?l3)),
+  step([x,l1,l3],
+   [ex l2: succeeds append(?l1,?l2,?l3),
+    succeeds prefix(?l1,?l3)],
+   exist(l2,
+    succeeds append(?l1,?l2,?l3),
+    [succeeds append([?x|?l1],?l2,[?x|?l3]),
+     ex l2: succeeds append([?x|?l1],?l2,[?x|?l3])],
+    ex l2: succeeds append([?x|?l1],?l2,[?x|?l3])),
+   ex l2: succeeds append([?x|?l1],?l2,[?x|?l3]))])
+).
+
+:- lemma(prefix:existence,
+all [l1,l3]: succeeds prefix(?l1,?l3) => 
+ (ex l2: succeeds append(?l1,?l2,?l3)),
+assume(succeeds prefix(?l1,?l3),
+ ex l2: succeeds append(?l1,?l2,?l3) by lemma(prefix:append),
+ ex l2: succeeds append(?l1,?l2,?l3))
+).
+
+:- lemma(prefix:ground,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & gr(?l3) => gr(?l2),
+assume(succeeds append(?l1,?l2,?l3) & gr(?l3),
+ gr(?l1) & gr(?l2) by lemma(append:ground:2),
+ gr(?l2))
+).
+
+:- definition_fun(suf,2,
+ all [l1,l2,l3]: succeeds prefix(?l1,?l3) => 
+  (suf(?l1,?l3) = ?l2 <=> succeeds append(?l1,?l2,?l3)),
+ existence by lemma(prefix:existence),
+ uniqueness by lemma(append:uniqueness:2)
+).
+
+:- corollary(suf:app,
+all [l1,l2]: succeeds prefix(?l1,?l2) => ?l1 ** suf(?l1,?l2) = ?l2,
+assume(succeeds prefix(?l1,?l2),
+ [succeeds append(?l1,suf(?l1,?l2),?l2) by existence(suf,2),
+  succeeds list(?l1) by lemma(prefix:types),
+  ?l1 ** suf(?l1,?l2) = ?l2 by uniqueness(**,2)],
+ ?l1 ** suf(?l1,?l2) = ?l2)
+).
+
+:- corollary(suf:types,
+all [l1,l2]: succeeds prefix(?l1,?l2) & succeeds list(?l2) => 
+ succeeds list(suf(?l1,?l2)),
+assume(succeeds prefix(?l1,?l2) & succeeds list(?l2),
+ [succeeds append(?l1,suf(?l1,?l2),?l2) by existence(suf,2),
+  succeeds append(?l1,suf(?l1,?l2),?l2) & succeeds list(?l2),
+  succeeds list(suf(?l1,?l2)) by lemma(append:types:3)],
+ succeeds list(suf(?l1,?l2)))
+).
+
+:- lemma(suffix:types,
+all [l1,l2]: succeeds suffix(?l1,?l2) & succeeds list(?l2) => 
+ succeeds list(?l1),
+[induction(
+  [all [l1,l2]: succeeds suffix(?l1,?l2) => succeeds list(?l2) => 
+    succeeds list(?l1)],
+  [step([l],[],[],succeeds list(?l) => succeeds list(?l)),
+   step([l1,x,l2],
+    [succeeds list(?l2) => succeeds list(?l1),
+     succeeds suffix(?l1,?l2)],
+    assume(succeeds list([?x|?l2]),
+     [def succeeds list([?x|?l2]) by completion,
+      succeeds list(?l2),
+      succeeds list(?l1)],
+     succeeds list(?l1)),
+    succeeds list([?x|?l2]) => succeeds list(?l1))]),
+ assume(succeeds suffix(?l1,?l2) & succeeds list(?l2),
+  [succeeds list(?l2) => succeeds list(?l1),
+   succeeds list(?l1)],
+  succeeds list(?l1))]
+).
+
+:- lemma(suffix:termination,
+all [l1,l2]: succeeds list(?l2) => terminates suffix(?l1,?l2),
+[induction(
+  [all l2: succeeds list(?l2) => (all l1: terminates suffix(?l1,?l2))],
+  [step([],
+    [],
+    terminates suffix(?l1,[]) by completion,
+    all l1: terminates suffix(?l1,[])),
+   step([x,l2],
+    [all l1: terminates suffix(?l1,?l2),
+     succeeds list(?l2)],
+    [terminates suffix(?l1,?l2),
+     terminates suffix(?l1,[?x|?l2]) by completion],
+    all l1: terminates suffix(?l1,[?x|?l2]))]),
+ assume(succeeds list(?l2),
+  [all l1: terminates suffix(?l1,?l2),
+   terminates suffix(?l1,?l2)],
+  terminates suffix(?l1,?l2))]
+).
+
+:- lemma(suffix:append,
+all [l2,l3]: succeeds suffix(?l2,?l3) => 
+ (ex l1: succeeds append(?l1,?l2,?l3)),
+induction(
+ [all [l2,l3]: succeeds suffix(?l2,?l3) => 
+   (ex l1: succeeds append(?l1,?l2,?l3))],
+ [step([l2],
+   [],
+   [succeeds append([],?l2,?l2),
+    ex l1: succeeds append(?l1,?l2,?l2)],
+   ex l1: succeeds append(?l1,?l2,?l2)),
+  step([l2,x,l3],
+   [ex l1: succeeds append(?l1,?l2,?l3),
+    succeeds suffix(?l2,?l3)],
+   exist(l1,
+    succeeds append(?l1,?l2,?l3),
+    [succeeds append([?x|?l1],?l2,[?x|?l3]),
+     ex l1: succeeds append(?l1,?l2,[?x|?l3])],
+    ex l1: succeeds append(?l1,?l2,[?x|?l3])),
+   ex l1: succeeds append(?l1,?l2,[?x|?l3]))])
+).
+
+:- theorem(suffix:function,
+all [l2,l3]: succeeds suffix(?l2,?l3) & succeeds list(?l3) => 
+ (ex l1: succeeds append(?l1,?l2,?l3) & 
+   (all l4: succeeds append(?l4,?l2,?l3) => ?l1 = ?l4)),
+assume(succeeds suffix(?l2,?l3) & succeeds list(?l3),
+ [ex l1: succeeds append(?l1,?l2,?l3) by lemma(suffix:append),
+  exist(l1,
+   succeeds append(?l1,?l2,?l3),
+   [assume(succeeds append(?l4,?l2,?l3),
+     [succeeds append(?l1,?l2,?l3) & succeeds append(?l4,?l2,?l3) & 
+      succeeds list(?l3),
+      ?l1 = ?l4 by lemma(append:uniqueness:1)],
+     ?l1 = ?l4),
+    succeeds append(?l1,?l2,?l3) & 
+    (all l4: succeeds append(?l4,?l2,?l3) => ?l1 = ?l4),
+    ex l1: succeeds append(?l1,?l2,?l3) & 
+     (all l4: succeeds append(?l4,?l2,?l3) => ?l1 = ?l4)],
+   ex l1: succeeds append(?l1,?l2,?l3) & 
+    (all l4: succeeds append(?l4,?l2,?l3) => ?l1 = ?l4))],
+ ex l1: succeeds append(?l1,?l2,?l3) & 
+  (all l4: succeeds append(?l4,?l2,?l3) => ?l1 = ?l4))
+).
+
+:- lemma(suffix:ground,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) & gr(?l3) => gr(?l1),
+assume(succeeds append(?l1,?l2,?l3) & gr(?l3),
+ gr(?l1) & gr(?l2) by lemma(append:ground:2),
+ gr(?l1))
+).
+
+:- definition_fun(pre,2,
+ all [l1,l2,l3]: succeeds suffix(?l2,?l3) & succeeds list(?l3) => 
+  (pre(?l2,?l3) = ?l1 <=> succeeds append(?l1,?l2,?l3)),
+ existence by lemma(suffix:append),
+ uniqueness by lemma(append:uniqueness:1)
+).
+
+:- corollary(pre:types,
+all [l1,l2]: succeeds suffix(?l1,?l2) & succeeds list(?l2) => 
+ succeeds list(pre(?l1,?l2)),
+assume(succeeds suffix(?l1,?l2) & succeeds list(?l2),
+ [succeeds append(pre(?l1,?l2),?l1,?l2) by existence(pre,2),
+  succeeds list(pre(?l1,?l2)) by lemma(append:types:1)],
+ succeeds list(pre(?l1,?l2)))
+).
+
+:- corollary(pre:app,
+all [l1,l2]: succeeds suffix(?l1,?l2) & succeeds list(?l2) => 
+ pre(?l1,?l2) ** ?l1 = ?l2,
+assume(succeeds suffix(?l1,?l2) & succeeds list(?l2),
+ [succeeds append(pre(?l1,?l2),?l1,?l2) by existence(pre,2),
+  succeeds list(pre(?l1,?l2)) by corollary(pre:types),
+  pre(?l1,?l2) ** ?l1 = ?l2 by uniqueness(**,2)],
+ pre(?l1,?l2) ** ?l1 = ?l2)
+).
+
+:- corollary(pre:app:uniqueness,
+all [l1,l2,l3]: succeeds suffix(?l2,?l3) & succeeds list(?l1) & 
+ succeeds list(?l3) & ?l1 ** ?l2 = ?l3 => pre(?l2,?l3) = ?l1,
+assume(succeeds suffix(?l2,?l3) & succeeds list(?l1) & succeeds list(?l3) &
+ ?l1 ** ?l2 = ?l3,
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds append(?l1,?l2,?l3),
+  pre(?l2,?l3) = ?l1 by uniqueness(pre,2)],
+ pre(?l2,?l3) = ?l1)
+).
+
+:- corollary(pre:nil,
+all l: succeeds list(?l) => pre(?l,?l) = [],
+assume(succeeds list(?l),
+ [succeeds suffix(?l,?l),
+  succeeds append(pre(?l,?l),?l,?l) by existence(pre,2),
+  pre(?l,?l) = [] by lemma(append:equal:nil)],
+ pre(?l,?l) = [])
+).
+
+:- lemma(suffix:transitive,
+all [l1,l2,l3]: succeeds suffix(?l2,?l3) & succeeds suffix(?l1,?l2) => 
+ succeeds suffix(?l1,?l3),
+[induction(
+  [all [l2,l3]: succeeds suffix(?l2,?l3) => 
+    (all l1: succeeds suffix(?l1,?l2) => succeeds suffix(?l1,?l3))],
+  [step([l],
+    [],
+    succeeds suffix(?l1,?l) => succeeds suffix(?l1,?l),
+    all l1: succeeds suffix(?l1,?l) => succeeds suffix(?l1,?l)),
+   step([l2,x,l3],
+    [all l1: succeeds suffix(?l1,?l2) => succeeds suffix(?l1,?l3),
+     succeeds suffix(?l2,?l3)],
+    assume(succeeds suffix(?l1,?l2),
+     [succeeds suffix(?l1,?l3),
+      succeeds suffix(?l1,[?x|?l3])],
+     succeeds suffix(?l1,[?x|?l3])),
+    all l1: succeeds suffix(?l1,?l2) => succeeds suffix(?l1,[?x|?l3]))]),
+ assume(succeeds suffix(?l2,?l3) & succeeds suffix(?l1,?l2),
+  [all l1: succeeds suffix(?l1,?l2) => succeeds suffix(?l1,?l3),
+   succeeds suffix(?l1,?l2) => succeeds suffix(?l1,?l3),
+   succeeds suffix(?l1,?l3)],
+  succeeds suffix(?l1,?l3))]
+).
+
+:- lemma(append:prefix:suffix,
+all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds prefix(?l1,?l3) &
+ succeeds suffix(?l2,?l3),
+induction(
+ [all [l1,l2,l3]: succeeds append(?l1,?l2,?l3) => succeeds prefix(?l1,?l3)
+   & succeeds suffix(?l2,?l3)],
+ [step([l],[],[],succeeds prefix([],?l) & succeeds suffix(?l,?l)),
+  step([x,l1,l2,l3],
+   [succeeds prefix(?l1,?l3) & succeeds suffix(?l2,?l3),
+    succeeds append(?l1,?l2,?l3)],
+   [],
+   succeeds prefix([?x|?l1],[?x|?l3]) & succeeds suffix(?l2,[?x|?l3]))])
+).
+
+:- corollary(append:prefix,
+all [l1,l2]: succeeds list(?l1) => succeeds prefix(?l1,?l1 ** ?l2),
+assume(succeeds list(?l1),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds prefix(?l1,?l1 ** ?l2) & succeeds suffix(?l2,?l1 ** ?l2) by 
+   lemma(append:prefix:suffix),
+  succeeds prefix(?l1,?l1 ** ?l2)],
+ succeeds prefix(?l1,?l1 ** ?l2))
+).
+
+:- corollary(append:suffix,
+all [l1,l2]: succeeds list(?l1) => succeeds suffix(?l2,?l1 ** ?l2),
+assume(succeeds list(?l1),
+ [succeeds append(?l1,?l2,?l1 ** ?l2) by existence(**,2),
+  succeeds prefix(?l1,?l1 ** ?l2) & succeeds suffix(?l2,?l1 ** ?l2) by 
+   lemma(append:prefix:suffix),
+  succeeds suffix(?l2,?l1 ** ?l2)],
+ succeeds suffix(?l2,?l1 ** ?l2))
+).
+
+:- lemma(sublist1:types,
+all [l1,l2]: succeeds sublist1(?l1,?l2) => succeeds list(?l1),
+assume(succeeds sublist1(?l1,?l2),
+ [def succeeds sublist1(?l1,?l2) by completion,
+  exist(l3,
+   succeeds prefix(?l3,?l2) & succeeds suffix(?l1,?l3),
+   [succeeds list(?l3) by lemma(prefix:types),
+    succeeds suffix(?l1,?l3) & succeeds list(?l3),
+    succeeds list(?l1) by lemma(suffix:types)],
+   succeeds list(?l1))],
+ succeeds list(?l1))
+).
+
+:- lemma(sublist1:termination,
+all [l1,l2]: succeeds list(?l2) => terminates sublist1(?l1,?l2),
+assume(succeeds list(?l2),
+ [terminates prefix(?l3,?l2) by lemma(prefix:termination:2),
+  succeeds prefix(?l3,?l2) \/ fails prefix(?l3,?l2),
+  cases(succeeds prefix(?l3,?l2),
+   [succeeds list(?l3) by lemma(prefix:types),
+    terminates suffix(?l1,?l3) by lemma(suffix:termination),
+    terminates (prefix(?l3,?l2) & suffix(?l1,?l3))],
+   fails prefix(?l3,?l2),
+   [],
+   terminates (prefix(?l3,?l2) & suffix(?l1,?l3))),
+  all l3: terminates (prefix(?l3,?l2) & suffix(?l1,?l3)),
+  terminates sublist1(?l1,?l2) by completion],
+ terminates sublist1(?l1,?l2))
+).
+
+:- lemma(sublist1:append,
+all [l2,l4]: succeeds sublist1(?l2,?l4) => 
+ (ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4),
+assume(succeeds sublist1(?l2,?l4),
+ [def succeeds sublist1(?l2,?l4) by completion,
+  exist(l5,
+   succeeds prefix(?l5,?l4) & succeeds suffix(?l2,?l5),
+   [?l5 ** suf(?l5,?l4) = ?l4 by corollary(suf:app),
+    succeeds list(?l5) by lemma(prefix:types),
+    succeeds list(pre(?l2,?l5)) by corollary(pre:types),
+    pre(?l2,?l5) ** ?l2 = ?l5 by corollary(pre:app),
+    pre(?l2,?l5) ** ?l2 ** suf(?l5,?l4) = ?l5 ** suf(?l5,?l4) = ?l4,
+    succeeds list(pre(?l2,?l5)) & pre(?l2,?l5) ** ?l2 ** suf(?l5,?l4) = ?l4,
+    ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4],
+   ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4)],
+ ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4)
+).
+
+:- lemma(append:sublist1,
+all [l1,l2,l3,l4]: succeeds list(?l1) & succeeds list(?l2) & 
+ ?l1 ** ?l2 ** ?l3 = ?l4 => succeeds sublist1(?l2,?l4),
+assume(succeeds list(?l1) & succeeds list(?l2) & ?l1 ** ?l2 ** ?l3 = ?l4,
+ [succeeds list(?l1 ** ?l2) by corollary(app:types:1),
+  succeeds prefix(?l1 ** ?l2,?l1 ** ?l2 ** ?l3) by 
+   corollary(append:prefix),
+  succeeds prefix(?l1 ** ?l2,?l4),
+  succeeds suffix(?l2,?l1 ** ?l2) by corollary(append:suffix),
+  succeeds sublist1(?l2,?l4)],
+ succeeds sublist1(?l2,?l4))
+).
+
+:- lemma(sublist2:types,
+all [l1,l2]: succeeds sublist2(?l1,?l2) => succeeds list(?l1),
+assume(succeeds sublist2(?l1,?l2),
+ [def succeeds sublist2(?l1,?l2) by completion,
+  exist(l3,
+   succeeds suffix(?l3,?l2) & succeeds prefix(?l1,?l3),
+   succeeds list(?l1) by lemma(prefix:types),
+   succeeds list(?l1))],
+ succeeds list(?l1))
+).
+
+:- lemma(sublist2:termination,
+all [l1,l2]: succeeds list(?l2) => terminates sublist2(?l1,?l2),
+assume(succeeds list(?l2),
+ [terminates suffix(?l3,?l2) by lemma(suffix:termination),
+  succeeds suffix(?l3,?l2) \/ fails suffix(?l3,?l2),
+  cases(succeeds suffix(?l3,?l2),
+   [succeeds suffix(?l3,?l2) & succeeds list(?l2),
+    succeeds list(?l3) by lemma(suffix:types),
+    terminates prefix(?l1,?l3) by lemma(prefix:termination:2),
+    terminates (suffix(?l3,?l2) & prefix(?l1,?l3))],
+   fails suffix(?l3,?l2),
+   [],
+   terminates (suffix(?l3,?l2) & prefix(?l1,?l3))),
+  all l3: terminates (suffix(?l3,?l2) & prefix(?l1,?l3)),
+  terminates sublist2(?l1,?l2) by completion],
+ terminates sublist2(?l1,?l2))
+).
+
+:- lemma(sublist2:append,
+all [l2,l4]: succeeds sublist2(?l2,?l4) => 
+ (ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4),
+assume(succeeds sublist2(?l2,?l4),
+ [def succeeds sublist2(?l2,?l4) by completion,
+  exist(l5,
+   succeeds suffix(?l5,?l4) & succeeds prefix(?l2,?l5),
+   [ex l1: succeeds append(?l1,?l5,?l4) by lemma(suffix:append),
+    exist(l1,
+     succeeds append(?l1,?l5,?l4),
+     [succeeds list(?l1) by lemma(append:types:1),
+      ?l1 ** ?l5 = ?l4 by uniqueness(**,2),
+      ?l2 ** suf(?l2,?l5) = ?l5 by corollary(suf:app),
+      succeeds list(?l2) by lemma(prefix:types),
+      ?l1 ** ?l2 ** suf(?l2,?l5) = ?l1 ** (?l2 ** suf(?l2,?l5)) by 
+       theorem(app:associative),
+      ?l1 ** ?l2 ** suf(?l2,?l5) = ?l1 ** (?l2 ** suf(?l2,?l5)) = ?l1 ** 
+      ?l5 = ?l4,
+      succeeds list(?l1) & ?l1 ** ?l2 ** suf(?l2,?l5) = ?l4,
+      ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4],
+     ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4)],
+   ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4)],
+ ex [l1,l3]: succeeds list(?l1) & ?l1 ** ?l2 ** ?l3 = ?l4)
+).
+
+:- lemma(append:sublist2,
+all [l1,l2,l3,l4]: succeeds list(?l1) & succeeds list(?l2) & 
+ ?l1 ** ?l2 ** ?l3 = ?l4 => succeeds sublist2(?l2,?l4),
+assume(succeeds list(?l1) & succeeds list(?l2) & ?l1 ** ?l2 ** ?l3 = ?l4,
+ [?l1 ** ?l2 ** ?l3 = ?l1 ** (?l2 ** ?l3) by theorem(app:associative),
+  succeeds suffix(?l2 ** ?l3,?l1 ** (?l2 ** ?l3)) by 
+   corollary(append:suffix),
+  ?l1 ** (?l2 ** ?l3) = ?l4,
+  succeeds suffix(?l2 ** ?l3,?l4),
+  succeeds prefix(?l2,?l2 ** ?l3) by corollary(append:prefix),
+  succeeds sublist2(?l2,?l4)],
+ succeeds sublist2(?l2,?l4))
+).
+
+:- theorem(sublist:success,
+all [l1,l2]: succeeds sublist1(?l1,?l2) <=> succeeds sublist2(?l1,?l2),
+[assume(succeeds sublist1(?l1,?l2),
+  [ex [l3,l4]: succeeds list(?l3) & ?l3 ** ?l1 ** ?l4 = ?l2 by 
+    lemma(sublist1:append),
+   exist([l3,l4],
+    succeeds list(?l3) & ?l3 ** ?l1 ** ?l4 = ?l2,
+    [succeeds list(?l1) by lemma(sublist1:types),
+     succeeds list(?l3) & succeeds list(?l1) & ?l3 ** ?l1 ** ?l4 = ?l2,
+     succeeds sublist2(?l1,?l2) by lemma(append:sublist2)],
+    succeeds sublist2(?l1,?l2))],
+  succeeds sublist2(?l1,?l2)),
+ assume(succeeds sublist2(?l1,?l2),
+  [ex [l3,l4]: succeeds list(?l3) & ?l3 ** ?l1 ** ?l4 = ?l2 by 
+    lemma(sublist2:append),
+   exist([l3,l4],
+    succeeds list(?l3) & ?l3 ** ?l1 ** ?l4 = ?l2,
+    [succeeds list(?l1) by lemma(sublist2:types),
+     succeeds list(?l3) & succeeds list(?l1) & ?l3 ** ?l1 ** ?l4 = ?l2,
+     succeeds sublist1(?l1,?l2) by lemma(append:sublist1)],
+    succeeds sublist1(?l1,?l2))],
+  succeeds sublist1(?l1,?l2)),
+ succeeds sublist1(?l1,?l2) <=> succeeds sublist2(?l1,?l2)]
+).
+
+:- theorem(sublist:failure,
+all [l1,l2]: succeeds list(?l2) => 
+ (fails sublist1(?l1,?l2) <=> fails sublist2(?l1,?l2)),
+assume(succeeds list(?l2),
+ [assume(fails sublist1(?l1,?l2),
+   [terminates sublist2(?l1,?l2) by lemma(sublist2:termination),
+    succeeds sublist2(?l1,?l2) \/ fails sublist2(?l1,?l2),
+    cases(succeeds sublist2(?l1,?l2),
+     [succeeds sublist1(?l1,?l2) <=> succeeds sublist2(?l1,?l2) by 
+       theorem(sublist:success),
+      succeeds sublist1(?l1,?l2),
+      ff],
+     fails sublist2(?l1,?l2),
+     [],
+     fails sublist2(?l1,?l2))],
+   fails sublist2(?l1,?l2)),
+  assume(fails sublist2(?l1,?l2),
+   [terminates sublist1(?l1,?l2) by lemma(sublist1:termination),
+    succeeds sublist1(?l1,?l2) \/ fails sublist1(?l1,?l2),
+    cases(succeeds sublist1(?l1,?l2),
+     [succeeds sublist1(?l1,?l2) <=> succeeds sublist2(?l1,?l2) by 
+       theorem(sublist:success),
+      succeeds sublist2(?l1,?l2),
+      ff],
+     fails sublist1(?l1,?l2),
+     [],
+     fails sublist1(?l1,?l2))],
+   fails sublist1(?l1,?l2))],
+ fails sublist1(?l1,?l2) <=> fails sublist2(?l1,?l2))
+).
+
+:- bye(suffix).

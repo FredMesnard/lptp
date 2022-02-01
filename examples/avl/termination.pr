@@ -1,0 +1,216 @@
+%   Author: Rene Lehmann  <rene.lehmann@unifr.ch> & 
+%           Patrik Fuhrer <patrik.fuhrer@unifr.ch> 
+%  Created: Tue Mar 11 09:10:20 1997 
+% Filename: termination.pr 
+
+
+:-initialize.
+:-needs_gr($(examples)/avl/avl).
+:-thm_file($(tmp)/termination).
+:-tex_file($(tmp)/termination).
+:-needs_thm($(tmp)/axioms).
+
+
+:- lemma(insert:grows,
+all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) =>
+  ?g = grows \/ ?g = stable,
+[induction(
+  [all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => ?g = grows \/
+     ?g = stable],
+  [step([u],[],[],grows = grows \/ grows = stable),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [?g1 = grows \/ ?g1 = stable,
+     succeeds r(?u,?v),
+     succeeds insert(?u,?t1,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable \/
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g)],
+    cases(?g1 = stable & ?t = t(?v,?b,?t3,?t2) & ?g = stable,
+     [],
+     ?g1 <> stable & succeeds left_combine(?b,?t3,?v,?t2,?t,?g),
+     [def succeeds left_combine(?b,?t3,?v,?t2,?t,?g) by completion,
+      cases(
+       [case(?b = 1 & ?t = t(?v,0,?t3,?t2) & ?g = stable,[]),
+        case(?b = 0 & ?t = t(?v,-1,?t3,?t2) & ?g = grows,
+         []),
+        case(
+         ex [u,s1,s2]: ?b = -1 & ?t3 = t(?u,-1,?s1,?s2) &
+          ?t = t(?u,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+         exist([0,s1,s2],
+          ?b = -1 & ?t3 = t(?0,-1,?s1,?s2) &
+          ?t = t(?0,0,?s1,t(?v,0,?s2,?t2)) & ?g = stable,
+          [],
+          ?g = grows \/ ?g = stable)),
+        case(
+         ex [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 &
+          ?t3 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+          ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+          succeeds flip(?0,?b1,?b2),
+         exist([1,s1,w,0,s2,s3,b1,b2],
+          ?b = -1 & ?t3 = t(?1,1,?s1,t(?w,?0,?s2,?s3)) &
+          ?t = t(?w,0,t(?1,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable &
+          succeeds flip(?0,?b1,?b2),
+          [],
+          ?g = grows \/ ?g = stable))],
+       ?g = grows \/ ?g = stable)],
+     ?g = grows \/ ?g = stable),
+    ?g = grows \/ ?g = stable),
+   step([u,v,b,t1,t2,t,g,t3,g1],
+    [?g1 = grows \/ ?g1 = stable,
+     fails r(?u,?v),
+     succeeds insert(?u,?t2,?t3,?g1),
+     ?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable \/
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g)],
+    cases(?g1 = stable & ?t = t(?v,?b,?t1,?t3) & ?g = stable,
+     [],
+     ?g1 <> stable & succeeds right_combine(?b,?t1,?v,?t3,?t,?g),
+     [def succeeds right_combine(?b,?t1,?v,?t3,?t,?g) by completion,
+      cases(
+       [case(?b = -1 & ?t = t(?v,0,?t1,?t3) & ?g = stable,[]),
+        case(?b = 0 & ?t = t(?v,1,?t1,?t3) & ?g = grows,
+         []),
+        case(
+         ex [u,s1,s2]: ?b = 1 & ?t3 = t(?u,1,?s1,?s2) &
+          ?t = t(?u,0,t(?v,0,?t1,?s1),?s2) & ?g = stable,
+         exist([0,s1,s2],
+          ?b = 1 & ?t3 = t(?0,1,?s1,?s2) & ?t = t(?0,0,t(?v,0,?t1,?s1),?s2) &
+          ?g = stable,
+          [],
+          ?g = grows \/ ?g = stable)),
+        case(
+         ex [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 &
+          ?t3 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+          ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable &
+          succeeds flip(?2,?b1,?b2),
+         exist([3,w,2,s1,s2,s3,b1,b2],
+          ?b = 1 & ?t3 = t(?3,-1,t(?w,?2,?s1,?s2),?s3) &
+          ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?3,?b2,?s2,?s3)) & ?g = stable &
+          succeeds flip(?2,?b1,?b2),
+          [],
+          ?g = grows \/ ?g = stable))],
+       ?g = grows \/ ?g = stable)],
+     ?g = grows \/ ?g = stable),
+    ?g = grows \/ ?g = stable)]),
+ assume(succeeds insert(?v,?t1,?t2,?g),
+  [?g = grows \/ ?g = stable,
+   ?g = grows \/ ?g = stable],
+  ?g = grows \/ ?g = stable)]
+).
+
+
+
+:- corollary(insert:gr,
+all [v,t1,t2,g]: succeeds insert(?v,?t1,?t2,?g) => gr(?g),
+assume(succeeds insert(?v,?t1,?t2,?g),
+ [?g = grows \/ ?g = stable by 
+   lemma(insert:grows),
+  cases(?g = grows,
+   gr(grows),
+   ?g = stable,
+   gr(stable),
+   gr(?g))],
+ gr(?g))
+).
+
+
+:- lemma(left_combine:termination,
+all [b,t1,v,t2,t,g]: terminates left_combine(?b,?t1,?v,?t2,?t,?g),
+[?b = -1 & ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+ ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable => 
+  terminates flip(?0,?b1,?b2),
+ all [u,s1,w,0,s2,s3,b1,b2]: ?b = -1 & ?t1 = t(?u,1,?s1,t(?w,?0,?s2,?s3)) &
+  ?t = t(?w,0,t(?u,?b1,?s1,?s2),t(?v,?b2,?s3,?t2)) & ?g = stable => 
+   terminates flip(?0,?b1,?b2),
+ terminates left_combine(?b,?t1,?v,?t2,?t,?g) by completion]
+).
+
+:- lemma(right_combine:termination,
+all [b,t1,v,t2,t,g]: terminates right_combine(?b,?t1,?v,?t2,?t,?g),
+[?b = 1 & ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+ ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable => 
+  terminates flip(?2,?b1,?b2),
+ all [u,w,2,s1,s2,s3,b1,b2]: ?b = 1 & ?t2 = t(?u,-1,t(?w,?2,?s1,?s2),?s3) &
+  ?t = t(?w,0,t(?v,?b1,?t1,?s1),t(?u,?b2,?s2,?s3)) & ?g = stable => 
+   terminates flip(?2,?b1,?b2),
+ terminates right_combine(?b,?t1,?v,?t2,?t,?g) by completion]
+).
+
+
+:- theorem(insert:termination,
+all [v,t1,t2,g]: succeeds a_tree(?t1) & succeeds a(?v) =>
+  terminates insert(?v,?t1,?t2,?g),
+[induction(
+  [all t1: succeeds a_tree(?t1) => 
+     (all [v,t2,g]: succeeds a(?v) => terminates insert(?v,?t1,?t2,?g))],
+  [step([],
+    [],
+    succeeds a(?v) => terminates insert(?v,t,?t2,?g),
+    all [v,t2,g]: succeeds a(?v) => terminates insert(?v,t,?t2,?g)),
+   step([v,0,t1,t2],
+    [all [v,t2,g]: succeeds a(?v) => terminates insert(?v,?t1,?t2,?g),
+     all [v,1,g]: succeeds a(?v) => terminates insert(?v,?t2,?1,?g),
+     succeeds a(?v),
+     succeeds a_tree(?t1),
+     succeeds a_tree(?t2)],
+    assume(succeeds a(?1),
+     [terminates r(?1,?v) by axiom(ordering:termination),
+      assume(succeeds insert(?1,?t1,?t3,?g1),
+       [gr(?g1) by corollary(insert:gr),
+	terminates left_combine(?0,?t3,?v,?t2,?2,?g) by 
+         lemma(left_combine:termination),
+	terminates (~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))],
+       terminates (?g1 = stable & ?2 = t(?v,?0,?t3,?t2) & ?g = stable) &
+       terminates (~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))),
+      terminates 
+      (insert(?1,?t1,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t3,?t2) & ?g = stable \/
+	~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))),
+      terminates 
+      (r(?1,?v) & insert(?1,?t1,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t3,?t2) & ?g = stable \/
+	~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))),
+      gr(?1) by axiom(domain:ground),
+      gr(?v) by axiom(domain:ground),
+      assume(succeeds insert(?1,?t2,?t3,?g1),
+       [gr(?g1) by corollary(insert:gr),
+	terminates right_combine(?0,?t1,?v,?t3,?2,?g) by 
+         lemma(right_combine:termination),
+	terminates (~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))],
+       terminates (?g1 = stable & ?2 = t(?v,?0,?t1,?t3) & ?g = stable) &
+       terminates (~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))),
+      terminates 
+      (insert(?1,?t2,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t1,?t3) & ?g = stable \/
+	~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))),
+      terminates 
+      (~ r(?1,?v) & insert(?1,?t2,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t1,?t3) & ?g = stable \/
+	~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))),
+      terminates 
+      (r(?1,?v) & insert(?1,?t1,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t3,?t2) & ?g = stable \/
+        ~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))) &
+      terminates 
+      (~ r(?1,?v) & insert(?1,?t2,?t3,?g1) &
+       (?g1 = stable & ?2 = t(?v,?0,?t1,?t3) & ?g = stable \/
+        ~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))),
+      all [t3,g1]: 
+       terminates 
+       (r(?1,?v) & insert(?1,?t1,?t3,?g1) &
+        (?g1 = stable & ?2 = t(?v,?0,?t3,?t2) & ?g = stable \/
+         ~ ?g1 = stable & left_combine(?0,?t3,?v,?t2,?2,?g))) &
+       terminates 
+       (~ r(?1,?v) & insert(?1,?t2,?t3,?g1) &
+        (?g1 = stable & ?2 = t(?v,?0,?t1,?t3) & ?g = stable \/
+         ~ ?g1 = stable & right_combine(?0,?t1,?v,?t3,?2,?g))),
+      terminates insert(?1,t(?v,?0,?t1,?t2),?2,?g) by completion],
+     terminates insert(?1,t(?v,?0,?t1,?t2),?2,?g)),
+    all [1,2,g]: succeeds a(?1) => 
+      terminates insert(?1,t(?v,?0,?t1,?t2),?2,?g))]),
+ assume(succeeds a_tree(?t1) & succeeds a(?v),
+  [all [v,t2,g]: succeeds a(?v) => terminates insert(?v,?t1,?t2,?g),
+   succeeds a(?v) => terminates insert(?v,?t1,?t2,?g),
+   terminates insert(?v,?t1,?t2,?g)],
+  terminates insert(?v,?t1,?t2,?g))]
+).
+
+:- bye(termination).

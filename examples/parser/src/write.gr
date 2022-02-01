@@ -1,0 +1,84 @@
+
+:- assert_clauses(n(add_layout,2),[
+ clause([n(add_layout,2),[n('.',2),$(x),$(l1)],$(l2)],
+  [\/,[&,[=,$(x),[n(open,1),[n(nolayout,0)]]],[=,$(l2),[n('.',2),[n(open,1),[n(layout,0)]],$(l1)]]],[&,[~,[=,$(x),[n(open,1),[n(nolayout,0)]]]],[=,$(l2),[n('.',2),$(x),$(l1)]]]],
+  [x,l1,l2]/0)
+]).
+
+:- assert_clauses(n(close_par,4),[
+ clause([n(close_par,4),$(m),$(n),$(l1),$(l2)],
+  [\/,[&,[n(<,2),$(m),$(n)],[=,$(l2),[n('.',2),[n(close,0)],$(l1)]]],[&,[~,[n(<,2),$(m),$(n)]],[=,$(l2),$(l1)]]],
+  [m,n,l1,l2]/0)
+]).
+
+:- assert_clauses(n(con_tree,1),[
+ clause([n(con_tree,1),[n(con,1),$(0)]],
+  [&],
+  [0]/1)
+]).
+
+:- assert_clauses(n(list_tree,1),[
+ clause([n(list_tree,1),[n(fun,2),[n('.',0)],[n('.',2),$(0),[n('.',2),$(1),[n([],0)]]]]],
+  [&],
+  [0,1]/2)
+]).
+
+:- assert_clauses(n(open_par,4),[
+ clause([n(open_par,4),$(m),$(n),$(l1),$(l2)],
+  [\/,[&,[n(<,2),$(m),$(n)],[=,$(l2),[n('.',2),[n(open,1),[n(nolayout,0)]],$(l1)]]],[&,[~,[n(<,2),$(m),$(n)]],[=,$(l2),$(l1)]]],
+  [m,n,l1,l2]/0)
+]).
+
+:- assert_clauses(n(singleton,1),[
+ clause([n(singleton,1),[n('.',2),$(0),[n([],0)]]],
+  [&],
+  [0]/1)
+]).
+
+:- assert_clauses(n(un_arg_seq,3),[
+ clause([n(un_arg_seq,3),[n([],0)],$(l),[n('.',2),[n(close,0)],$(l)]],
+  [&],
+  [l]/0),
+ clause([n(un_arg_seq,3),[n('.',2),$(t),$(a)],$(l1),[n('.',2),[n(comma,0)],$(l3)]],
+  [&,[n(un_arg_seq,3),$(a),$(l1),$(l2)],[n(un_one_arg,3),$(t),$(l2),$(l3)]],
+  [t,a,l1,l3,l2]/0)
+]).
+
+:- assert_clauses(n(un_list_tail,3),[
+ clause([n(un_list_tail,3),$(t),$(l1),$(l4)],
+  [\/,[&,[=,$(t),[n(con,1),[n([],0)]]],[=,$(l4),[n('.',2),[n(close_list,0)],$(l1)]]],[&,[~,[=,$(t),[n(con,1),[n([],0)]]]],[\/,[&,[n(list_tree,1),$(t)],[=,$(t),[n(fun,2),[n('.',0)],[n('.',2),$(t1),[n('.',2),$(t2),[n([],0)]]]]],[n(un_list_tail,3),$(t2),$(l1),$(l2)],[n(un_one_arg,3),$(t1),$(l2),$(l3)],[=,$(l4),[n('.',2),[n(comma,0)],$(l3)]]],[&,[~,[n(list_tree,1),$(t)]],[n(un_one_arg,3),$(t),[n('.',2),[n(close_list,0)],$(l1)],$(l2)],[=,$(l4),[n('.',2),[n(head_tail_sep,0)],$(l2)]]]]]],
+  [t,l1,l4,t1,t2,l2,l3]/0)
+]).
+
+:- assert_clauses(n(un_one_arg,3),[
+ clause([n(un_one_arg,3),$(t),$(l1),$(l2)],
+  [\/,[&,[n(con_tree,1),$(t)],[=,$(t),[n(con,1),$(x)]],[=,$(l2),[n('.',2),[n(name,1),$(x)],$(l1)]]],[&,[~,[n(con_tree,1),$(t)]],[n(un_parse,4),$(t),[n(999,0)],$(l1),$(l2)]]],
+  [t,l1,l2,x]/0)
+]).
+
+:- assert_clauses(n(un_parse,2),[
+ clause([n(un_parse,2),$(t),$(l)],
+  [n(un_parse,4),$(t),[n(1200,0)],[n([],0)],$(l)],
+  [t,l]/0)
+]).
+
+:- assert_clauses(n(un_parse,4),[
+ clause([n(un_parse,4),[n(variable,1),$(x)],$(0),$(l),[n('.',2),[n(variable,1),$(x)],$(l)]],
+  [&],
+  [x,0,l]/1),
+ clause([n(un_parse,4),[n(integer,1),$(x)],$(0),$(l),[n('.',2),[n(integer,1),$(x)],$(l)]],
+  [&],
+  [x,0,l]/1),
+ clause([n(un_parse,4),[n(float_number,1),$(x)],$(0),$(l),[n('.',2),[n(float_number,1),$(x)],$(l)]],
+  [&],
+  [x,0,l]/1),
+ clause([n(un_parse,4),[n(char_code_list,1),$(x)],$(0),$(l),[n('.',2),[n(char_code_list,1),$(x)],$(l)]],
+  [&],
+  [x,0,l]/1),
+ clause([n(un_parse,4),[n(con,1),$(x)],$(0),$(l1),$(l2)],
+  [\/,[&,[=,$(x),[n([],0)]],[=,$(l2),[n('.',2),[n(open_list,0)],[n('.',2),[n(close_list,0)],$(l1)]]]],[&,[~,[=,$(x),[n([],0)]]],[\/,[&,[=,$(x),[n({},0)]],[=,$(l2),[n('.',2),[n(open_curly,0)],[n('.',2),[n(close_curly,0)],$(l1)]]]],[&,[~,[=,$(x),[n({},0)]]],[\/,[&,[n(symbol_op,1),$(x)],[=,$(l2),[n('.',2),[n(open,1),[n(nolayout,0)]],[n('.',2),[n(name,1),$(x)],[n('.',2),[n(close,0)],$(l1)]]]]],[&,[~,[n(symbol_op,1),$(x)]],[=,$(l2),[n('.',2),[n(name,1),$(x)],$(l1)]]]]]]]],
+  [x,0,l1,l2]/1),
+ clause([n(un_parse,4),[n(fun,2),$(x),[n('.',2),$(t1),$(ts)]],$(n1),$(l1),$(l5)],
+  [\/,[&,[=,$(ts),[n([],0)]],[n(prefix_op,1),$(x)],[~,[=,$(x),[n(-,0)]]],[n(prefix_prec,3),$(x),$(n2),$(n3)],[n(close_par,4),$(n1),$(n2),$(l1),$(l2)],[n(un_parse,4),$(t1),$(n3),$(l2),$(l3)],[n(add_layout,2),$(l3),$(l4)],[n(open_par,4),$(n1),$(n2),[n('.',2),[n(name,1),$(x)],$(l4)],$(l5)]],[&,[~,[&,[=,$(ts),[n([],0)]],[n(prefix_op,1),$(x)],[~,[=,$(x),[n(-,0)]]]]],[\/,[&,[n(singleton,1),$(ts)],[n(infix_op,1),$(x)],[n(infix_prec,4),$(x),$(n2),$(n3),$(n4)],[=,$(ts),[n('.',2),$(t2),[n([],0)]]],[n(close_par,4),$(n1),$(n2),$(l1),$(l2)],[n(un_parse,4),$(t2),$(n4),$(l2),$(l3)],[\/,[&,[=,$(x),[n(',',0)]],[=,$(y),[n(comma,0)]]],[&,[~,[=,$(x),[n(',',0)]]],[=,$(y),[n(name,1),$(x)]]]],[n(un_parse,4),$(t1),$(n3),[n('.',2),$(y),$(l3)],$(l4)],[n(open_par,4),$(n1),$(n2),$(l4),$(l5)]],[&,[~,[&,[n(singleton,1),$(ts)],[n(infix_op,1),$(x)]]],[\/,[&,[=,$(ts),[n([],0)]],[n(postfix_op,1),$(x)],[n(postfix_prec,3),$(x),$(n2),$(n3)],[n(close_par,4),$(n1),$(n2),$(l1),$(l2)],[n(un_parse,4),$(t1),$(n3),[n('.',2),[n(name,1),$(x)],$(l2)],$(l3)],[n(open_par,4),$(n1),$(n2),$(l3),$(l5)]],[&,[~,[&,[=,$(ts),[n([],0)]],[n(postfix_op,1),$(x)]]],[\/,[&,[n(singleton,1),$(ts)],[=,$(x),[n('.',0)]],[=,$(ts),[n('.',2),$(t2),[n([],0)]]],[n(un_list_tail,3),$(t2),$(l1),$(l2)],[n(un_one_arg,3),$(t1),$(l2),$(l3)],[=,$(l5),[n('.',2),[n(open_list,0)],$(l3)]]],[&,[~,[&,[n(singleton,1),$(ts)],[=,$(x),[n('.',0)]]]],[\/,[&,[=,$(ts),[n([],0)]],[=,$(x),[n({},0)]],[n(un_parse,4),$(t1),[n(1200,0)],[n('.',2),[n(close_curly,0)],$(l1)],$(l2)],[=,$(l5),[n('.',2),[n(open_curly,0)],$(l2)]]],[&,[~,[&,[=,$(ts),[n([],0)]],[=,$(x),[n({},0)]]]],[n(un_arg_seq,3),$(ts),$(l1),$(l2)],[n(un_one_arg,3),$(t1),$(l2),$(l3)],[=,$(l5),[n('.',2),[n(name,1),$(x)],[n('.',2),[n(open,1),[n(nolayout,0)]],$(l3)]]]]]]]]]]]]],
+  [x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y]/0)
+]).

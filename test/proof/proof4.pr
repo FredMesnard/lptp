@@ -1,0 +1,37 @@
+:- initialize.
+:- tex_file($(tmp)/proof4).
+:- thm_file($(tmp)/proof4).
+
+:- lemma(4:1,
+p & (p => q) => q,
+assume(p & (p => q),[p,p => q,q],q)
+).
+
+:- theorem(4:2,
+p & (p => q) => q,
+[p & (p => q) => q by lemma(4:1)]
+).
+
+:- lemma(4:3,
+all x: r(?x) => r(?x),
+assume(r(?x),[],r(?x))
+).
+
+:- theorem(4:4,
+r(c) => r(c),
+r(c) => r(c) by lemma(4:3)
+).
+
+:- corollary(4:5,
+all [x,y,z]: r(?x,?y,?z),
+r(?x,?y,?z) by because
+).
+
+:- theorem(4:6,
+r(a0,a1,a2) & r(b0,b1,b2) & r(c0,c1,c2),
+[r(a0,a1,a2) by corollary(4:5),
+ r(b0,b1,b2) by corollary(4:5),
+ r(c0,c1,c2) by corollary(4:5)]
+).
+
+:- bye(proof4).

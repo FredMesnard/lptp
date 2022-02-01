@@ -1,0 +1,42 @@
+
+:- assert_clauses(n(member2,3),[
+ clause([n(member2,3),$(x),$(l1),$(l2)],
+  [n(member,2),$(x),$(l1)],
+  [x,l1,l2]/0),
+ clause([n(member2,3),$(x),$(l1),$(l2)],
+  [n(member,2),$(x),$(l2)],
+  [x,l1,l2]/0)
+]).
+
+:- assert_clauses(n(not_same_occ,2),[
+ clause([n(not_same_occ,2),$(l1),$(l2)],
+  [&,[n(member2,3),$(x),$(l1),$(l2)],[n(occ,3),$(x),$(l1),$(n1)],[n(occ,3),$(x),$(l2),$(n2)],[~,[=,$(n1),$(n2)]]],
+  [l1,l2,x,n1,n2]/0)
+]).
+
+:- assert_clauses(n(occ,3),[
+ clause([n(occ,3),$(x),[n([],0)],[n(0,0)]],
+  [&],
+  [x]/0),
+ clause([n(occ,3),$(x),[n('.',2),$(x),$(l)],[n(s,1),$(n)]],
+  [n(occ,3),$(x),$(l),$(n)],
+  [x,l,n]/0),
+ clause([n(occ,3),$(x),[n('.',2),$(y),$(l)],$(n)],
+  [&,[~,[=,$(x),$(y)]],[n(occ,3),$(x),$(l),$(n)]],
+  [x,y,l,n]/0)
+]).
+
+:- assert_clauses(n(permutation,2),[
+ clause([n(permutation,2),[n([],0)],[n([],0)]],
+  [&],
+  []/0),
+ clause([n(permutation,2),$(l1),[n('.',2),$(x),$(l3)]],
+  [&,[n(delete,3),$(x),$(l1),$(l2)],[n(permutation,2),$(l2),$(l3)]],
+  [l1,x,l3,l2]/0)
+]).
+
+:- assert_clauses(n(same_occ,2),[
+ clause([n(same_occ,2),$(l1),$(l2)],
+  [~,[n(not_same_occ,2),$(l1),$(l2)]],
+  [l1,l2]/0)
+]).

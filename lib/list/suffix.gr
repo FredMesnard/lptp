@@ -1,0 +1,30 @@
+
+:- assert_clauses(n(prefix,2),[
+ clause([n(prefix,2),[n([],0)],$(l)],
+  [&],
+  [l]/0),
+ clause([n(prefix,2),[n('.',2),$(x),$(l1)],[n('.',2),$(x),$(l2)]],
+  [n(prefix,2),$(l1),$(l2)],
+  [x,l1,l2]/0)
+]).
+
+:- assert_clauses(n(sublist1,2),[
+ clause([n(sublist1,2),$(l1),$(l2)],
+  [&,[n(prefix,2),$(l3),$(l2)],[n(suffix,2),$(l1),$(l3)]],
+  [l1,l2,l3]/0)
+]).
+
+:- assert_clauses(n(sublist2,2),[
+ clause([n(sublist2,2),$(l1),$(l2)],
+  [&,[n(suffix,2),$(l3),$(l2)],[n(prefix,2),$(l1),$(l3)]],
+  [l1,l2,l3]/0)
+]).
+
+:- assert_clauses(n(suffix,2),[
+ clause([n(suffix,2),$(l),$(l)],
+  [&],
+  [l]/0),
+ clause([n(suffix,2),$(l1),[n('.',2),$(y),$(l2)]],
+  [n(suffix,2),$(l1),$(l2)],
+  [l1,y,l2]/0)
+]).

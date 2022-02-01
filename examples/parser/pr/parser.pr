@@ -1,0 +1,261 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Fri Mar  1 13:06:42 1996 */
+/* Filename: parser.pr */
+/* Abstract: The main theorems. */
+
+:- initialize.
+
+:- tex_file($(tmp)/parser).
+
+:- needs_gr($(examples)/parser/src/grammar).
+:- needs_gr($(examples)/parser/src/read).
+:- needs_gr($(examples)/parser/src/write).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(tmp)/grammar).
+:- needs_thm($(tmp)/completeness).
+:- needs_thm($(tmp)/soundness).
+:- needs_thm($(tmp)/uniqueness).
+:- needs_thm($(tmp)/termination).
+:- needs_thm($(tmp)/write).
+
+
+:- theorem(dcg:parse,
+all [l,t]: succeeds consistent_op & succeeds dcg(?l,?t) =>
+ succeeds parse(?l ** [end],?t),
+assume(succeeds consistent_op & succeeds dcg(?l,?t),
+ [def succeeds dcg(?l,?t) by completion,
+  exist(n,
+   succeeds wf_term(?l,?n,?t) & succeeds ?n =< 1200,
+   [succeeds term(?l ** [end],1200,[end],?t) by theorem(wf_term:term),
+    [end] = [end],
+    ?t = ?t,
+    succeeds parse(?l ** [end],?t) by sld],
+   succeeds parse(?l ** [end],?t))],
+ succeeds parse(?l ** [end],?t))
+).
+
+:- theorem(parse:uniqueness,
+all [l,t1,t2]: succeeds consistent_op & succeeds parse(?l,?t1) &
+ succeeds parse(?l,?t2) => ?t1 = ?t2,
+assume(succeeds consistent_op & succeeds parse(?l,?t1) &
+ succeeds parse(?l,?t2),
+ [def succeeds parse(?l,?t1) by completion,
+  exist([e,r],
+   succeeds term(?l,1200,?e,?r) & 
+   (?e = [end] & ?t1 = ?r \/ ?e <> [end] & 
+    (succeeds error(?e) & ?t1 = ?e \/ fails error(?e) & 
+     ?t1 = error(parse / ?l))),
+   [def succeeds parse(?l,?t2) by completion,
+    exist([f,s],
+     succeeds term(?l,1200,?f,?s) & 
+     (?f = [end] & ?t2 = ?s \/ ?f <> [end] & 
+      (succeeds error(?f) & ?t2 = ?f \/ fails error(?f) & 
+       ?t2 = error(parse / ?l))),
+     [?e = ?f & ?r = ?s by theorem(term:uniqueness),
+      ?e = [end] & ?t2 = ?r \/ ?e <> [end] & 
+      (succeeds error(?e) & ?t2 = ?e \/ fails error(?e) & 
+       ?t2 = error(parse / ?l)),
+      cases(?e = [end] & ?t2 = ?r,
+       cases(?e = [end] & ?t1 = ?r,
+        [],
+        ?e <> [end] & 
+        (succeeds error(?e) & ?t1 = ?e \/ fails error(?e) & 
+         ?t1 = error(parse / ?l)),
+        [],
+        ?t1 = ?t2),
+       ?e <> [end] & 
+       (succeeds error(?e) & ?t2 = ?e \/ fails error(?e) & 
+        ?t2 = error(parse / ?l)),
+       cases(?e = [end] & ?t1 = ?r,
+        [],
+        ?e <> [end] & 
+        (succeeds error(?e) & ?t1 = ?e \/ fails error(?e) & 
+         ?t1 = error(parse / ?l)),
+        cases(succeeds error(?e) & ?t2 = ?e,
+         cases(succeeds error(?e) & ?t1 = ?e,
+          [],
+          fails error(?e) & ?t1 = error(parse / ?l),
+          [],
+          ?t1 = ?t2),
+         fails error(?e) & ?t2 = error(parse / ?l),
+         cases(succeeds error(?e) & ?t1 = ?e,
+          [],
+          fails error(?e) & ?t1 = error(parse / ?l),
+          [],
+          ?t1 = ?t2),
+         ?t1 = ?t2),
+        ?t1 = ?t2),
+       ?t1 = ?t2)],
+     ?t1 = ?t2)],
+   ?t1 = ?t2)],
+ ?t1 = ?t2)
+).
+
+:- theorem(dcg:uniqueness,
+all [l,t1,t2]: succeeds consistent_op & succeeds dcg(?l,?t1) &
+ succeeds dcg(?l,?t2) => ?t1 = ?t2,
+assume(succeeds consistent_op & succeeds dcg(?l,?t1) & succeeds dcg(?l,?t2),
+ [succeeds parse(?l ** [end],?t1) by theorem(dcg:parse),
+  succeeds parse(?l ** [end],?t2) by theorem(dcg:parse),
+  ?t1 = ?t2 by theorem(parse:uniqueness)],
+ ?t1 = ?t2)
+).
+
+:- lemma(parse:error,
+all [l,t]: succeeds parse(?l,?t) & fails error(?t) =>
+ succeeds term(?l,1200,[end],?t),
+assume(succeeds parse(?l,?t) & fails error(?t),
+ [def succeeds parse(?l,?t) by completion,
+  exist([l1,t1],
+   succeeds term(?l,1200,?l1,?t1) & 
+   (?l1 = [end] & ?t = ?t1 \/ ?l1 <> [end] & 
+    (succeeds error(?l1) & ?t = ?l1 \/ fails error(?l1) & 
+     ?t = error(parse / ?l))),
+   cases(?l1 = [end] & ?t = ?t1,
+    [],
+    ?l1 <> [end] & 
+    (succeeds error(?l1) & ?t = ?l1 \/ fails error(?l1) & 
+     ?t = error(parse / ?l)),
+    cases(succeeds error(?l1) & ?t = ?l1,
+     [succeeds error(?t),
+      ff],
+     fails error(?l1) & ?t = error(parse / ?l),
+     [succeeds error(error(parse / ?l)) by sld,
+      succeeds error(?t),
+      ff],
+     ff),
+    succeeds term(?l,1200,[end],?t)),
+   succeeds term(?l,1200,[end],?t))],
+ succeeds term(?l,1200,[end],?t))
+).
+
+:- theorem(parse:dcg,
+all [l,t]: succeeds token_list(?l) & succeeds parse(?l ** [end],?t) &
+ fails error(?t) => succeeds dcg(?l,?t),
+assume(succeeds token_list(?l) & succeeds parse(?l ** [end],?t) &
+  fails error(?t),
+ [succeeds term(?l ** [end],1200,[end],?t) by lemma(parse:error),
+  succeeds 0 =< 1200 by builtin,
+  ex m: succeeds ?m =< 1200 & succeeds wf_term(?l,?m,?t) by 
+   theorem(term:wf_term),
+  exist(m,
+   succeeds ?m =< 1200 & succeeds wf_term(?l,?m,?t),
+   succeeds dcg(?l,?t) by sld,
+   succeeds dcg(?l,?t))],
+ succeeds dcg(?l,?t))
+).
+
+:- theorem(parse:error,
+all [l,t]: succeeds token_list(?l) & succeeds parse(?l,?t) &
+ succeeds error(?t) =>
+ (ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l),
+assume(succeeds token_list(?l) & succeeds parse(?l,?t) & succeeds error(?t),
+ [def succeeds parse(?l,?t) by completion,
+  exist([l1,t1],
+   succeeds term(?l,1200,?l1,?t1) &
+   (?l1 = [end] & ?t = ?t1 \/
+    ?l1 <> [end] &
+    (succeeds error(?l1) & ?t = ?l1 \/
+     fails error(?l1) & ?t = error(parse / ?l))),
+   cases(?l1 = [end] & ?t = ?t1,
+    [fails error([end]) by completion,
+     fails error(?l1),
+     succeeds 0 =< 1200 by builtin,
+     succeeds parse_tree(?t1) by lemma(term:parse_tree),
+     succeeds parse_tree(?t),
+     def succeeds error(?t) by completion,
+     exist(y,
+      ?t = error(?y),
+      [def succeeds parse_tree(error(?y)) by completion,
+       ff],
+      ff)],
+    ?l1 <> [end] &
+    (succeeds error(?l1) & ?t = ?l1 \/
+     fails error(?l1) & ?t = error(parse / ?l)),
+    cases(succeeds error(?l1) & ?t = ?l1,
+     [succeeds 0 =< 1200 by builtin,
+      err_msg(?l,?l1) by lemma(term:error),
+      ex [0,l2,y]: succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) &
+       ?l1 = error(?y / ?l2) by elimination(err_msg,2),
+      exist([0,l2,y],
+       succeeds list(?0) & ?0 ** ?l2 = ?l & gr(?y) & ?l1 = error(?y / ?l2),
+       ?t = error(?y / ?l2),
+       ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l)],
+     fails error(?l1) & ?t = error(parse / ?l),
+     [[] ** ?l = ?l by corollary(app:nil),
+      ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l],
+     ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l),
+    ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l),
+   ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l)],
+ ex [x,l1,l2]: ?t = error(?x / ?l2) & ?l1 ** ?l2 = ?l)
+).
+
+:- theorem(parse:termination,
+all [l,t]: succeeds token_list(?l) => terminates parse(?l,?t),
+assume(succeeds token_list(?l),
+ [gr(?l) by lemma(token_list:gr),
+  succeeds integer(1200) by builtin,
+  succeeds 0 =< 1200 by builtin,
+  terminates term(?l,1200,?l1,?t1) by theorem(term:termination),
+  assume(succeeds term(?l,1200,?l1,?t1),
+   [succeeds token_list(?l) => term_ok(?l,1200,?l1,?t1) \/ err_msg(?l,?l1) by
+     lemma(term:wf_term),
+    term_ok(?l,1200,?l1,?t1) \/ err_msg(?l,?l1),
+    cases(term_ok(?l,1200,?l1,?t1),
+     [succeeds 0 =< 1200 => 
+       (ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l1 = ?l &
+         succeeds wf_term(?e3,?k,?t1)) by elimination(term_ok,4),
+      ex [e3,k]: succeeds ?k =< 1200 & ?e3 ** ?l1 = ?l &
+       succeeds wf_term(?e3,?k,?t1),
+      exist([e3,k],
+       succeeds ?k =< 1200 & ?e3 ** ?l1 = ?l & succeeds wf_term(?e3,?k,?t1),
+       [succeeds list(?e3) by corollary(wf_term:list),
+	gr(?e3 ** ?l1),
+	gr(?e3) & gr(?l1) by corollary(app:ground:2)],
+       gr(?l1))],
+     err_msg(?l,?l1),
+     gr(?l1) by lemma(err_msg:gr),
+     gr(?l1)),
+    terminates 
+   (~ ?l1 = [end] &
+    (error(?l1) & ?t = ?l1 \/ ~ error(?l1) & ?t = error(parse / ?l)))],
+   terminates (?l1 = [end] & ?t = ?t1) &
+   terminates 
+   (~ ?l1 = [end] &
+    (error(?l1) & ?t = ?l1 \/ ~ error(?l1) & ?t = error(parse / ?l)))),
+  terminates 
+  (term(?l,1200,?l1,?t1) &
+   (?l1 = [end] & ?t = ?t1 \/
+    ~ ?l1 = [end] &
+    (error(?l1) & ?t = ?l1 \/ ~ error(?l1) & ?t = error(parse / ?l)))),
+  all [l1,t1]: 
+   terminates 
+   (term(?l,1200,?l1,?t1) &
+    (?l1 = [end] & ?t = ?t1 \/
+     ~ ?l1 = [end] &
+     (error(?l1) & ?t = ?l1 \/ ~ error(?l1) & ?t = error(parse / ?l)))),
+  terminates parse(?l,?t) by completion],
+ terminates parse(?l,?t))
+).
+
+:- theorem(un_parse:parse,
+all [l,t]: succeeds consistent_op & succeeds parse_tree(?t) &
+ succeeds un_parse(?t,?l) => succeeds parse(?l ** [end],?t),
+assume(succeeds consistent_op & succeeds parse_tree(?t) &
+ succeeds un_parse(?t,?l),
+ [succeeds dcg(?l,?t) by theorem(un_parse:wf_term),
+  succeeds parse(?l ** [end],?t) by theorem(dcg:parse)],
+ succeeds parse(?l ** [end],?t))
+).
+
+:- theorem(un_parse:termination,
+all [t,l]: succeeds parse_tree(?t) => terminates un_parse(?t,?l),
+assume(succeeds parse_tree(?t),
+ [termination_tree(?t) by lemma(un_parse:termination),
+  terminates un_parse(?t,1200,[],?l) by lemma(termination_tree:un_parse),
+  terminates un_parse(?t,?l) by completion],
+ terminates un_parse(?t,?l))
+).
+
+:- bye(parser).

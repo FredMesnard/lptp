@@ -1,0 +1,112 @@
+:- initialize.
+:- tex_file($(tmp)/proof3).
+:- thm_file($(tmp)/proof3).
+
+:- needs_gr($(test)/boot/lists).
+
+:- theorem(3:1,
+succeeds list([]),
+[[] = [],succeeds list([]) by completion]
+).
+
+:- theorem(3:2,
+succeeds list([]),
+[succeeds list([]) by completion]
+).
+
+:- theorem(3:3,
+all [x,l] : succeeds list(?l) => succeeds list([?x|?l]),
+[assume(succeeds list(?l),
+  [[?x|?l] = [?x|?l],
+   [?x|?l] = [?x|?l] & succeeds list(?l),
+   ex [x1,l1] : [?x|?l] = [?x1|?l1] & succeeds list(?l1),
+   succeeds list([?x|?l]) by completion],
+  succeeds list([?x|?l]))]
+).
+
+:- theorem(3:4,
+all [x,l] : fails list(?l) => fails list([?x|?l]),
+[assume(fails list(?l),
+  [[?x|?l] <> [],
+   ~ [?x|?l] = [],
+   assume([?x|?l] = [?x1|?l1],
+    [?l = ?l1,
+     fails list(?l1)],
+    fails list(?l1)),
+   all [x1,l1] : [?x|?l] = [?x1|?l1] => fails list(?l1),
+   fails list([?x|?l]) by completion],
+  fails list([?x|?l]))]
+).
+
+:- theorem(3:5,
+all [x,l] : fails list(?l) => fails list([?x|?l]),
+[assume(fails list(?l),
+  [~ [?x|?l] = [],
+   assume([?x|?l] = [?x1|?l1],
+    [fails list(?l1)],
+    fails list(?l1)),
+   all [x1,l1] : [?x|?l] = [?x1|?l1] => fails list(?l1),
+   fails list([?x|?l]) by completion],
+  fails list([?x|?l]))]
+).
+
+:- theorem(3:6,
+all x : fails member(?x,[]),
+[~ [] = [?x|?l1],
+ all l1 : ~ [] = [?x|?l1],
+ assume([] = [?y1|?l1],
+  [ff,
+   fails member(?x,?l1)],
+  fails member(?x,?l1)),
+ all [y1,l1] : [] = [?y1|?l1] => fails member(?x,?l1),
+ fails member(?x,[]) by completion]
+).
+
+:- theorem(3:7,
+all [x,y,l] : ?x <> ?y & fails member(?x,?l) => fails member(?x,[?y|?l]),
+assume(?x <> ?y & fails member(?x,?l),
+ [?x <> ?y,
+  fails member(?x,?l),
+  contra([?y|?l] = [?x|?l1],
+   [?x = ?y,
+    ~ ?x = ?y]),
+  all [l1] : ~ [?y|?l] = [?x|?l1],
+  assume([?y|?l] = [?y1|?l1],
+   [?l = ?l1,
+    fails member(?x,?l1)],
+   fails member(?x,?l1)),
+  all [y1,l1] : [?y|?l] = [?y1|?l1] => fails member(?x,?l1),
+  fails member(?x,[?y|?l]) by completion],
+ fails member(?x,[?y|?l]))
+).
+
+:- theorem(3:8,
+all [x,y,l] : fails member(?x,[?y|?l]) => ?x <> ?y & fails member(?x,?l),
+assume(fails member(?x,[?y|?l]),
+ def fails member(?x,[?y|?l]) by completion,
+ ?x <> ?y & fails member(?x,?l))
+).
+
+:- theorem(3:9,
+all [x,y,l] : ?x <> ?y & fails member(?x,?l) <=> fails member(?x,[?y|?l]),
+[assume(?x <> ?y & fails member(?x,?l),[],fails member(?x,[?y|?l])),
+ assume(fails member(?x,[?y|?l]),
+  [def fails member(?x,[?y|?l]) by completion,
+   ?x <> ?y,
+   fails member(?x,?l)],
+  ?x <> ?y & fails member(?x,?l)),
+ ?x <> ?y & fails member(?x,?l) <=> fails member(?x,[?y|?l])]
+).
+
+:- theorem(3:10,
+succeeds member(c,[c]),
+[succeeds member(c,[c])]
+).
+
+:- theorem(3:11,
+succeeds member(c1,[c0,c1,c2]),
+[succeeds member(c1,[c1,c2]),succeeds member(c1,[c0,c1,c2])]
+).
+
+:- bye(proof3).
+

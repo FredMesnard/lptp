@@ -1,0 +1,1802 @@
+/* Author: Robert Staerk <staerk@math.stanford.edu> */
+/* Created: 5/26/95, 8:09 PM */
+/* Updated: Mon Dec 28 17:54:08 1998 */
+/* Filename: nat.pr */
+
+:- initialize.
+:- tex_file($(tmp)/nat).
+:- thm_file($(lib)/nat/nat).
+:- needs_gr($(lib)/nat/nat).
+
+:- lemma(nat:termination,
+all x: succeeds nat(?x) => terminates nat(?x),
+induction([all x: succeeds nat(?x) => terminates nat(?x)],
+ [step([],[],terminates nat(0) by completion,terminates nat(0)),
+  step([x],
+   [terminates nat(?x),
+    succeeds nat(?x)],
+   terminates nat(s(?x)) by completion,
+   terminates nat(s(?x)))])
+).
+
+:- lemma(nat:ground,
+all x: succeeds nat(?x) => gr(?x),
+induction([all x: succeeds nat(?x) => gr(?x)],
+ [step([],[],[],gr(0)),
+  step([x],
+   [gr(?x),
+    succeeds nat(?x)],
+   [],
+   gr(s(?x)))])
+).
+
+:- lemma(plus:termination:1,
+all [x,y,z]: succeeds nat(?x) => terminates plus(?x,?y,?z),
+[induction(
+  [all x: succeeds nat(?x) => (all [y,z]: terminates plus(?x,?y,?z))],
+  [step([],
+    [],
+    [terminates plus(0,?y,?z) by completion],
+    all [y,z]: terminates plus(0,?y,?z)),
+   step([x],
+    [all [y,z]: terminates plus(?x,?y,?z),
+     succeeds nat(?x)],
+    [?z = s(?n) => terminates plus(?x,?y,?n),
+     all n: ?z = s(?n) => terminates plus(?x,?y,?n),
+     terminates plus(s(?x),?y,?z) by completion],
+    all [y,z]: terminates plus(s(?x),?y,?z))]),
+ assume(succeeds nat(?x),
+  [all [y,z]: terminates plus(?x,?y,?z),
+   terminates plus(?x,?y,?z)],
+  terminates plus(?x,?y,?z))]
+).
+
+:- lemma(plus:termination:2,
+all [x,y,z]: succeeds nat(?z) => terminates plus(?x,?y,?z),
+[induction(
+  [all z: succeeds nat(?z) => (all [x,y]: terminates plus(?x,?y,?z))],
+  [step([],
+    [],
+    terminates plus(?x,?y,0) by completion,
+    all [x,y]: terminates plus(?x,?y,0)),
+   step([0],
+    [all [x,y]: terminates plus(?x,?y,?0),
+     succeeds nat(?0)],
+    [?x = s(?n) => terminates plus(?n,?y,?0),
+     all n: ?x = s(?n) => terminates plus(?n,?y,?0),
+     terminates plus(?x,?y,s(?0)) by completion],
+    all [x,y]: terminates plus(?x,?y,s(?0)))]),
+ assume(succeeds nat(?z),
+  [all [x,y]: terminates plus(?x,?y,?z),
+   terminates plus(?x,?y,?z)],
+  terminates plus(?x,?y,?z))]
+).
+
+:- lemma(plus:types:1,
+all [x,y,z]: succeeds plus(?x,?y,?z) => succeeds nat(?x),
+induction([all [x,y,z]: succeeds plus(?x,?y,?z) => succeeds nat(?x)],
+ [step([0],[],[],succeeds nat(0)),
+  step([x,y,z],
+   [succeeds nat(?x),
+    succeeds plus(?x,?y,?z)],
+   [],
+   succeeds nat(s(?x)))])
+).
+
+:- lemma(plus:types:2,
+all [x,y,z]: succeeds plus(?x,?y,?z) & succeeds nat(?y) => 
+ succeeds nat(?z),
+[induction(
+  [all [x,y,z]: succeeds plus(?x,?y,?z) => succeeds nat(?y) => 
+    succeeds nat(?z)],
+  [step([0],[],[],succeeds nat(?0) => succeeds nat(?0)),
+   step([x,y,z],
+    [succeeds nat(?y) => succeeds nat(?z),
+     succeeds plus(?x,?y,?z)],
+    assume(succeeds nat(?y),
+     [succeeds nat(?z),
+      succeeds nat(s(?z))],
+     succeeds nat(s(?z))),
+    succeeds nat(?y) => succeeds nat(s(?z)))]),
+ assume(succeeds plus(?x,?y,?z) & succeeds nat(?y),
+  [succeeds nat(?y) => succeeds nat(?z),
+   succeeds nat(?z)],
+  succeeds nat(?z))]
+).
+
+:- lemma(plus:types:3,
+all [x,y,z]: succeeds plus(?x,?y,?z) & succeeds nat(?z) => 
+ succeeds nat(?y),
+[induction(
+  [all [x,y,z]: succeeds plus(?x,?y,?z) => succeeds nat(?z) => 
+    succeeds nat(?y)],
+  [step([0],[],[],succeeds nat(?0) => succeeds nat(?0)),
+   step([x,y,z],
+    [succeeds nat(?z) => succeeds nat(?y),
+     succeeds plus(?x,?y,?z)],
+    assume(succeeds nat(s(?z)),
+     [def succeeds nat(s(?z)) by completion,
+      succeeds nat(?z),
+      succeeds nat(?y)],
+     succeeds nat(?y)),
+    succeeds nat(s(?z)) => succeeds nat(?y))]),
+ assume(succeeds plus(?x,?y,?z) & succeeds nat(?z),
+  [succeeds nat(?z) => succeeds nat(?y),
+   succeeds nat(?y)],
+  succeeds nat(?y))]
+).
+
+:- lemma(plus:termination:3,
+all [x,y,z]: succeeds plus(?x,?y,?z) => terminates plus(?x,?y,?z),
+assume(succeeds plus(?x,?y,?z),
+ [succeeds nat(?x) by lemma(plus:types:1),
+  terminates plus(?x,?y,?z) by lemma(plus:termination:1)],
+ terminates plus(?x,?y,?z))
+).
+
+:- lemma(plus:ground:1,
+all [x,y,z]: succeeds plus(?x,?y,?z) => gr(?x),
+induction([all [x,y,z]: succeeds plus(?x,?y,?z) => gr(?x)],
+ [step([y],[],[],gr(0)),
+  step([x,y,z],
+   [gr(?x),
+    succeeds plus(?x,?y,?z)],
+   [],
+   gr(s(?x)))])
+).
+
+:- lemma(plus:ground:2,
+all [x,y,z]: succeeds plus(?x,?y,?z) & gr(?y) => gr(?z),
+[induction([all [x,y,z]: succeeds plus(?x,?y,?z) => gr(?y) => gr(?z)],
+  [step([y],[],[],gr(?y) => gr(?y)),
+   step([x,y,z],
+    [gr(?y) => gr(?z),
+     succeeds plus(?x,?y,?z)],
+    assume(gr(?y),
+     [],
+     gr(s(?z))),
+    gr(?y) => gr(s(?z)))]),
+ assume(succeeds plus(?x,?y,?z) & gr(?y),
+  [gr(?y) => gr(?z),
+   gr(?y) => gr(?z),
+   gr(?z)],
+  gr(?z))]
+).
+
+:- lemma(plus:ground:3,
+all [x,y,z]: succeeds plus(?x,?y,?z) & gr(?z) => gr(?y),
+[induction([all [x,y,z]: succeeds plus(?x,?y,?z) => gr(?z) => gr(?y)],
+  [step([y],[],[],gr(?y) => gr(?y)),
+   step([x,y,z],
+    [gr(?z) => gr(?y),
+     succeeds plus(?x,?y,?z)],
+    assume(gr(s(?z)),
+     [],
+     gr(?y)),
+    gr(s(?z)) => gr(?y))]),
+ assume(succeeds plus(?x,?y,?z) & gr(?z),
+  [gr(?z) => gr(?y),
+   gr(?z) => gr(?y),
+   gr(?y)],
+  gr(?y))]
+).
+
+:- lemma(plus:existence,
+all [x,y]: succeeds nat(?x) => (ex z: succeeds plus(?x,?y,?z)),
+[induction(
+  [all x: succeeds nat(?x) => (all y: ex z: succeeds plus(?x,?y,?z))],
+  [step([],
+    [],
+    [succeeds plus(0,?y,?y),
+     ex z: succeeds plus(0,?y,?z)],
+    all y: ex z: succeeds plus(0,?y,?z)),
+   step([x],
+    [all y: ex z: succeeds plus(?x,?y,?z),
+     succeeds nat(?x)],
+    [ex z: succeeds plus(?x,?y,?z),
+     exist(z,
+      succeeds plus(?x,?y,?z),
+      succeeds plus(s(?x),?y,s(?z)),
+      ex z: succeeds plus(s(?x),?y,?z)),
+     ex z: succeeds plus(s(?x),?y,?z)],
+    all y: ex z: succeeds plus(s(?x),?y,?z))]),
+ assume(succeeds nat(?x),
+  [all y: ex z: succeeds plus(?x,?y,?z),
+   ex z: succeeds plus(?x,?y,?z)],
+  ex z: succeeds plus(?x,?y,?z))]
+).
+
+:- lemma(plus:uniqueness,
+all [x,y,z1,z2]: succeeds plus(?x,?y,?z1) & succeeds plus(?x,?y,?z2) => 
+ ?z1 = ?z2,
+[induction(
+  [all [x,y,z1]: succeeds plus(?x,?y,?z1) => 
+    (all z2: succeeds plus(?x,?y,?z2) => ?z1 = ?z2)],
+  [step([y],
+    [],
+    assume(succeeds plus(0,?y,?z2),
+     [def succeeds plus(0,?y,?z2) by completion,
+      ?y = ?z2],
+     ?y = ?z2),
+    all z2: succeeds plus(0,?y,?z2) => ?y = ?z2),
+   step([x,y,z1],
+    [all z2: succeeds plus(?x,?y,?z2) => ?z1 = ?z2,
+     succeeds plus(?x,?y,?z1)],
+    assume(succeeds plus(s(?x),?y,?z2),
+     [def succeeds plus(s(?x),?y,?z2) by completion,
+      ex z3: ?z2 = s(?z3) & succeeds plus(?x,?y,?z3),
+      exist(z3,
+       ?z2 = s(?z3) & succeeds plus(?x,?y,?z3),
+       [succeeds plus(?x,?y,?z3) => ?z1 = ?z3,
+        ?z1 = ?z3],
+       s(?z1) = ?z2)],
+     s(?z1) = ?z2),
+    all z2: succeeds plus(s(?x),?y,?z2) => s(?z1) = ?z2)]),
+ assume(succeeds plus(?x,?y,?z1) & succeeds plus(?x,?y,?z2),
+  [all z2: succeeds plus(?x,?y,?z2) => ?z1 = ?z2,
+   succeeds plus(?x,?y,?z2) => ?z1 = ?z2,
+   ?z1 = ?z2],
+  ?z1 = ?z2)]
+).
+
+:- definition_fun(@+,2,
+ all [x,y,z]: succeeds nat(?x) => 
+  (?x @+ ?y = ?z <=> succeeds plus(?x,?y,?z)),
+ existence by lemma(plus:existence),
+ uniqueness by lemma(plus:uniqueness)
+).
+
+:- corollary(plus:zero,
+all y: 0 @+ ?y = ?y,
+0 @+ ?y = ?y by uniqueness(@+,2)
+).
+
+:- corollary(plus:successor,
+all [x,y]: succeeds nat(?x) => s(?x) @+ ?y = s(?x @+ ?y),
+assume(succeeds nat(?x),
+ [succeeds plus(?x,?y,?x @+ ?y) by existence(@+,2),
+  succeeds plus(s(?x),?y,s(?x @+ ?y)),
+  s(?x) @+ ?y = s(?x @+ ?y) by uniqueness(@+,2)],
+ s(?x) @+ ?y = s(?x @+ ?y))
+).
+
+:- corollary(plus:types,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?x @+ ?y),
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds plus(?x,?y,?x @+ ?y) by existence(@+,2),
+  succeeds nat(?y) => succeeds nat(?x @+ ?y) by lemma(plus:types:2),
+  succeeds nat(?x @+ ?y)],
+ succeeds nat(?x @+ ?y))
+).
+
+:- theorem(plus:associative,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) => 
+ ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z),
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) & succeeds nat(?z) => 
+    ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z)],
+  [step([],
+    [],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ (?y @+ ?z) = ?y @+ ?z by corollary(plus:zero),
+      0 @+ ?y @+ ?z = ?y @+ ?z = 0 @+ (?y @+ ?z)],
+     0 @+ ?y @+ ?z = 0 @+ (?y @+ ?z)),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    0 @+ ?y @+ ?z = 0 @+ (?y @+ ?z)),
+   step([x],
+    [succeeds nat(?y) & succeeds nat(?z) => 
+     ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z),
+     succeeds nat(?x)],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      succeeds nat(?x @+ ?y) by corollary(plus:types),
+      s(?x @+ ?y) @+ ?z = s(?x @+ ?y @+ ?z) by 
+       corollary(plus:successor),
+      ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z),
+      s(?x) @+ (?y @+ ?z) = s(?x @+ (?y @+ ?z)) by 
+       corollary(plus:successor),
+      s(?x) @+ ?y @+ ?z = s(?x @+ ?y) @+ ?z = s(?x @+ ?y @+ ?z) = 
+      s(?x @+ (?y @+ ?z)) = s(?x) @+ (?y @+ ?z)],
+     s(?x) @+ ?y @+ ?z = s(?x) @+ (?y @+ ?z)),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    s(?x) @+ ?y @+ ?z = s(?x) @+ (?y @+ ?z))]),
+ assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z),
+  [succeeds nat(?y) & succeeds nat(?z) => 
+   ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z),
+   ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z)],
+  ?x @+ ?y @+ ?z = ?x @+ (?y @+ ?z))]
+).
+
+:- lemma(plus:zero,
+all x: succeeds nat(?x) => ?x @+ 0 = ?x,
+induction([all x: succeeds nat(?x) => ?x @+ 0 = ?x],
+ [step([],[],[0 @+ 0 = 0 by corollary(plus:zero)],0 @+ 0 = 0),
+  step([x],
+   [?x @+ 0 = ?x,
+    succeeds nat(?x)],
+   [s(?x) @+ 0 = s(?x @+ 0) by corollary(plus:successor),
+    s(?x) @+ 0 = s(?x @+ 0) = s(?x)],
+   s(?x) @+ 0 = s(?x))])
+).
+
+:- lemma(plus:successor,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => 
+ ?x @+ s(?y) = s(?x) @+ ?y,
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) => 
+    ?x @+ s(?y) = s(?x) @+ ?y],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     [0 @+ s(?y) = s(?y) by corollary(plus:zero),
+      s(0) @+ ?y = s(0 @+ ?y) by corollary(plus:successor),
+      0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ s(?y) = s(?y) = s(0 @+ ?y) = s(0) @+ ?y],
+     0 @+ s(?y) = s(0) @+ ?y),
+    succeeds nat(?y) => 0 @+ s(?y) = s(0) @+ ?y),
+   step([x],
+    [succeeds nat(?y) => ?x @+ s(?y) = s(?x) @+ ?y,
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [s(?x) @+ s(?y) = s(?x @+ s(?y)) by corollary(plus:successor),
+      ?x @+ s(?y) = s(?x) @+ ?y,
+      s(s(?x)) @+ ?y = s(s(?x) @+ ?y) by corollary(plus:successor),
+      s(?x) @+ s(?y) = s(?x @+ s(?y)) = s(s(?x) @+ ?y) = s(s(?x)) @+ ?y],
+     s(?x) @+ s(?y) = s(s(?x)) @+ ?y),
+    succeeds nat(?y) => s(?x) @+ s(?y) = s(s(?x)) @+ ?y)]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [succeeds nat(?y) => ?x @+ s(?y) = s(?x) @+ ?y,
+   ?x @+ s(?y) = s(?x) @+ ?y],
+  ?x @+ s(?y) = s(?x) @+ ?y)]
+).
+
+:- theorem(plus:commutative,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => ?x @+ ?y = ?y @+ ?x,
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) => ?x @+ ?y = ?y @+ ?x],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      ?y @+ 0 = ?y by lemma(plus:zero),
+      0 @+ ?y = ?y @+ 0],
+     0 @+ ?y = ?y @+ 0),
+    succeeds nat(?y) => 0 @+ ?y = ?y @+ 0),
+   step([x],
+    [succeeds nat(?y) => ?x @+ ?y = ?y @+ ?x,
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      ?x @+ ?y = ?y @+ ?x,
+      s(?y) @+ ?x = s(?y @+ ?x) by corollary(plus:successor),
+      ?y @+ s(?x) = s(?y) @+ ?x by lemma(plus:successor),
+      s(?x) @+ ?y = s(?x @+ ?y) = s(?y @+ ?x) = s(?y) @+ ?x = ?y @+ 
+      s(?x)],
+     s(?x) @+ ?y = ?y @+ s(?x)),
+    succeeds nat(?y) => s(?x) @+ ?y = ?y @+ s(?x))]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [succeeds nat(?y) => ?x @+ ?y = ?y @+ ?x,
+   ?x @+ ?y = ?y @+ ?x],
+  ?x @+ ?y = ?y @+ ?x)]
+).
+
+:- lemma(plus:injective:second,
+all [x,y,z]: succeeds nat(?x) & ?x @+ ?y = ?x @+ ?z => ?y = ?z,
+[induction([all x: succeeds nat(?x) => ?x @+ ?y = ?x @+ ?z => ?y = ?z],
+  [step([],
+    [],
+    assume(0 @+ ?y = 0 @+ ?z,
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ ?z = ?z by corollary(plus:zero),
+      ?y = ?z],
+     ?y = ?z),
+    0 @+ ?y = 0 @+ ?z => ?y = ?z),
+   step([x],
+    [?x @+ ?y = ?x @+ ?z => ?y = ?z,
+     succeeds nat(?x)],
+    assume(s(?x) @+ ?y = s(?x) @+ ?z,
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      s(?x) @+ ?z = s(?x @+ ?z) by corollary(plus:successor),
+      s(?x @+ ?y) = s(?x @+ ?z),
+      ?x @+ ?y = ?x @+ ?z,
+      ?y = ?z],
+     ?y = ?z),
+    s(?x) @+ ?y = s(?x) @+ ?z => ?y = ?z)]),
+ assume(succeeds nat(?x) & ?x @+ ?y = ?x @+ ?z,
+  [?x @+ ?y = ?x @+ ?z => ?y = ?z,
+   ?y = ?z],
+  ?y = ?z)]
+).
+
+:- lemma(times:types:1,
+all [x,y,z]: succeeds times(?x,?y,?z) => succeeds nat(?x),
+induction([all [x,y,z]: succeeds times(?x,?y,?z) => succeeds nat(?x)],
+ [step([0],[],[],succeeds nat(0)),
+  step([x,y,z,a],
+   [succeeds nat(?x),
+    succeeds times(?x,?y,?a),
+    succeeds plus(?y,?a,?z)],
+   [],
+   succeeds nat(s(?x)))])
+).
+
+:- lemma(times:types:2,
+all [x,y,z]: succeeds times(?x,?y,?z) & succeeds nat(?y) => 
+ succeeds nat(?z),
+[induction(
+  [all [x,y,z]: succeeds times(?x,?y,?z) => succeeds nat(?y) => 
+    succeeds nat(?z)],
+  [step([0],[],[],succeeds nat(?0) => succeeds nat(0)),
+   step([x,y,z,a],
+    [succeeds nat(?y) => succeeds nat(?a),
+     succeeds times(?x,?y,?a),
+     succeeds plus(?y,?a,?z)],
+    assume(succeeds nat(?y),
+     [succeeds nat(?a),
+      succeeds plus(?y,?a,?z) & succeeds nat(?a),
+      succeeds nat(?z) by lemma(plus:types:2)],
+     succeeds nat(?z)),
+    succeeds nat(?y) => succeeds nat(?z))]),
+ assume(succeeds times(?x,?y,?z) & succeeds nat(?y),
+  [succeeds nat(?y) => succeeds nat(?z),
+   succeeds nat(?z)],
+  succeeds nat(?z))]
+).
+
+:- lemma(times:ground:1,
+all [x,y,z]: succeeds times(?x,?y,?z) => gr(?x),
+induction([all [x,y,z]: succeeds times(?x,?y,?z) => gr(?x)],
+ [step([y],[],[],gr(0)),
+  step([x,y,z,a],
+   [gr(?x),
+    succeeds times(?x,?y,?a),
+    succeeds plus(?y,?a,?z)],
+   [],
+   gr(s(?x)))])
+).
+
+:- lemma(times:ground:2,
+all [x,y,z]: succeeds times(?x,?y,?z) & gr(?y) => gr(?z),
+[induction([all [x,y,z]: succeeds times(?x,?y,?z) => gr(?y) => gr(?z)],
+  [step([y],[],[],gr(?y) => gr(0)),
+   step([x,y,z,a],
+    [gr(?y) => gr(?a),
+     succeeds times(?x,?y,?a),
+     succeeds plus(?y,?a,?z)],
+    assume(gr(?y),
+     [gr(?a),
+      gr(?z) by lemma(plus:ground:2)],
+     gr(?z)),
+    gr(?y) => gr(?z))]),
+ assume(succeeds times(?x,?y,?z) & gr(?y),
+  [gr(?y) => gr(?z),
+   gr(?z)],
+  gr(?z))]
+).
+
+:- lemma(times:termination,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) => 
+ terminates times(?x,?y,?z),
+[induction(
+  [all x: succeeds nat(?x) => 
+    (all [y,z]: succeeds nat(?y) => terminates times(?x,?y,?z))],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     terminates times(0,?y,?z) by completion,
+     terminates times(0,?y,?z)),
+    all [y,z]: succeeds nat(?y) => terminates times(0,?y,?z)),
+   step([x],
+    [all [y,z]: succeeds nat(?y) => terminates times(?x,?y,?z),
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [terminates times(?x,?y,?a),
+      terminates plus(?y,?a,?z) by lemma(plus:termination:1),
+      terminates (times(?x,?y,?a) & plus(?y,?a,?z)),
+      all a: terminates (times(?x,?y,?a) & plus(?y,?a,?z)),
+      terminates times(s(?x),?y,?z) by completion],
+     terminates times(s(?x),?y,?z)),
+    all [y,z]: succeeds nat(?y) => terminates times(s(?x),?y,?z))]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [all [y,z]: succeeds nat(?y) => terminates times(?x,?y,?z),
+   succeeds nat(?y) => terminates times(?x,?y,?z),
+   terminates times(?x,?y,?z)],
+  terminates times(?x,?y,?z))]
+).
+
+:- lemma(times:existence,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => 
+ (ex z: succeeds times(?x,?y,?z)),
+[induction(
+  [all x: succeeds nat(?x) => 
+    (all y: succeeds nat(?y) => (ex z: succeeds times(?x,?y,?z)))],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     [succeeds times(0,?y,0),
+      ex z: succeeds times(0,?y,?z)],
+     ex z: succeeds times(0,?y,?z)),
+    all y: succeeds nat(?y) => (ex z: succeeds times(0,?y,?z))),
+   step([x],
+    [all y: succeeds nat(?y) => (ex z: succeeds times(?x,?y,?z)),
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [exist(a,
+       succeeds times(?x,?y,?a),
+       [succeeds plus(?y,?a,?y @+ ?a) by existence(@+,2),
+        succeeds times(s(?x),?y,?y @+ ?a)],
+       ex z: succeeds times(s(?x),?y,?z))],
+     ex z: succeeds times(s(?x),?y,?z)),
+    all y: succeeds nat(?y) => (ex z: succeeds times(s(?x),?y,?z)))]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [all y: succeeds nat(?y) => (ex z: succeeds times(?x,?y,?z)),
+   succeeds nat(?y) => (ex z: succeeds times(?x,?y,?z)),
+   ex z: succeeds times(?x,?y,?z)],
+  ex z: succeeds times(?x,?y,?z))]
+).
+
+:- lemma(times:uniqueness,
+all [x,y,z1,z2]: succeeds times(?x,?y,?z1) & succeeds times(?x,?y,?z2) => 
+ ?z1 = ?z2,
+[induction(
+  [all [x,y,z1]: succeeds times(?x,?y,?z1) => 
+    (all z2: succeeds times(?x,?y,?z2) => ?z1 = ?z2)],
+  [step([y],
+    [],
+    assume(succeeds times(0,?y,?z2),
+     [def succeeds times(0,?y,?z2) by completion,
+      0 = ?z2],
+     0 = ?z2),
+    all z2: succeeds times(0,?y,?z2) => 0 = ?z2),
+   step([x,y,z1,a],
+    [all z2: succeeds times(?x,?y,?z2) => ?a = ?z2,
+     succeeds times(?x,?y,?a),
+     succeeds plus(?y,?a,?z1)],
+    assume(succeeds times(s(?x),?y,?z2),
+     [def succeeds times(s(?x),?y,?z2) by completion,
+      ex b: succeeds times(?x,?y,?b) & succeeds plus(?y,?b,?z2),
+      exist(b,
+       succeeds times(?x,?y,?b) & succeeds plus(?y,?b,?z2),
+       [succeeds times(?x,?y,?b) => ?a = ?b,
+        ?a = ?b,
+        succeeds plus(?y,?a,?z2),
+        succeeds plus(?y,?a,?z1) & succeeds plus(?y,?a,?z2) => ?z1 = ?z2 by
+         lemma(plus:uniqueness),
+        ?z1 = ?z2],
+       ?z1 = ?z2)],
+     ?z1 = ?z2),
+    all z2: succeeds times(s(?x),?y,?z2) => ?z1 = ?z2)]),
+ assume(succeeds times(?x,?y,?z1) & succeeds times(?x,?y,?z2),
+  [all z2: succeeds times(?x,?y,?z2) => ?z1 = ?z2,
+   succeeds times(?x,?y,?z2) => ?z1 = ?z2,
+   ?z1 = ?z2],
+  ?z1 = ?z2)]
+).
+
+:- definition_fun(@*,2,
+ all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) => 
+  (?x @* ?y = ?z <=> succeeds times(?x,?y,?z)),
+ existence by lemma(times:existence),
+ uniqueness by lemma(times:uniqueness)
+).
+
+:- corollary(times:zero,
+all y: succeeds nat(?y) => 0 @* ?y = 0,
+assume(succeeds nat(?y),0 @* ?y = 0 by uniqueness(@*,2),0 @* ?y = 0)
+).
+
+:- corollary(times:successor,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => 
+ s(?x) @* ?y = ?y @+ ?x @* ?y,
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds times(?x,?y,?x @* ?y) by existence(@*,2),
+  succeeds plus(?y,?x @* ?y,?y @+ ?x @* ?y) by existence(@+,2),
+  succeeds times(s(?x),?y,?y @+ ?x @* ?y),
+  s(?x) @* ?y = ?y @+ ?x @* ?y by uniqueness(@*,2)],
+ s(?x) @* ?y = ?y @+ ?x @* ?y)
+).
+
+:- corollary(times:types,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?x @* ?y),
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds times(?x,?y,?x @* ?y) by existence(@*,2),
+  succeeds nat(?y) => succeeds nat(?x @* ?y) by lemma(times:types:2),
+  succeeds nat(?x @* ?y)],
+ succeeds nat(?x @* ?y))
+).
+
+:- theorem(plus:times:distributive,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) => 
+ (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) & succeeds nat(?z) => 
+    (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z],
+  [step([],
+    [],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @* ?z = 0 by corollary(times:zero),
+      0 @+ ?y @* ?z = ?y @* ?z by corollary(plus:zero),
+      (0 @+ ?y) @* ?z = ?y @* ?z = 0 @+ ?y @* ?z = 0 @* ?z @+ ?y @*
+      ?z],
+     (0 @+ ?y) @* ?z = 0 @* ?z @+ ?y @* ?z),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    (0 @+ ?y) @* ?z = 0 @* ?z @+ ?y @* ?z),
+   step([x],
+    [succeeds nat(?y) & succeeds nat(?z) => 
+     (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z,
+     succeeds nat(?x)],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      succeeds nat(?x @+ ?y) by corollary(plus:types),
+      s(?x @+ ?y) @* ?z = ?z @+ (?x @+ ?y) @* ?z by 
+       corollary(times:successor),
+      (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z,
+      succeeds nat(?x @* ?z) by corollary(times:types),
+      succeeds nat(?y @* ?z) by corollary(times:types),
+      ?z @+ ?x @* ?z @+ ?y @* ?z = ?z @+ (?x @* ?z @+ ?y @* ?z) by 
+       theorem(plus:associative),
+      s(?x) @* ?z = ?z @+ ?x @* ?z by corollary(times:successor),
+      (s(?x) @+ ?y) @* ?z = s(?x @+ ?y) @* ?z = ?z @+ (?x @+ ?y) @* 
+      ?z = ?z @+ (?x @* ?z @+ ?y @* ?z) = ?z @+ ?x @* ?z @+ ?y @* 
+      ?z = s(?x) @* ?z @+ ?y @* ?z],
+     (s(?x) @+ ?y) @* ?z = s(?x) @* ?z @+ ?y @* ?z),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    (s(?x) @+ ?y) @* ?z = s(?x) @* ?z @+ ?y @* ?z)]),
+ assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z),
+  [succeeds nat(?y) & succeeds nat(?z) => 
+   (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z,
+   (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z],
+  (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z)]
+).
+
+:- theorem(times:associative,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) => 
+ ?x @* ?y @* ?z = ?x @* (?y @* ?z),
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) & succeeds nat(?z) => 
+    ?x @* ?y @* ?z = ?x @* (?y @* ?z)],
+  [step([],
+    [],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [0 @* ?y = 0 by corollary(times:zero),
+      0 @* ?z = 0 by corollary(times:zero),
+      succeeds nat(?y @* ?z) by corollary(times:types),
+      0 @* (?y @* ?z) = 0 by corollary(times:zero),
+      0 @* ?y @* ?z = 0 @* ?z = 0 = 0 @* (?y @* ?z)],
+     0 @* ?y @* ?z = 0 @* (?y @* ?z)),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    0 @* ?y @* ?z = 0 @* (?y @* ?z)),
+   step([x],
+    [succeeds nat(?y) & succeeds nat(?z) => 
+     ?x @* ?y @* ?z = ?x @* (?y @* ?z),
+     succeeds nat(?x)],
+    assume(succeeds nat(?y) & succeeds nat(?z),
+     [s(?x) @* ?y = ?y @+ ?x @* ?y by corollary(times:successor),
+      succeeds nat(?x @* ?y) by corollary(times:types),
+      (?y @+ ?x @* ?y) @* ?z = ?y @* ?z @+ ?x @* ?y @* ?z by 
+       theorem(plus:times:distributive),
+      ?x @* ?y @* ?z = ?x @* (?y @* ?z),
+      succeeds nat(?y @* ?z) by corollary(times:types),
+      s(?x) @* (?y @* ?z) = ?y @* ?z @+ ?x @* (?y @* ?z) by 
+       corollary(times:successor),
+      s(?x) @* ?y @* ?z = (?y @+ ?x @* ?y) @* ?z = ?y @* ?z @+ ?x 
+      @* ?y @* ?z = ?y @* ?z @+ ?x @* (?y @* ?z) = s(?x) @* 
+      (?y @* ?z)],
+     s(?x) @* ?y @* ?z = s(?x) @* (?y @* ?z)),
+    succeeds nat(?y) & succeeds nat(?z) => 
+    s(?x) @* ?y @* ?z = s(?x) @* (?y @* ?z))]),
+ assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z),
+  [succeeds nat(?y) & succeeds nat(?z) => 
+   ?x @* ?y @* ?z = ?x @* (?y @* ?z),
+   ?x @* ?y @* ?z = ?x @* (?y @* ?z)],
+  ?x @* ?y @* ?z = ?x @* (?y @* ?z))]
+).
+
+:- lemma(times:zero,
+all x: succeeds nat(?x) => ?x @* 0 = 0,
+induction([all x: succeeds nat(?x) => ?x @* 0 = 0],
+ [step([],[],0 @* 0 = 0 by corollary(times:zero),0 @* 0 = 0),
+  step([x],
+   [?x @* 0 = 0,
+    succeeds nat(?x)],
+   [s(?x) @* 0 = 0 @+ ?x @* 0 by corollary(times:successor),
+    0 @+ 0 = 0 by corollary(plus:zero),
+    s(?x) @* 0 = 0 @+ ?x @* 0 = 0 @+ 0 = 0],
+   s(?x) @* 0 = 0)])
+).
+
+:- lemma(times:successor,
+all [y,x]: succeeds nat(?y) & succeeds nat(?x) => 
+ ?y @* ?x @+ ?y = ?y @* s(?x),
+[induction(
+  [all y: succeeds nat(?y) => succeeds nat(?x) => 
+    ?y @* ?x @+ ?y = ?y @* s(?x)],
+  [step([],
+    [],
+    assume(succeeds nat(?x),
+     [0 @* ?x = 0 by corollary(times:zero),
+      0 @+ 0 = 0 by corollary(plus:zero),
+      0 @* s(?x) = 0 by corollary(times:zero),
+      0 @* ?x @+ 0 = 0 @+ 0 = 0 = 0 @* s(?x)],
+     0 @* ?x @+ 0 = 0 @* s(?x)),
+    succeeds nat(?x) => 0 @* ?x @+ 0 = 0 @* s(?x)),
+   step([y],
+    [succeeds nat(?x) => ?y @* ?x @+ ?y = ?y @* s(?x),
+     succeeds nat(?y)],
+    assume(succeeds nat(?x),
+     [s(?y) @* ?x = ?x @+ ?y @* ?x by corollary(times:successor),
+      succeeds nat(?y @* ?x) by corollary(times:types),
+      succeeds nat(?x @+ ?y @* ?x) by corollary(plus:types),
+      ?x @+ ?y @* ?x @+ s(?y) = s(?x @+ ?y @* ?x) @+ ?y by 
+       lemma(plus:successor),
+      s(?x) @+ ?y @* ?x = s(?x @+ ?y @* ?x) by 
+       corollary(plus:successor),
+      s(?x) @+ ?y @* ?x @+ ?y = s(?x) @+ (?y @* ?x @+ ?y) by 
+       theorem(plus:associative),
+      ?y @* ?x @+ ?y = ?y @* s(?x),
+      s(?y) @* s(?x) = s(?x) @+ ?y @* s(?x) by 
+       corollary(times:successor),
+      s(?y) @* ?x @+ s(?y) = ?x @+ ?y @* ?x @+ s(?y) = 
+      s(?x @+ ?y @* ?x) @+ ?y = s(?x) @+ ?y @* ?x @+ ?y = s(?x) @+ 
+      (?y @* ?x @+ ?y) = s(?x) @+ ?y @* s(?x) = s(?y) @* s(?x)],
+     s(?y) @* ?x @+ s(?y) = s(?y) @* s(?x)),
+    succeeds nat(?x) => s(?y) @* ?x @+ s(?y) = s(?y) @* s(?x))]),
+ assume(succeeds nat(?y) & succeeds nat(?x),
+  [succeeds nat(?x) => ?y @* ?x @+ ?y = ?y @* s(?x),
+   ?y @* ?x @+ ?y = ?y @* s(?x)],
+  ?y @* ?x @+ ?y = ?y @* s(?x))]
+).
+
+:- theorem(times:commutative,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => ?x @* ?y = ?y @* ?x,
+[induction(
+  [all x: succeeds nat(?x) => succeeds nat(?y) => ?x @* ?y = ?y @* ?x],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     [0 @* ?y = 0 by corollary(times:zero),
+      ?y @* 0 = 0 by lemma(times:zero),
+      0 @* ?y = ?y @* 0],
+     0 @* ?y = ?y @* 0),
+    succeeds nat(?y) => 0 @* ?y = ?y @* 0),
+   step([x],
+    [succeeds nat(?y) => ?x @* ?y = ?y @* ?x,
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [s(?x) @* ?y = ?y @+ ?x @* ?y by corollary(times:successor),
+      ?x @* ?y = ?y @* ?x,
+      succeeds nat(?y @* ?x) by corollary(times:types),
+      ?y @+ ?y @* ?x = ?y @* ?x @+ ?y by theorem(plus:commutative),
+      ?y @* ?x @+ ?y = ?y @* s(?x) by lemma(times:successor),
+      s(?x) @* ?y = ?y @+ ?x @* ?y = ?y @+ ?y @* ?x = ?y @* ?x @+ ?y
+      = ?y @* s(?x)],
+     s(?x) @* ?y = ?y @* s(?x)),
+    succeeds nat(?y) => s(?x) @* ?y = ?y @* s(?x))]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [succeeds nat(?y) => ?x @* ?y = ?y @* ?x,
+   ?x @* ?y = ?y @* ?x],
+  ?x @* ?y = ?y @* ?x)]
+).
+
+:- lemma(times:one,
+all x: succeeds nat(?x) => s(0) @* ?x = ?x,
+assume(succeeds nat(?x),
+ [succeeds times(0,?x,0),
+  ?x @+ 0 = ?x by lemma(plus:zero),
+  succeeds plus(?x,0,?x @+ 0) by existence(@+,2),
+  succeeds plus(?x,0,?x),
+  succeeds times(s(0),?x,?x),
+  s(0) @* ?x = ?x by uniqueness(@*,2)],
+ s(0) @* ?x = ?x)
+).
+
+:- corollary(times:one,
+all x: succeeds nat(?x) => ?x @* s(0) = ?x,
+assume(succeeds nat(?x),
+ [s(0) @* ?x = ?x by lemma(times:one),
+  s(0) @* ?x = ?x @* s(0) by theorem(times:commutative),
+  ?x @* s(0) = ?x],
+ ?x @* s(0) = ?x)
+).
+
+:- corollary(plus:times:distributive,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) => 
+ ?z @* (?x @+ ?y) = ?z @* ?x @+ ?z @* ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z),
+ [succeeds nat(?x @+ ?y) by corollary(plus:types),
+  ?z @* (?x @+ ?y) = (?x @+ ?y) @* ?z by theorem(times:commutative),
+  (?x @+ ?y) @* ?z = ?x @* ?z @+ ?y @* ?z by 
+   theorem(plus:times:distributive),
+  ?x @* ?z = ?z @* ?x by theorem(times:commutative),
+  ?y @* ?z = ?z @* ?y by theorem(times:commutative),
+  ?z @* (?x @+ ?y) = (?x @+ ?y) @* ?z  = ?x @* ?z @+ ?y @* ?z
+  = ?z @* ?x @+ ?z @* ?y,
+  ?z @* (?x @+ ?y) = ?z @* ?x @+ ?z @* ?y],
+ ?z @* (?x @+ ?y) = ?z @* ?x @+ ?z @* ?y)
+).
+
+:- lemma(less:termination:1,
+all [x,y]: succeeds nat(?x) => terminates ?x @< ?y,
+[induction([all x: succeeds nat(?x) => (all y: terminates ?x @< ?y)],
+  [step([],
+    [],
+    terminates 0 @< ?y by completion,
+    all y: terminates 0 @< ?y),
+   step([x],
+    [all y: terminates ?x @< ?y,
+     succeeds nat(?x)],
+    [?y = s(?z) => terminates ?x @< ?z,
+     all z: ?y = s(?z) => terminates ?x @< ?z,
+     terminates s(?x) @< ?y by completion],
+    all y: terminates s(?x) @< ?y)]),
+ assume(succeeds nat(?x),
+  [all y: terminates ?x @< ?y,
+   terminates ?x @< ?y],
+  terminates ?x @< ?y)]
+).
+
+:- lemma(less:termination:2,
+all [x,y]: succeeds nat(?y) => terminates ?x @< ?y,
+[induction([all y: succeeds nat(?y) => (all x: terminates ?x @< ?y)],
+  [step([],
+    [],
+    terminates ?x @< 0 by completion,
+    all x: terminates ?x @< 0),
+   step([y],
+    [all x: terminates ?x @< ?y,
+     succeeds nat(?y)],
+    [?x = s(?z) => terminates ?z @< ?y,
+     all z: ?x = s(?z) => terminates ?z @< ?y,
+     terminates ?x @< s(?y) by completion],
+    all x: terminates ?x @< s(?y))]),
+ assume(succeeds nat(?y),
+  [all x: terminates ?x @< ?y,
+   terminates ?x @< ?y],
+  terminates ?x @< ?y)]
+).
+
+:- lemma(less:types,
+all [x,y]: succeeds ?x @< ?y => succeeds nat(?x),
+induction([all [x,y]: succeeds ?x @< ?y => succeeds nat(?x)],
+ [step([0],[],[],succeeds nat(0)),
+  step([x,y],
+   [succeeds nat(?x),
+    succeeds ?x @< ?y],
+   [],
+   succeeds nat(s(?x)))])
+).
+
+:- lemma(less:successor,
+all [x,y]: succeeds ?x @< ?y => (ex z: ?y = s(?z)),
+induction([all [x,y]: succeeds ?x @< ?y => (ex z: ?y = s(?z))],
+ [step([y],[],s(?y) = s(?y),ex z: s(?y) = s(?z)),
+  step([x,y],
+   [ex z: ?y = s(?z),
+    succeeds ?x @< ?y],
+   s(?y) = s(?y),
+   ex z: s(?y) = s(?z))])
+).
+
+:- lemma(less:transitive:successor,
+all [x,y,z]: succeeds ?x @< ?y & succeeds ?y @< s(?z) => 
+ succeeds ?x @< ?z,
+[induction(
+  [all [x,y]: succeeds ?x @< ?y => 
+    (all z: succeeds ?y @< s(?z) => succeeds ?x @< ?z)],
+  [step([y],
+    [],
+    assume(succeeds s(?y) @< s(?z),
+     [def succeeds s(?y) @< s(?z) by completion,
+      succeeds ?y @< ?z,
+      ex z1: ?z = s(?z1) by lemma(less:successor),
+      exist(z1,
+       ?z = s(?z1),
+       succeeds 0 @< s(?z1),
+       succeeds 0 @< ?z)],
+     succeeds 0 @< ?z),
+    all z: succeeds s(?y) @< s(?z) => succeeds 0 @< ?z),
+   step([x,y],
+    [all z: succeeds ?y @< s(?z) => succeeds ?x @< ?z,
+     succeeds ?x @< ?y],
+    assume(succeeds s(?y) @< s(?z),
+     [def succeeds s(?y) @< s(?z) by completion,
+      succeeds ?y @< ?z,
+      ex z1: ?z = s(?z1) by lemma(less:successor),
+      exist(z1,
+       ?z = s(?z1),
+       [succeeds ?x @< ?z1,
+        succeeds s(?x) @< s(?z1)],
+       succeeds s(?x) @< ?z)],
+     succeeds s(?x) @< ?z),
+    all z: succeeds s(?y) @< s(?z) => succeeds s(?x) @< ?z)]),
+ assume(succeeds ?x @< ?y & succeeds ?y @< s(?z),
+  [all z: succeeds ?y @< s(?z) => succeeds ?x @< ?z,
+   succeeds ?y @< s(?z) => succeeds ?x @< ?z,
+   succeeds ?x @< ?z],
+  succeeds ?x @< ?z)]
+).
+
+:- lemma(less:weakening,
+all [x,y]: succeeds ?x @< ?y => succeeds ?x @< s(?y),
+induction([all [x,y]: succeeds ?x @< ?y => succeeds ?x @< s(?y)],
+ [step([y],[],[],succeeds 0 @< s(s(?y))),
+  step([x,y],
+   [succeeds ?x @< s(?y),
+    succeeds ?x @< ?y],
+   [],
+   succeeds s(?x) @< s(s(?y)))])
+).
+
+:- theorem(less:transitive,
+all [x,y,z]: succeeds ?x @< ?y & succeeds ?y @< ?z => succeeds ?x @< ?z,
+assume(succeeds ?x @< ?y & succeeds ?y @< ?z,
+ [succeeds ?y @< s(?z) by lemma(less:weakening),
+  succeeds ?x @< ?z by lemma(less:transitive:successor)],
+ succeeds ?x @< ?z)
+).
+
+:- lemma(less:failure,
+all x: succeeds nat(?x) => fails ?x @< ?x,
+induction([all x: succeeds nat(?x) => fails ?x @< ?x],
+ [step([],[],fails 0 @< 0 by completion,fails 0 @< 0),
+  step([x],
+   [fails ?x @< ?x,
+    succeeds nat(?x)],
+   [fails s(?x) @< s(?x) by completion],
+   fails s(?x) @< s(?x))])
+).
+
+:- theorem(less:strictness,
+all x: succeeds nat(?x) => ~ succeeds ?x @< ?x,
+assume(succeeds nat(?x),
+ contra(succeeds ?x @< ?x,
+  [fails ?x @< ?x by lemma(less:failure),
+   ff]),
+ ~ succeeds ?x @< ?x)
+).
+
+:- lemma(less:one,
+all x: succeeds nat(?x) => succeeds ?x @< s(?x),
+induction([all x: succeeds nat(?x) => succeeds ?x @< s(?x)],
+ [step([],[],[],succeeds 0 @< s(0)),
+  step([x],
+   [succeeds ?x @< s(?x),
+    succeeds nat(?x)],
+   [],
+   succeeds s(?x) @< s(s(?x)))])
+).
+
+:- lemma(less:axiom:successor,
+all [x,y]: succeeds nat(?y) & succeeds ?x @< s(?y) => succeeds ?x @< ?y 
+ \/ ?x = ?y,
+[induction(
+  [all y: succeeds nat(?y) => 
+    (all x: succeeds ?x @< s(?y) => succeeds ?x @< ?y \/ ?x = ?y)],
+  [step([],
+    [],
+    assume(succeeds ?x @< s(0),
+     [def succeeds ?x @< s(0) by completion,
+      ?x = 0 \/ (ex y: ?x = s(?y) & succeeds ?y @< 0),
+      cases(?x = 0,
+       [],
+       ex y: ?x = s(?y) & succeeds ?y @< 0,
+       exist(y,
+        ?x = s(?y) & succeeds ?y @< 0,
+        [def succeeds ?y @< 0 by completion,
+         ff],
+        ff),
+       succeeds ?x @< 0 \/ ?x = 0)],
+     succeeds ?x @< 0 \/ ?x = 0),
+    all x: succeeds ?x @< s(0) => succeeds ?x @< 0 \/ ?x = 0),
+   step([y],
+    [all x: succeeds ?x @< s(?y) => succeeds ?x @< ?y \/ ?x = ?y,
+     succeeds nat(?y)],
+    assume(succeeds ?x @< s(s(?y)),
+     [def succeeds ?x @< s(s(?y)) by completion,
+      ?x = 0 \/ (ex z: ?x = s(?z) & succeeds ?z @< s(?y)),
+      cases(?x = 0,
+       succeeds 0 @< s(?y),
+       ex z: ?x = s(?z) & succeeds ?z @< s(?y),
+       exist(z,
+        ?x = s(?z) & succeeds ?z @< s(?y),
+        [succeeds ?z @< ?y \/ ?z = ?y,
+         cases(succeeds ?z @< ?y,
+          succeeds s(?z) @< s(?y),
+          ?z = ?y,
+          s(?z) = s(?y),
+          succeeds ?x @< s(?y) \/ ?x = s(?y))],
+        succeeds ?x @< s(?y) \/ ?x = s(?y)),
+       succeeds ?x @< s(?y) \/ ?x = s(?y))],
+     succeeds ?x @< s(?y) \/ ?x = s(?y)),
+    all x: succeeds ?x @< s(s(?y)) => succeeds ?x @< s(?y) \/ ?x = s(?y))]),
+ assume(succeeds nat(?y) & succeeds ?x @< s(?y),
+  [all x: succeeds ?x @< s(?y) => succeeds ?x @< ?y \/ ?x = ?y,
+   succeeds ?x @< s(?y) => succeeds ?x @< ?y \/ ?x = ?y,
+   succeeds ?x @< ?y \/ ?x = ?y],
+  succeeds ?x @< ?y \/ ?x = ?y)]
+).
+
+:- theorem(less:totality,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => succeeds ?x @< ?y \/ 
+ ?x = ?y \/ succeeds ?y @< ?x,
+[induction(
+  [all x: succeeds nat(?x) => 
+    (all y: succeeds nat(?y) => succeeds ?x @< ?y \/ ?x = ?y \/ 
+      succeeds ?y @< ?x)],
+  [step([],
+    [],
+    assume(succeeds nat(?y),
+     [def succeeds nat(?y) by completion,
+      ?y = 0 \/ (ex z: ?y = s(?z) & succeeds nat(?z)),
+      cases(?y = 0,
+       0 = ?y,
+       ex z: ?y = s(?z) & succeeds nat(?z),
+       exist(z,
+        ?y = s(?z) & succeeds nat(?z),
+        succeeds 0 @< s(?z),
+        succeeds 0 @< ?y),
+       succeeds 0 @< ?y \/ 0 = ?y \/ succeeds ?y @< 0)],
+     succeeds 0 @< ?y \/ 0 = ?y \/ succeeds ?y @< 0),
+    all y: succeeds nat(?y) => succeeds 0 @< ?y \/ 0 = ?y \/ 
+     succeeds ?y @< 0),
+   step([x],
+    [all y: succeeds nat(?y) => succeeds ?x @< ?y \/ ?x = ?y \/ 
+      succeeds ?y @< ?x,
+     succeeds nat(?x)],
+    assume(succeeds nat(?y),
+     [succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x,
+      cases(
+       [case(succeeds ?x @< ?y,
+         [succeeds s(?x) @< s(?y),
+          succeeds s(?x) @< ?y \/ s(?x) = ?y by 
+           lemma(less:axiom:successor)]),
+        case(?x = ?y,
+         [succeeds ?x @< s(?x) by lemma(less:one),
+          succeeds ?y @< s(?x)]),
+        case(succeeds ?y @< ?x,
+         [succeeds ?y @< s(?x) by lemma(less:weakening)])],
+       succeeds s(?x) @< ?y \/ s(?x) = ?y \/ succeeds ?y @< s(?x))],
+     succeeds s(?x) @< ?y \/ s(?x) = ?y \/ succeeds ?y @< s(?x)),
+    all y: succeeds nat(?y) => succeeds s(?x) @< ?y \/ s(?x) = ?y \/ 
+     succeeds ?y @< s(?x))]),
+ assume(succeeds nat(?x) & succeeds nat(?y),
+  [all y: succeeds nat(?y) => succeeds ?x @< ?y \/ ?x = ?y \/ 
+    succeeds ?y @< ?x,
+   succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x],
+  succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x)]
+).
+
+:- lemma(less:different:zero,
+all x: succeeds nat(?x) & ?x <> 0 => succeeds 0 @< ?x,
+assume(succeeds nat(?x) & ?x <> 0,
+ [def succeeds nat(?x) by completion,
+  cases(?x = 0,
+   [],
+   ex y: ?x = s(?y) & succeeds nat(?y),
+   exist(y,
+    ?x = s(?y) & succeeds nat(?y),
+    [],
+    succeeds 0 @< ?x),
+   succeeds 0 @< ?x)],
+ succeeds 0 @< ?x)
+).
+
+:- lemma(leq:termination:1,
+all [x,y]: succeeds nat(?x) => terminates ?x @=< ?y,
+[induction([all x: succeeds nat(?x) => (all y: terminates ?x @=< ?y)],
+  [step([],
+    [],
+    terminates 0 @=< ?y by completion,
+    all y: terminates 0 @=< ?y),
+   step([x],
+    [all y: terminates ?x @=< ?y,
+     succeeds nat(?x)],
+    [?y = s(?z) => terminates ?x @=< ?z,
+     all z: ?y = s(?z) => terminates ?x @=< ?z,
+     terminates s(?x) @=< ?y by completion],
+    all y: terminates s(?x) @=< ?y)]),
+ assume(succeeds nat(?x),
+  [all y: terminates ?x @=< ?y,
+   terminates ?x @=< ?y],
+  terminates ?x @=< ?y)]
+).
+
+:- lemma(leq:termination:2,
+all [x,y]: succeeds nat(?y) => terminates ?x @=< ?y,
+[induction([all y: succeeds nat(?y) => (all x: terminates ?x @=< ?y)],
+  [step([],
+    [],
+    terminates ?x @=< 0 by completion,
+    all x: terminates ?x @=< 0),
+   step([y],
+    [all x: terminates ?x @=< ?y,
+     succeeds nat(?y)],
+    [?x = s(?z) => terminates ?z @=< ?y,
+     all z: ?x = s(?z) => terminates ?z @=< ?y,
+     terminates ?x @=< s(?y) by completion],
+    all x: terminates ?x @=< s(?y))]),
+ assume(succeeds nat(?y),
+  [all x: terminates ?x @=< ?y,
+   terminates ?x @=< ?y],
+  terminates ?x @=< ?y)]
+).
+
+:- lemma(leq:types,
+all [x,y]: succeeds ?x @=< ?y => succeeds nat(?x),
+induction([all [x,y]: succeeds ?x @=< ?y => succeeds nat(?x)],
+ [step([y],[],[],succeeds nat(0)),
+  step([x,y],
+   [succeeds nat(?x),
+    succeeds ?x @=< ?y],
+   [],
+   succeeds nat(s(?x)))])
+).
+
+:- lemma(leq:plus,
+all [x,y]: succeeds ?x @=< ?y => (ex z: succeeds plus(?x,?z,?y)),
+induction(
+ [all [x,y]: succeeds ?x @=< ?y => (ex z: succeeds plus(?x,?z,?y))],
+ [step([y],
+   [],
+   [succeeds plus(0,?y,?y),
+    ex z: succeeds plus(0,?z,?y)],
+   ex z: succeeds plus(0,?z,?y)),
+  step([x,y],
+   [ex z: succeeds plus(?x,?z,?y),
+    succeeds ?x @=< ?y],
+   exist(z,
+    succeeds plus(?x,?z,?y),
+    [ succeeds plus(s(?x),?z,s(?y)),
+     ex z: succeeds plus(s(?x),?z,s(?y))],
+    ex z: succeeds plus(s(?x),?z,s(?y))),
+   ex z: succeeds plus(s(?x),?z,s(?y)))])
+).
+
+
+:- corollary(leq:plus,
+all [x,y]: succeeds ?x @=< ?y => (ex z: ?x @+ ?z = ?y),
+assume(succeeds ?x @=< ?y,
+ [ex z: succeeds plus(?x,?z,?y) by lemma(leq:plus),
+  exist(z,
+   succeeds plus(?x,?z,?y),
+   [succeeds nat(?x) by lemma(plus:types:1),
+    ?x @+ ?z = ?y by uniqueness(@+,2),
+    ex z: ?x @+ ?z = ?y],
+   ex z: ?x @+ ?z = ?y)],
+ ex z: ?x @+ ?z = ?y)
+).
+
+:- lemma(less:plus,
+all [x,y]: succeeds ?x @< ?y => (ex z: succeeds plus(?x,s(?z),?y)),
+induction(
+ [all [x,y]: succeeds ?x @< ?y => (ex z: succeeds plus(?x,s(?z),?y))],
+ [step([y],
+   [],
+   [succeeds plus(0,s(?y),s(?y)),
+    ex z: succeeds plus(0,s(?z),s(?y))],
+   ex z: succeeds plus(0,s(?z),s(?y))),
+  step([x,y],
+   [ex z: succeeds plus(?x,s(?z),?y),
+    succeeds ?x @< ?y],
+   exist(z,
+    succeeds plus(?x,s(?z),?y),
+    [succeeds plus(s(?x),s(?z),s(?y)),
+     ex z: succeeds plus(s(?x),s(?z),s(?y))],
+    ex z: succeeds plus(s(?x),s(?z),s(?y))),
+   ex z: succeeds plus(s(?x),s(?z),s(?y)))])
+).
+
+:- corollary(less:plus,
+all [x,y]: succeeds ?x @< ?y => (ex z: ?x @+ s(?z) = ?y),
+assume(succeeds ?x @< ?y,
+ [ex z: succeeds plus(?x,s(?z),?y) by lemma(less:plus),
+  exist(z,
+   succeeds plus(?x,s(?z),?y),
+   [succeeds nat(?x) by lemma(plus:types:1),
+    ?x @+ s(?z) = ?y by uniqueness(@+,2),
+    ex z: ?x @+ s(?z) = ?y],
+   ex z: ?x @+ s(?z) = ?y)],
+ ex z: ?x @+ s(?z) = ?y)
+).
+
+:- lemma(less:leq,
+all [x,y]: succeeds ?x @< ?y => succeeds ?x @=< ?y,
+induction([all [x,y]: succeeds ?x @< ?y => succeeds ?x @=< ?y],
+ [step([y],[],[],succeeds 0 @=< s(?y)),
+  step([x,y],
+   [succeeds ?x @=< ?y,
+    succeeds ?x @< ?y],
+   [],
+   succeeds s(?x) @=< s(?y))])
+).
+
+:- theorem(leq:reflexive,
+all x: succeeds nat(?x) => succeeds ?x @=< ?x,
+induction([all x: succeeds nat(?x) => succeeds ?x @=< ?x],
+ [step([],[],succeeds 0 @=< 0,succeeds 0 @=< 0),
+  step([x],
+   [succeeds ?x @=< ?x,
+    succeeds nat(?x)],
+   [],
+   succeeds s(?x) @=< s(?x))])
+).
+
+:- theorem(leq:totality,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => succeeds ?x @=< ?y \/ 
+ succeeds ?y @=< ?x,
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x by 
+   theorem(less:totality),
+  cases(
+   [case(succeeds ?x @< ?y,succeeds ?x @=< ?y by lemma(less:leq)),
+    case(?x = ?y,
+     succeeds ?x @=< ?x by theorem(leq:reflexive)),
+    case(succeeds ?y @< ?x,
+     succeeds ?y @=< ?x by lemma(less:leq))],
+   succeeds ?x @=< ?y \/ succeeds ?y @=< ?x)],
+ succeeds ?x @=< ?y \/ succeeds ?y @=< ?x)
+).
+
+:- corollary(less:leq:total,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => succeeds ?x @< ?y \/ 
+ succeeds ?y @=< ?x,
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds ?x @< ?y \/ ?x = ?y \/ succeeds ?y @< ?x by 
+   theorem(less:totality),
+  cases(
+   [case(succeeds ?x @< ?y,[]),
+    case(?x = ?y,
+     succeeds ?x @=< ?x by theorem(leq:reflexive)),
+    case(succeeds ?y @< ?x,
+     succeeds ?y @=< ?x by lemma(less:leq))],
+   succeeds ?x @< ?y \/ succeeds ?y @=< ?x)],
+ succeeds ?x @< ?y \/ succeeds ?y @=< ?x)
+).
+
+:- corollary(leq:failure,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) & fails ?x @=< ?y => 
+ succeeds ?y @=< ?x,
+assume(succeeds nat(?x) & succeeds nat(?y) & fails ?x @=< ?y,
+ [succeeds ?x @=< ?y \/ succeeds ?y @=< ?x by theorem(leq:totality),
+  cases(succeeds ?x @=< ?y,
+   [ff],
+   succeeds ?y @=< ?x,
+   [],
+   succeeds ?y @=< ?x)],
+ succeeds ?y @=< ?x)
+).
+
+:- lemma(leq:less,
+all [x,y]: succeeds ?x @=< ?y & succeeds nat(?y) => succeeds ?x @< ?y \/
+ ?x = ?y,
+[induction(
+  [all [x,y]: succeeds ?x @=< ?y => succeeds nat(?y) => 
+    succeeds ?x @< ?y \/ ?x = ?y],
+  [step([y],
+    [],
+    assume(succeeds nat(?y),
+     [def succeeds nat(?y) by completion,
+      cases(?y = 0,
+       [],
+       ex z: ?y = s(?z) & succeeds nat(?z),
+       exist(z,
+        ?y = s(?z) & succeeds nat(?z),
+        [succeeds 0 @< s(?z),
+         succeeds 0 @< ?y],
+        succeeds 0 @< ?y \/ 0 = ?y),
+       succeeds 0 @< ?y \/ 0 = ?y)],
+     succeeds 0 @< ?y \/ 0 = ?y),
+    succeeds nat(?y) => succeeds 0 @< ?y \/ 0 = ?y),
+   step([x,y],
+    [succeeds nat(?y) => succeeds ?x @< ?y \/ ?x = ?y,
+     succeeds ?x @=< ?y],
+    assume(succeeds nat(s(?y)),
+     [def succeeds nat(s(?y)) by completion,
+      succeeds ?x @< ?y \/ ?x = ?y,
+      cases(succeeds ?x @< ?y,
+       [],
+       ?x = ?y,
+       [],
+       succeeds s(?x) @< s(?y) \/ s(?x) = s(?y))],
+     succeeds s(?x) @< s(?y) \/ s(?x) = s(?y)),
+    succeeds nat(s(?y)) => succeeds s(?x) @< s(?y) \/ s(?x) = s(?y))]),
+ assume(succeeds ?x @=< ?y & succeeds nat(?y),
+  [succeeds nat(?y) => succeeds ?x @< ?y \/ ?x = ?y,
+   succeeds ?x @< ?y \/ ?x = ?y],
+  succeeds ?x @< ?y \/ ?x = ?y)]
+).
+
+:- theorem(leq:less:transitive,
+all [x,y,z]: succeeds ?x @=< ?y & succeeds ?y @< ?z => 
+ succeeds ?x @< ?z,
+assume(succeeds ?x @=< ?y & succeeds ?y @< ?z,
+ [succeeds ?y @< ?z => succeeds nat(?y) by lemma(less:types),
+  succeeds ?x @< ?y \/ ?x = ?y by lemma(leq:less),
+  cases(succeeds ?x @< ?y,
+   [succeeds ?x @< ?y & succeeds ?y @< ?z => succeeds ?x @< ?z by 
+     theorem(less:transitive),
+    succeeds ?x @< ?z],
+   ?x = ?y,
+   [],
+   succeeds ?x @< ?z)],
+ succeeds ?x @< ?z)
+).
+
+:- theorem(less:leq:transitive,
+all [x,y,z]: succeeds ?x @< ?y & succeeds ?y @=< ?z => 
+ succeeds ?x @< ?z,
+[induction(
+  [all [x,y]: succeeds ?x @< ?y => 
+    (all z: succeeds ?y @=< ?z => succeeds ?x @< ?z)],
+  [step([y],
+    [],
+    assume(succeeds s(?y) @=< ?z,
+     [def succeeds s(?y) @=< ?z by completion,
+      exist(a,
+       ?z = s(?a) & succeeds ?y @=< ?a,
+       succeeds 0 @< s(?a),
+       succeeds 0 @< ?z)],
+     succeeds 0 @< ?z),
+    all z: succeeds s(?y) @=< ?z => succeeds 0 @< ?z),
+   step([x,y],
+    [all z: succeeds ?y @=< ?z => succeeds ?x @< ?z,
+     succeeds ?x @< ?y],
+    assume(succeeds s(?y) @=< ?z,
+     [def succeeds s(?y) @=< ?z by completion,
+      exist(a,
+       ?z = s(?a) & succeeds ?y @=< ?a,
+       [succeeds ?y @=< ?a => succeeds ?x @< ?a,
+        succeeds ?x @< ?a,
+        succeeds s(?x) @< s(?a),
+        succeeds s(?x) @< ?z],
+       succeeds s(?x) @< ?z)],
+     succeeds s(?x) @< ?z),
+    all z: succeeds s(?y) @=< ?z => succeeds s(?x) @< ?z)]),
+ assume(succeeds ?x @< ?y & succeeds ?y @=< ?z,
+  [all z: succeeds ?y @=< ?z => succeeds ?x @< ?z,
+   succeeds ?y @=< ?z => succeeds ?x @< ?z,
+   succeeds ?x @< ?z],
+  succeeds ?x @< ?z)]
+).
+
+:- theorem(leq:transitive,
+all [x,y,z]: succeeds ?x @=< ?y & succeeds ?y @=< ?z => 
+ succeeds ?x @=< ?z,
+assume(succeeds ?x @=< ?y & succeeds ?y @=< ?z,
+ [succeeds ?y @=< ?z => succeeds nat(?y) by lemma(leq:types),
+  succeeds ?x @< ?y \/ ?x = ?y by lemma(leq:less),
+  cases(succeeds ?x @< ?y,
+   [succeeds ?x @< ?y & succeeds ?y @=< ?z => succeeds ?x @< ?z by 
+     theorem(less:leq:transitive),
+    succeeds ?x @=< ?z by lemma(less:leq)],
+   ?x = ?y,
+   [],
+   succeeds ?x @=< ?z)],
+ succeeds ?x @=< ?z)
+).
+
+:- theorem(leq:antisymmetric,
+all [x,y]: succeeds ?x @=< ?y & succeeds ?y @=< ?x => ?x = ?y,
+assume(succeeds ?x @=< ?y & succeeds ?y @=< ?x,
+ [succeeds nat(?x) by lemma(leq:types),
+  succeeds nat(?y) by lemma(leq:types),
+  succeeds ?x @< ?y \/ ?x = ?y by lemma(leq:less),
+  cases(succeeds ?x @< ?y,
+   [succeeds ?y @< ?x \/ ?y = ?x by lemma(leq:less),
+    cases(succeeds ?y @< ?x,
+     [succeeds ?x @< ?y & succeeds ?y @< ?x => succeeds ?x @< ?x by 
+       theorem(less:transitive),
+      succeeds ?x @< ?x,
+      fails ?x @< ?x by lemma(less:failure),
+      ff],
+     ?y = ?x,
+     [],
+     ?x = ?y)],
+   ?x = ?y,
+   [],
+   ?x = ?y)],
+ ?x = ?y)
+).
+
+:- lemma(leq:one:success,
+all x: succeeds nat(?x) => succeeds ?x @=< s(?x),
+assume(succeeds nat(?x),
+ [succeeds ?x @< s(?x) by lemma(less:one),
+  succeeds ?x @=< s(?x) by lemma(less:leq)],
+ succeeds ?x @=< s(?x))
+).
+
+:- lemma(leq:one:failure,
+all x: succeeds nat(?x) => fails s(?x) @=< ?x,
+assume(succeeds nat(?x),
+ [succeeds nat(s(?x)),
+  terminates s(?x) @=< ?x by lemma(leq:termination:1),
+  succeeds s(?x) @=< ?x \/ fails s(?x) @=< ?x,
+  cases(succeeds s(?x) @=< ?x,
+   [succeeds ?x @=< s(?x) by lemma(leq:one:success),
+    ?x = s(?x) by theorem(leq:antisymmetric),
+    ff],
+   fails s(?x) @=< ?x,
+   [],
+   fails s(?x) @=< ?x)],
+ fails s(?x) @=< ?x)
+).
+
+:- lemma(less:plus:second,
+all [x,y,z]: succeeds nat(?x) & succeeds ?y @< ?z => 
+ succeeds ?x @+ ?y @< ?x @+ ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds ?y @< ?z => 
+    succeeds ?x @+ ?y @< ?x @+ ?z],
+  [step([],
+    [],
+    assume(succeeds ?y @< ?z,
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ ?z = ?z by corollary(plus:zero),
+      succeeds 0 @+ ?y @< 0 @+ ?z],
+     succeeds 0 @+ ?y @< 0 @+ ?z),
+    succeeds ?y @< ?z => succeeds 0 @+ ?y @< 0 @+ ?z),
+   step([x],
+    [succeeds ?y @< ?z => succeeds ?x @+ ?y @< ?x @+ ?z,
+     succeeds nat(?x)],
+    assume(succeeds ?y @< ?z,
+     [succeeds ?x @+ ?y @< ?x @+ ?z,
+      succeeds s(?x @+ ?y) @< s(?x @+ ?z),
+      s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      s(?x) @+ ?z = s(?x @+ ?z) by corollary(plus:successor),
+      succeeds s(?x) @+ ?y @< s(?x) @+ ?z],
+     succeeds s(?x) @+ ?y @< s(?x) @+ ?z),
+    succeeds ?y @< ?z => succeeds s(?x) @+ ?y @< s(?x) @+ ?z)]),
+ assume(succeeds nat(?x) & succeeds ?y @< ?z,
+  [succeeds ?y @< ?z => succeeds ?x @+ ?y @< ?x @+ ?z,
+   succeeds ?x @+ ?y @< ?x @+ ?z],
+  succeeds ?x @+ ?y @< ?x @+ ?z)]
+).
+
+:- corollary(less:plus:second,
+all [x,y]: succeeds nat(?x) => succeeds ?x @< ?x @+ s(?y),
+assume(succeeds nat(?x),
+ [succeeds 0 @< s(?y),
+  succeeds ?x @+ 0 @< ?x @+ s(?y) by lemma(less:plus:second),
+  ?x @+ 0 = ?x by lemma(plus:zero),
+  succeeds ?x @< ?x @+ s(?y)],
+ succeeds ?x @< ?x @+ s(?y))
+).
+
+:- lemma(less:plus:first,
+all [x,y,z]: succeeds ?x @< ?y & succeeds nat(?y) & succeeds nat(?z) => 
+ succeeds ?x @+ ?z @< ?y @+ ?z,
+assume(succeeds ?x @< ?y & succeeds nat(?y) & succeeds nat(?z),
+ [succeeds nat(?x) by lemma(less:types),
+  succeeds ?z @+ ?x @< ?z @+ ?y by lemma(less:plus:second),
+  ?x @+ ?z = ?z @+ ?x by theorem(plus:commutative),
+  ?y @+ ?z = ?z @+ ?y by theorem(plus:commutative),
+  succeeds ?x @+ ?z @< ?y @+ ?z],
+ succeeds ?x @+ ?z @< ?y @+ ?z)
+).
+
+:- corollary(less:plus:first,
+all [x,y]: succeeds 0 @< ?y & succeeds nat(?x) & succeeds nat(?y) => 
+ succeeds ?x @< ?y @+ ?x,
+assume(succeeds 0 @< ?y & succeeds nat(?x) & succeeds nat(?y),
+ [succeeds 0 @+ ?x @< ?y @+ ?x by lemma(less:plus:first),
+  0 @+ ?x = ?x by corollary(plus:zero),
+  succeeds ?x @< ?y @+ ?x],
+ succeeds ?x @< ?y @+ ?x)
+).
+
+:- lemma(leq:plus:second,
+all [x,y,z]: succeeds nat(?x) & succeeds ?y @=< ?z => 
+ succeeds ?x @+ ?y @=< ?x @+ ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds ?y @=< ?z => 
+    succeeds ?x @+ ?y @=< ?x @+ ?z],
+  [step([],
+    [],
+    assume(succeeds ?y @=< ?z,
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ ?z = ?z by corollary(plus:zero),
+      succeeds 0 @+ ?y @=< 0 @+ ?z],
+     succeeds 0 @+ ?y @=< 0 @+ ?z),
+    succeeds ?y @=< ?z => succeeds 0 @+ ?y @=< 0 @+ ?z),
+   step([x],
+    [succeeds ?y @=< ?z => succeeds ?x @+ ?y @=< ?x @+ ?z,
+     succeeds nat(?x)],
+    assume(succeeds ?y @=< ?z,
+     [succeeds ?x @+ ?y @=< ?x @+ ?z,
+      succeeds s(?x @+ ?y) @=< s(?x @+ ?z),
+      s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      s(?x) @+ ?z = s(?x @+ ?z) by corollary(plus:successor),
+      succeeds s(?x) @+ ?y @=< s(?x) @+ ?z],
+     succeeds s(?x) @+ ?y @=< s(?x) @+ ?z),
+    succeeds ?y @=< ?z => succeeds s(?x) @+ ?y @=< s(?x) @+ ?z)]),
+ assume(succeeds nat(?x) & succeeds ?y @=< ?z,
+  [succeeds ?y @=< ?z => succeeds ?x @+ ?y @=< ?x @+ ?z,
+   succeeds ?x @+ ?y @=< ?x @+ ?z],
+  succeeds ?x @+ ?y @=< ?x @+ ?z)]
+).
+
+:- lemma(leq:plus:first,
+all [x,y,z]: succeeds ?x @=< ?y & succeeds nat(?y) & succeeds nat(?z) => 
+ succeeds ?x @+ ?z @=< ?y @+ ?z,
+assume(succeeds ?x @=< ?y & succeeds nat(?y) & succeeds nat(?z),
+ [succeeds nat(?x) by lemma(leq:types),
+  succeeds ?z @+ ?x @=< ?z @+ ?y by lemma(leq:plus:second),
+  ?x @+ ?z = ?z @+ ?x by theorem(plus:commutative),
+  ?y @+ ?z = ?z @+ ?y by theorem(plus:commutative),
+  succeeds ?x @+ ?z @=< ?y @+ ?z],
+ succeeds ?x @+ ?z @=< ?y @+ ?z)
+).
+
+:- corollary(leq:plus:first,
+all [x,y]: succeeds nat(?x) => succeeds ?x @=< ?x @+ ?y,
+assume(succeeds nat(?x),
+ [succeeds 0 @=< ?y,
+  succeeds ?x @+ 0 @=< ?x @+ ?y by lemma(leq:plus:second),
+  ?x @+ 0 = ?x by lemma(plus:zero),
+  succeeds ?x @=< ?x @+ ?y],
+ succeeds ?x @=< ?x @+ ?y)
+).
+
+:- corollary(leq:plus:second,
+all [x,y]: succeeds nat(?x) & succeeds nat(?y) => 
+ succeeds ?y @=< ?x @+ ?y,
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds ?y @=< ?y @+ ?x by corollary(leq:plus:first),
+  ?x @+ ?y = ?y @+ ?x by theorem(plus:commutative),
+  succeeds ?y @=< ?x @+ ?y],
+ succeeds ?y @=< ?x @+ ?y)
+).
+
+:- lemma(less:plus:inverse,
+all [x,y,z]: succeeds nat(?x) & succeeds ?x @+ ?y @< ?x @+ ?z => 
+ succeeds ?y @< ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds ?x @+ ?y @< ?x @+ ?z => 
+    succeeds ?y @< ?z],
+  [step([],
+    [],
+    assume(succeeds 0 @+ ?y @< 0 @+ ?z,
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ ?z = ?z by corollary(plus:zero),
+      succeeds ?y @< ?z],
+     succeeds ?y @< ?z),
+    succeeds 0 @+ ?y @< 0 @+ ?z => succeeds ?y @< ?z),
+   step([x],
+    [succeeds ?x @+ ?y @< ?x @+ ?z => succeeds ?y @< ?z,
+     succeeds nat(?x)],
+    assume(succeeds s(?x) @+ ?y @< s(?x) @+ ?z,
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      s(?x) @+ ?z = s(?x @+ ?z) by corollary(plus:successor),
+      def succeeds s(?x @+ ?y) @< s(?x @+ ?z) by completion,
+      succeeds ?x @+ ?y @< ?x @+ ?z,
+      succeeds ?y @< ?z],
+     succeeds ?y @< ?z),
+    succeeds s(?x) @+ ?y @< s(?x) @+ ?z => succeeds ?y @< ?z)]),
+ assume(succeeds nat(?x) & succeeds ?x @+ ?y @< ?x @+ ?z,
+  [succeeds ?x @+ ?y @< ?x @+ ?z => succeeds ?y @< ?z,
+   succeeds ?y @< ?z],
+  succeeds ?y @< ?z)]
+).
+
+:- corollary(less:plus:inverse,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) &
+ succeeds ?x @+ ?z @< ?y @+ ?z => 
+ succeeds ?x @< ?y,
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) &
+ succeeds ?x @+ ?z @< ?y @+ ?z,
+ [?x @+ ?z = ?z @+ ?x by theorem(plus:commutative),
+  ?y @+ ?z = ?z @+ ?y by theorem(plus:commutative),
+  succeeds ?z @+ ?x @< ?z @+ ?y,
+  succeeds ?x @< ?y by lemma(less:plus:inverse)],
+ succeeds ?x @< ?y)
+).
+
+:- lemma(leq:plus:inverse,
+all [x,y,z]: succeeds nat(?x) & succeeds ?x @+ ?y @=< ?x @+ ?z => 
+ succeeds ?y @=< ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds ?x @+ ?y @=< ?x @+ ?z => 
+    succeeds ?y @=< ?z],
+  [step([],
+    [],
+    assume(succeeds 0 @+ ?y @=< 0 @+ ?z,
+     [0 @+ ?y = ?y by corollary(plus:zero),
+      0 @+ ?z = ?z by corollary(plus:zero),
+      succeeds ?y @=< ?z],
+     succeeds ?y @=< ?z),
+    succeeds 0 @+ ?y @=< 0 @+ ?z => succeeds ?y @=< ?z),
+   step([x],
+    [succeeds ?x @+ ?y @=< ?x @+ ?z => succeeds ?y @=< ?z,
+     succeeds nat(?x)],
+    assume(succeeds s(?x) @+ ?y @=< s(?x) @+ ?z,
+     [s(?x) @+ ?y = s(?x @+ ?y) by corollary(plus:successor),
+      s(?x) @+ ?z = s(?x @+ ?z) by corollary(plus:successor),
+      def succeeds s(?x @+ ?y) @=< s(?x @+ ?z) by completion,
+      succeeds ?x @+ ?y @=< ?x @+ ?z,
+      succeeds ?y @=< ?z],
+     succeeds ?y @=< ?z),
+    succeeds s(?x) @+ ?y @=< s(?x) @+ ?z => succeeds ?y @=< ?z)]),
+ assume(succeeds nat(?x) & succeeds ?x @+ ?y @=< ?x @+ ?z,
+  [succeeds ?x @+ ?y @=< ?x @+ ?z => succeeds ?y @=< ?z,
+   succeeds ?y @=< ?z],
+  succeeds ?y @=< ?z)]
+).
+
+:- lemma(plus:leq:leq,
+all [x1,x2,y1,y2]: succeeds ?x1 @=< ?y1 & succeeds ?x2 @=< ?y2 & 
+ succeeds nat(?y1) => succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?y2,
+assume(succeeds ?x1 @=< ?y1 & succeeds ?x2 @=< ?y2 & succeeds nat(?y1),
+ [succeeds nat(?x2) by lemma(leq:types),
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?x2 by lemma(leq:plus:first),
+  succeeds ?y1 @+ ?x2 @=< ?y1 @+ ?y2 by lemma(leq:plus:second),
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?x2 & 
+  succeeds ?y1 @+ ?x2 @=< ?y1 @+ ?y2 => 
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?y2 by theorem(leq:transitive),
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?y2],
+ succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?y2)
+).
+
+:- lemma(plus:less:leq,
+all [x1,x2,y1,y2]: succeeds ?x1 @< ?y1 & succeeds ?x2 @=< ?y2 & 
+ succeeds nat(?y1) => succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2,
+assume(succeeds ?x1 @< ?y1 & succeeds ?x2 @=< ?y2 & succeeds nat(?y1),
+ [succeeds nat(?x2) by lemma(leq:types),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?x2 by lemma(less:plus:first),
+  succeeds ?y1 @+ ?x2 @=< ?y1 @+ ?y2 by lemma(leq:plus:second),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?x2 & 
+  succeeds ?y1 @+ ?x2 @=< ?y1 @+ ?y2 => 
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2 by theorem(less:leq:transitive),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2],
+ succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2)
+).
+
+:- lemma(plus:leq:less,
+all [x1,x2,y1,y2]: succeeds ?x1 @=< ?y1 & succeeds ?x2 @< ?y2 & 
+ succeeds nat(?y1) => succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2,
+assume(succeeds ?x1 @=< ?y1 & succeeds ?x2 @< ?y2 & succeeds nat(?y1),
+ [succeeds nat(?x2) by lemma(less:types),
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?x2 by lemma(leq:plus:first),
+  succeeds ?y1 @+ ?x2 @< ?y1 @+ ?y2 by lemma(less:plus:second),
+  succeeds ?x1 @+ ?x2 @=< ?y1 @+ ?x2 & 
+  succeeds ?y1 @+ ?x2 @< ?y1 @+ ?y2 => 
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2 by theorem(leq:less:transitive),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2],
+ succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2)
+).
+
+:- lemma(plus:less:less,
+all [x1,x2,y1,y2]: succeeds ?x1 @< ?y1 & succeeds ?x2 @< ?y2 & 
+ succeeds nat(?y1) => succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2,
+assume(succeeds ?x1 @< ?y1 & succeeds ?x2 @< ?y2 & succeeds nat(?y1),
+ [succeeds nat(?x2) by lemma(less:types),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?x2 by lemma(less:plus:first),
+  succeeds ?y1 @+ ?x2 @< ?y1 @+ ?y2 by lemma(less:plus:second),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?x2 & 
+  succeeds ?y1 @+ ?x2 @< ?y1 @+ ?y2 => 
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2 by theorem(less:transitive),
+  succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2],
+ succeeds ?x1 @+ ?x2 @< ?y1 @+ ?y2)
+).
+
+:- lemma(times:leq:second,
+all [x,y,z]: succeeds nat(?x) & succeeds ?y @=< ?z & succeeds nat(?z) => 
+ succeeds ?x @* ?y @=< ?x @* ?z,
+[induction(
+  [all x: succeeds nat(?x) => succeeds ?y @=< ?z & succeeds nat(?z) => 
+    succeeds ?x @* ?y @=< ?x @* ?z],
+  [step([],
+    [],
+    assume(succeeds ?y @=< ?z & succeeds nat(?z),
+     [succeeds nat(?y) by lemma(leq:types),
+      0 @* ?y = 0 by corollary(times:zero),
+      succeeds 0 @=< 0 @* ?z,
+      succeeds 0 @* ?y @=< 0 @* ?z],
+     succeeds 0 @* ?y @=< 0 @* ?z),
+    succeeds ?y @=< ?z & succeeds nat(?z) => 
+    succeeds 0 @* ?y @=< 0 @* ?z),
+   step([x],
+    [succeeds ?y @=< ?z & succeeds nat(?z) => 
+     succeeds ?x @* ?y @=< ?x @* ?z,
+     succeeds nat(?x)],
+    assume(succeeds ?y @=< ?z & succeeds nat(?z),
+     [succeeds ?x @* ?y @=< ?x @* ?z,
+      succeeds nat(?y) by lemma(leq:types),
+      succeeds ?y @+ ?x @* ?y @=< ?z @+ ?x @* ?z by 
+       lemma(plus:leq:leq),
+      s(?x) @* ?y = ?y @+ ?x @* ?y by corollary(times:successor),
+      s(?x) @* ?z = ?z @+ ?x @* ?z by corollary(times:successor),
+      succeeds s(?x) @* ?y @=< s(?x) @* ?z],
+     succeeds s(?x) @* ?y @=< s(?x) @* ?z),
+    succeeds ?y @=< ?z & succeeds nat(?z) => 
+    succeeds s(?x) @* ?y @=< s(?x) @* ?z)]),
+ assume(succeeds nat(?x) & succeeds ?y @=< ?z & succeeds nat(?z),
+  [succeeds ?y @=< ?z & succeeds nat(?z) => 
+   succeeds ?x @* ?y @=< ?x @* ?z,
+   succeeds ?x @* ?y @=< ?x @* ?z],
+  succeeds ?x @* ?y @=< ?x @* ?z)]
+).
+
+:- corollary(times:leq:first,
+all [x,y,z]: succeeds ?x @=< ?y & succeeds nat(?y) & succeeds nat(?z) => 
+ succeeds ?x @* ?z @=< ?y @* ?z,
+assume(succeeds ?x @=< ?y & succeeds nat(?y) & succeeds nat(?z),
+ [succeeds ?z @* ?x @=< ?z @* ?y by lemma(times:leq:second),
+  succeeds nat(?x) by lemma(leq:types),
+  ?x @* ?z = ?z @* ?x by theorem(times:commutative),
+  ?y @* ?z = ?z @* ?y by theorem(times:commutative),
+  succeeds ?x @* ?z @=< ?y @* ?z],
+ succeeds ?x @* ?z @=< ?y @* ?z)
+).
+
+:- lemma(times:less:second,
+all [x,y,z]: succeeds nat(?x) & ?x <> 0 & succeeds ?y @< ?z & 
+ succeeds nat(?z) => succeeds ?x @* ?y @< ?x @* ?z,
+[induction(
+  [all x: succeeds nat(?x) => ?x <> 0 & succeeds ?y @< ?z & 
+    succeeds nat(?z) => succeeds ?x @* ?y @< ?x @* ?z],
+  [step([],
+    [],
+    assume(0 <> 0 & succeeds ?y @< ?z & succeeds nat(?z),
+     [],
+     succeeds 0 @* ?y @< 0 @* ?z),
+    0 <> 0 & succeeds ?y @< ?z & succeeds nat(?z) => 
+    succeeds 0 @* ?y @< 0 @* ?z),
+   step([x],
+    [?x <> 0 & succeeds ?y @< ?z & succeeds nat(?z) => 
+     succeeds ?x @* ?y @< ?x @* ?z,
+     succeeds nat(?x)],
+    assume(s(?x) <> 0 & succeeds ?y @< ?z & succeeds nat(?z),
+     [succeeds nat(?y) by lemma(less:types),
+      s(?x) @* ?y = ?y @+ ?x @* ?y by corollary(times:successor),
+      s(?x) @* ?z = ?z @+ ?x @* ?z by corollary(times:successor),
+      succeeds ?y @=< ?z by lemma(less:leq),
+      succeeds ?x @* ?y @=< ?x @* ?z by lemma(times:leq:second),
+      succeeds ?y @+ ?x @* ?y @< ?z @+ ?x @* ?z by 
+       lemma(plus:less:leq),
+      succeeds s(?x) @* ?y @< s(?x) @* ?z],
+     succeeds s(?x) @* ?y @< s(?x) @* ?z),
+    s(?x) <> 0 & succeeds ?y @< ?z & succeeds nat(?z) => 
+    succeeds s(?x) @* ?y @< s(?x) @* ?z)]),
+ assume(succeeds nat(?x) & ?x <> 0 & succeeds ?y @< ?z & succeeds nat(?z),
+  [?x <> 0 & succeeds ?y @< ?z & succeeds nat(?z) => 
+   succeeds ?x @* ?y @< ?x @* ?z,
+   succeeds ?x @* ?y @< ?x @* ?z],
+  succeeds ?x @* ?y @< ?x @* ?z)]
+).
+
+:- lemma(leq:times:inverse,
+all [x,y,z]: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) &
+ succeeds s(?x) @* ?y @=< s(?x) @* ?z => succeeds ?y @=< ?z,
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?z) &
+ succeeds s(?x) @* ?y @=< s(?x) @* ?z,
+ [succeeds ?z @< ?y \/ succeeds ?y @=< ?z by corollary(less:leq:total),
+  cases(succeeds ?z @< ?y,
+   [succeeds s(?x) @* ?z @< s(?x) @* ?y by lemma(times:less:second),
+    succeeds s(?x) @* ?z @< s(?x) @* ?z by theorem(less:leq:transitive),
+    succeeds nat(s(?x) @* ?z) by lemma(less:types),
+    ~ succeeds s(?x) @* ?z @< s(?x) @* ?z by theorem(less:strictness),
+    ff],
+   succeeds ?y @=< ?z,
+   [],
+   succeeds ?y @=< ?z)],
+ succeeds ?y @=< ?z)
+).
+
+
+:- lemma(plus:injective:first,
+all [x1,x2,y]: succeeds nat(?x1) & succeeds nat(?x2) & succeeds nat(?y) &
+ ?x1 @+ ?y = ?x2 @+ ?y => ?x1 = ?x2,
+assume(succeeds nat(?x1) & succeeds nat(?x2) & succeeds nat(?y) &
+ ?x1 @+ ?y = ?x2 @+ ?y,
+ [?x1 @+ ?y = ?y @+ ?x1 by theorem(plus:commutative),
+  ?x2 @+ ?y = ?y @+ ?x2 by theorem(plus:commutative),
+  ?y @+ ?x1 = ?x1 @+ ?y = ?x2 @+ ?y = ?y @+ ?x2,
+  ?y @+ ?x1 = ?y @+ ?x2,
+  ?x1 = ?x2 by lemma(plus:injective:second)],
+ ?x1 = ?x2)
+).
+
+:- bye(nat).

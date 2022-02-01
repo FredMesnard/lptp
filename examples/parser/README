@@ -1,0 +1,26 @@
+A verified parser for ISO standard Prolog
+=========================================
+
+Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+
+Files:
+	
+	src/grammar.pl		Grammar of ISO standard Prolog.
+	src/read.pl		Parse a token list into a parse tree.
+	src/write.pl		Write a parse tree as a token list.
+	src/dcg_grammar.pl	Definite clase grammar of ISO Prolog.
+	src/test/*		Files for testing.
+
+	pr/all.pl		Check all proofs.
+	pr/parser.pr		The main theorems about the parser.
+	pr/axioms.pr		Axioms for builtin predicates.
+	pr/axioms.pl		Additional predicates used in the axioms.
+	pr/precedence.pr	Properties of precedences.
+	pr/grammar.pr		Properties of the grammar.
+	pr/soundness.pr		Tokenlists accepted by the parser are terms.
+	pr/completeness.pr	Each correct token list is accepted.
+	pr/uniqueness.pr	The parser is a function.
+	pr/termination.pr	Termination of the parser and of write.
+	pr/write.pr		parse(write(?t)) = ?t.
+
+ 

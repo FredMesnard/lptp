@@ -1,0 +1,401 @@
+:- initialize.
+:- needs_gr($(lib)/nat/nat).
+:- needs_thm($(lib)/nat/nat).
+:- needs_gr($(lib)/nat/gcd).
+:- tex_file($(tmp)/gcd).
+
+:- definition_pred(div,2,
+all [x,y]: div(?x,?y) <=>
+ (ex z: succeeds nat(?z) & ?x @* ?z = ?y)
+).
+
+:- lemma(div:plus,
+all [x,y,z,d]: succeeds nat(?y) & succeeds nat(?d) &
+ succeeds plus(?x,?y,?z) & div(?d,?x) & div(?d,?y) => div(?d,?z),
+assume(succeeds nat(?y) & succeeds nat(?d) &
+ succeeds plus(?x,?y,?z) & div(?d,?x) & div(?d,?y),
+ [ex z: succeeds nat(?z) & ?d @* ?z = ?x by elimination(div,2),
+  exist(m,
+   succeeds nat(?m) & ?d @* ?m = ?x,
+   [ex z: succeeds nat(?z) & ?d @* ?z = ?y by elimination(div,2),
+    exist(n,
+     succeeds nat(?n) & ?d @* ?n = ?y,
+     [succeeds nat(?x) by lemma(plus:types:1),
+      ?x @+ ?y = ?z by uniqueness(@+,2),
+      ?d @* ?m @+ ?d @* ?n = ?z,
+      ?d @* (?m @+ ?n) = ?d @* ?m @+ ?d @* ?n by 
+       corollary(plus:times:distributive),
+      ?d @* (?m @+ ?n) = ?z,
+      succeeds nat(?m @+ ?n) by corollary(plus:types),
+      ex k: succeeds nat(?k) & ?d @* ?k = ?z,
+      div(?d,?z) by introduction(div,2)],
+     div(?d,?z))],
+   div(?d,?z))],
+ div(?d,?z))
+).
+
+:- lemma(div:minus,
+all [x,y,z,d]: succeeds nat(?z) & succeeds nat(?d) &
+ succeeds plus(?x,?y,?z) & div(?d,?x) & div(?d,?z) => div(?d,?y),
+assume(succeeds nat(?z) & succeeds nat(?d) & succeeds plus(?x,?y,?z) &
+ div(?d,?x) & div(?d,?z),
+ [ex z: succeeds nat(?z) & ?d @* ?z = ?x by elimination(div,2),
+  exist(m,
+   succeeds nat(?m) & ?d @* ?m = ?x,
+   [ex n: succeeds nat(?n) & ?d @* ?n = ?z by elimination(div,2),
+    exist(n,
+     succeeds nat(?n) & ?d @* ?n = ?z,
+      [def succeeds nat(?d) by completion,
+       cases(?d = 0,
+        [0 @* ?n = 0 by corollary(times:zero),
+	 ?z = ?d @* ?n = 0 @* ?n = 0,
+	 0 @* ?m = 0 by corollary(times:zero),
+	 ?x = ?d @* ?m = 0 @* ?m = 0,
+	 def succeeds plus(0,?y,0) by completion,
+	 ?y = 0,
+	 0 @* 0 = 0 by lemma(times:zero),
+	 ?d @* 0 = ?y,
+	 succeeds nat(0),
+	 ex z: succeeds nat(?z) & ?d @* ?z = ?y,
+	 div(?d,?y) by introduction(div,2)],
+        ex x: ?d = s(?x) & succeeds nat(?x),
+        exist(e,
+         ?d = s(?e) & succeeds nat(?e),
+         [succeeds nat(?x) by lemma(plus:types:1),
+	  ?x @+ ?y = ?z by uniqueness(@+,2),
+	  succeeds nat(?y) by lemma(plus:types:3),
+	  succeeds ?x @=< ?x @+ ?y by corollary(leq:plus:first),
+	  succeeds ?x @=< ?z,
+	  succeeds ?d @* ?m @=< ?d @* ?n,
+	  succeeds s(?e) @* ?m @=< s(?e) @* ?n,
+	  succeeds ?m @=< ?n by lemma(leq:times:inverse),
+	  ex k: succeeds plus(?m,?k,?n) by lemma(leq:plus),
+	  exist(k,succeeds plus(?m,?k,?n),
+	   [succeeds nat(?k) by lemma(plus:types:3),
+	    ?m @+ ?k = ?n by uniqueness(@+,2),
+	    ?d @* (?m @+ ?k) = ?d @* ?m @+ ?d @* ?k by 
+             corollary(plus:times:distributive),
+	    ?x @+ ?d @* ?k = ?d @* ?m @+ ?d @* ?k = ?d @* (?m @+ ?k)
+	    = ?d @* ?n = ?z,
+	    ?d @* ?k = ?y by lemma(plus:injective:second),
+	    div(?d,?y) by introduction(div,2)],
+	   div(?d,?y))],
+         div(?d,?y)),
+        div(?d,?y))],
+     div(?d,?y))],
+   div(?d,?y))],
+ div(?d,?y))
+).
+
+
+:- lemma(gcd:types,
+(all [x,y,d]: succeeds gcd(?x,?y,?d) =>
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d)) &
+(all [x,y,d]: succeeds gcd_leq(?x,?y,?d) =>
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d)),
+induction(
+ [all [x,y,d]: succeeds gcd(?x,?y,?d) => succeeds nat(?x) & 
+    succeeds nat(?y) => succeeds nat(?d),
+  all [x,y,d]: succeeds gcd_leq(?x,?y,?d) => succeeds nat(?x) &
+    succeeds nat(?y) => succeeds nat(?d)],
+ [step([x,y,d],
+   [succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d),
+    succeeds ?x @=< ?y,
+    succeeds gcd_leq(?x,?y,?d)],
+   [],
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d)),
+  step([x,y,d],
+   [succeeds nat(?y) & succeeds nat(?x) => succeeds nat(?d),
+    fails ?x @=< ?y,
+    succeeds gcd_leq(?y,?x,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    [],
+    succeeds nat(?d)),
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d)),
+  step([x,y,d,z],
+   [?x = 0,
+    ?d = ?y],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    [],
+    succeeds nat(?d)),
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d)),
+  step([x,y,d,z],
+   [succeeds nat(?x) & succeeds nat(?z) => succeeds nat(?d),
+    ?x <> 0,
+    succeeds plus(?x,?z,?y),
+    succeeds gcd(?x,?z,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    succeeds nat(?z) by lemma(plus:types:3),
+    succeeds nat(?d)),
+   succeeds nat(?x) & succeeds nat(?y) => succeeds nat(?d))])
+).
+
+:- corollary(gcd:types,
+all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) & 
+ succeeds gcd(?x,?y,?d) => succeeds nat(?d),
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds gcd(?x,?y,?d),
+ [succeeds gcd(?x,?y,?d) => succeeds nat(?x) & succeeds nat(?y) => 
+    succeeds nat(?d) by lemma(gcd:types),
+  succeeds nat(?x) & succeeds nat(?y) => 
+    succeeds nat(?d),
+  succeeds nat(?d)],
+ succeeds nat(?d))
+).
+
+:- corollary(gcd_leq:types,
+all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) & 
+ succeeds gcd_leq(?x,?y,?d) => succeeds nat(?d),
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds gcd_leq(?x,?y,?d),
+ [succeeds gcd_leq(?x,?y,?d) => succeeds nat(?x) & succeeds nat(?y) => 
+    succeeds nat(?d) by lemma(gcd:types),
+  succeeds nat(?x) & succeeds nat(?y) => 
+    succeeds nat(?d),
+  succeeds nat(?d)],
+ succeeds nat(?d))
+).
+
+:- lemma(gcd:div,
+(all [x,y,d]: succeeds gcd(?x,?y,?d) =>
+  succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y)) &
+(all [x,y,d]: succeeds gcd_leq(?x,?y,?d) =>
+  succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y)),
+induction(
+ [all [x,y,d]: succeeds gcd(?x,?y,?d) => succeeds nat(?x) & 
+    succeeds nat(?y) => div(?d,?x) & div(?d,?y),
+  all [x,y,d]: succeeds gcd_leq(?x,?y,?d) => succeeds nat(?x) &
+    succeeds nat(?y) => div(?d,?x) & div(?d,?y)],
+ [step([x,y,d],
+   [succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y),
+    succeeds ?x @=< ?y,
+    succeeds gcd_leq(?x,?y,?d)],
+   [],
+   succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y)),
+  step([x,y,d],
+   [succeeds nat(?y) & succeeds nat(?x) => div(?d,?y) & div(?d,?x),
+    fails ?x @=< ?y,
+    succeeds gcd_leq(?y,?x,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    [div(?d,?y) & div(?d,?x)],
+    div(?d,?x) & div(?d,?y)),
+   succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y)),
+  step([x,y,d,z],
+   [?x = 0,
+    ?d = ?y],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    [?d @* 0 = 0 by lemma(times:zero),
+     ?d @* 0 = ?x,
+     succeeds nat(0),
+     div(?d,?x) by introduction(div,2),
+     ?d @* s(0) = ?d by corollary(times:one),
+     ?d @* s(0) = ?y,
+     succeeds nat(s(0)),
+     div(?d,?y) by introduction(div,2)],
+    div(?d,?x) & div(?d,?y)),
+   succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y)),
+  step([x,y,d,z],
+   [succeeds nat(?x) & succeeds nat(?z) => div(?d,?x) & div(?d,?z),
+    ?x <> 0,
+    succeeds plus(?x,?z,?y),
+    succeeds gcd(?x,?z,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y),
+    [succeeds nat(?z) by lemma(plus:types:3),
+     div(?d,?x) & div(?d,?z),
+     succeeds nat(?d) by corollary(gcd:types),
+     div(?d,?y) by lemma(div:plus)],
+    div(?d,?x) & div(?d,?y)),
+   succeeds nat(?x) & succeeds nat(?y) => div(?d,?x) & div(?d,?y))])
+).
+
+:- theorem(gcd:div,
+all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) & succeeds gcd(?x,?y,?d) =>
+  div(?d,?x) & div(?d,?y),
+assume(succeeds nat(?x) & succeeds nat(?y) & succeeds gcd(?x,?y,?d),
+ [succeeds gcd(?x,?y,?d) => succeeds nat(?x) & succeeds nat(?y) => 
+    div(?d,?x) & div(?d,?y) by lemma(gcd:div),
+  succeeds nat(?x) & succeeds nat(?y) => 
+    div(?d,?x) & div(?d,?y),
+  div(?d,?x) & div(?d,?y)],
+ div(?d,?x) & div(?d,?y))
+).
+
+:- lemma(gcd:complete,
+(all [x,y,d]: succeeds gcd(?x,?y,?d) =>
+   (all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?y) => div(?e,?d))) &
+(all [x,y,d]: succeeds gcd_leq(?x,?y,?d) =>
+   (all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?y) => div(?e,?d))),
+induction(
+ [all [x,y,d]: succeeds gcd(?x,?y,?d) => 
+    (all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+      div(?e,?x) & div(?e,?y) => div(?e,?d)),
+  all [x,y,d]: succeeds gcd_leq(?x,?y,?d) => 
+    (all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+      div(?e,?x) & div(?e,?y) => div(?e,?d))],
+ [step([x,y,d],
+   [all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?y) => div(?e,?d),
+    succeeds ?x @=< ?y,
+    succeeds gcd_leq(?x,?y,?d)],
+   [],
+   all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y) => div(?e,?d)),
+  step([x,y,d],
+   [all e: succeeds nat(?y) & succeeds nat(?x) & succeeds nat(?e) &
+     div(?e,?y) & div(?e,?x) => div(?e,?d),
+    fails ?x @=< ?y,
+    succeeds gcd_leq(?y,?x,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y),
+    [],
+    div(?e,?d)),
+   all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y) => div(?e,?d)),
+  step([x,y,d,z],
+   [?x = 0,
+    ?d = ?y],
+   assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y),
+    [],
+    div(?e,?d)),
+   all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y) => div(?e,?d)),
+  step([x,y,d,z],
+   [all e: succeeds nat(?x) & succeeds nat(?z) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?z) => div(?e,?d),
+    ?x <> 0,
+    succeeds plus(?x,?z,?y),
+    succeeds gcd(?x,?z,?d)],
+   assume(succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y),
+    [succeeds nat(?z) by lemma(plus:types:3),
+     succeeds nat(?d) by corollary(gcd:types),
+     div(?e,?z) by lemma(div:minus),
+     div(?e,?d)],
+    div(?e,?d)),
+   all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+    div(?e,?x) & div(?e,?y) => div(?e,?d))])
+).
+
+:- theorem(gcd:complete,
+all [x,y,d,e]: succeeds gcd(?x,?y,?d) & succeeds nat(?x) & succeeds nat(?y) &
+ succeeds nat(?e) & div(?e,?x) & div(?e,?y) => div(?e,?d),
+assume(succeeds gcd(?x,?y,?d) & succeeds nat(?x) & succeeds nat(?y) &
+ succeeds nat(?e) & div(?e,?x) & div(?e,?y),
+ [succeeds gcd(?x,?y,?d) => 
+   (all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?y) => div(?e,?d)) by lemma(gcd:complete),
+  all e: succeeds nat(?x) & succeeds nat(?y) & succeeds nat(?e) &
+     div(?e,?x) & div(?e,?y) => div(?e,?d),
+  div(?e,?d)],
+ div(?e,?d))
+).
+
+:- lemma(gcd:termination,
+all n: succeeds nat(?n) =>
+  (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+    succeeds ?x @+ ?y @< ?n & succeeds ?x @=< ?y =>
+     terminates gcd_leq(?x,?y,?d)) &
+  (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+    succeeds ?x @+ ?y @< ?n => terminates gcd(?x,?y,?d)),
+induction(
+ [all n: succeeds nat(?n) => 
+    (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+      succeeds ?x @+ ?y @< ?n & succeeds ?x @=< ?y => 
+       terminates gcd_leq(?x,?y,?d)) &
+    (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+      succeeds ?x @+ ?y @< ?n => terminates gcd(?x,?y,?d))],
+ [step([],
+   [],
+   [assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @+ ?y @< 0 &
+     succeeds ?x @=< ?y,
+     [def succeeds ?x @+ ?y @< 0 by completion,
+      ff],
+     terminates gcd_leq(?x,?y,?d)),
+    assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @+ ?y @< 0,
+     [def succeeds ?x @+ ?y @< 0 by completion,
+      ff],
+     terminates gcd(?x,?y,?d))],
+   (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+     succeeds ?x @+ ?y @< 0 & succeeds ?x @=< ?y => 
+      terminates gcd_leq(?x,?y,?d)) &
+   (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+     succeeds ?x @+ ?y @< 0 => terminates gcd(?x,?y,?d))),
+  step([n],
+   [(all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+      succeeds ?x @+ ?y @< ?n & succeeds ?x @=< ?y => 
+       terminates gcd_leq(?x,?y,?d)) &
+    (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+      succeeds ?x @+ ?y @< ?n => terminates gcd(?x,?y,?d)),
+    succeeds nat(?n)],
+   [assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @+ ?y @< s(?n) &
+     succeeds ?x @=< ?y,
+     [gr(?x) by lemma(nat:ground),
+      assume(?x <> 0,
+       [terminates plus(?x,?z,?y) by lemma(plus:termination:1),
+        assume(succeeds plus(?x,?z,?y),
+         [succeeds nat(?z) by lemma(plus:types:3),
+	  succeeds 0 @< ?x by lemma(less:different:zero),
+	  succeeds ?z @< ?x @+ ?z by corollary(less:plus:first),
+	  ?x @+ ?z = ?y by uniqueness(@+,2),
+	  succeeds ?z @< ?y,
+	  succeeds ?x @+ ?z @< ?x @+ ?y by lemma(less:plus:second),
+	  succeeds ?x @+ ?z @< ?n by lemma(less:transitive:successor),
+	  terminates gcd(?x,?z,?d)],
+         terminates gcd(?x,?z,?d)),
+        terminates (plus(?x,?z,?y) & gcd(?x,?z,?d))],
+       terminates (plus(?x,?z,?y) & gcd(?x,?z,?d))),
+      terminates (~ ?x = 0 & plus(?x,?z,?y) & gcd(?x,?z,?d)),
+      terminates (?x = 0 & ?d = ?y) &
+      terminates (~ ?x = 0 & plus(?x,?z,?y) & gcd(?x,?z,?d)),
+      all z: terminates (?x = 0 & ?d = ?y) &
+       terminates (~ ?x = 0 & plus(?x,?z,?y) & gcd(?x,?z,?d)),
+      terminates gcd_leq(?x,?y,?d) by completion],
+     terminates gcd_leq(?x,?y,?d)),
+    all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+     succeeds ?x @+ ?y @< s(?n) & succeeds ?x @=< ?y =>
+      terminates gcd_leq(?x,?y,?d),
+    assume(succeeds nat(?x) & succeeds nat(?y) & succeeds ?x @+ ?y @< s(?n),
+     [gr(?x) by lemma(nat:ground),
+      gr(?y) by lemma(nat:ground),
+      terminates ?x @=< ?y by lemma(leq:termination:1),
+      assume(succeeds ?x @=< ?y,
+       [terminates gcd_leq(?x,?y,?d)],
+       terminates gcd_leq(?x,?y,?d)),
+      terminates (?x @=< ?y & gcd_leq(?x,?y,?d)),
+      assume(fails ?x @=< ?y,
+       [succeeds ?y @=< ?x by corollary(leq:failure),
+	?x @+ ?y = ?y @+ ?x by theorem(plus:commutative),
+	succeeds ?y @+ ?x @< s(?n),
+	terminates gcd_leq(?y,?x,?d)],
+       terminates gcd_leq(?y,?x,?d)),
+      terminates (~ ?x @=< ?y & gcd_leq(?y,?x,?d)),
+      terminates (?x @=< ?y & gcd_leq(?x,?y,?d)) &
+      terminates (~ ?x @=< ?y & gcd_leq(?y,?x,?d)),
+      terminates gcd(?x,?y,?d) by completion],
+     terminates gcd(?x,?y,?d))],
+   (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+     succeeds ?x @+ ?y @< s(?n) & succeeds ?x @=< ?y => 
+      terminates gcd_leq(?x,?y,?d)) &
+   (all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) &
+     succeeds ?x @+ ?y @< s(?n) => terminates gcd(?x,?y,?d)))])
+).
+
+:- theorem(gcd:termination,
+all [x,y,d]: succeeds nat(?x) & succeeds nat(?y) =>
+  terminates gcd(?x,?y,?d),
+assume(succeeds nat(?x) & succeeds nat(?y),
+ [succeeds nat(?x @+ ?y) by corollary(plus:types),
+  succeeds nat(s(?x @+ ?y)),
+  (all [x1,y1,d]: succeeds nat(?x1) & succeeds nat(?y1) &
+    succeeds ?x1 @+ ?y1 @< s(?x @+ ?y) & succeeds ?x1 @=< ?y1 => 
+     terminates gcd_leq(?x1,?y1,?d)) &
+  (all [x1,y1,d]: succeeds nat(?x1) & succeeds nat(?y1) &
+    succeeds ?x1 @+ ?y1 @< s(?x @+ ?y) => terminates gcd(?x1,?y1,?d)) by 
+   lemma(gcd:termination),
+  succeeds ?x @+ ?y @< s(?x @+ ?y) by lemma(less:one),
+  terminates gcd(?x,?y,?d)],
+ terminates gcd(?x,?y,?d))
+).
+
+:- bye(gcd).

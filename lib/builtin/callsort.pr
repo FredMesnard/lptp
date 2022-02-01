@@ -1,0 +1,1707 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Sun Feb 25 17:03:58 1996 */
+/* Filename: callsort.pr */
+/* Abstract: Sorting algorithms with call/2 and call/3. */
+
+:- initialize.
+
+:- tex_file($(tmp)/callsort).
+:- thm_file($(lib)/builtin/callsort).
+
+:- needs_gr($(lib)/builtin/callsort).
+
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/list/permutation).
+
+:- needs_thm($(lib)/nat/nat).
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/list/permutation).
+
+:- definition_pred(total,2,
+ all [d,r]: total(?d,?r) <=> 
+  (all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+    gr(?y) => succeeds call(?r,?x,?y) \/ ?x = ?y \/ succeeds call(?r,?y,?x))
+).
+
+:- definition_pred(terminating,2,
+ all [d,r]: terminating(?d,?r) <=> 
+  (all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+    gr(?y) => terminates call(?r,?x,?y))
+).
+
+:- lemma(d_list:list,
+all [l,d]: succeeds d_list(?l,?d) => succeeds list(?l),
+induction([all [l,d]: succeeds d_list(?l,?d) => succeeds list(?l)],
+ [step([0],[],[],succeeds list([])),
+  step([x,l,d],
+   [succeeds list(?l),
+    succeeds call(?d,?x),
+    succeeds d_list(?l,?d)],
+   [],
+   succeeds list([?x|?l]))])
+).
+
+:- lemma(r_ordered:termination,
+all [l,d,r]: succeeds d_list(?l,?d) & terminating(?d,?r) & gr(?l) => 
+ terminates r_ordered(?l,?r),
+[induction(
+  [all [l,d]: succeeds d_list(?l,?d) => terminating(?d,?r) & gr(?l) => 
+    terminates r_ordered(?l,?r)],
+  [step([d],
+    [],
+    [],
+    terminating(?d,?r) & gr([]) => terminates r_ordered([],?r)),
+   step([x,l,d],
+    [terminating(?d,?r) & gr(?l) => terminates r_ordered(?l,?r),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(terminating(?d,?r) & gr([?x|?l]),
+     [assume(?l = [?y|?l1],
+       [def succeeds d_list([?y|?l1],?d) by completion,
+        gr(?x),
+        gr(?l),
+        gr([?y|?l1]),
+        all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+         gr(?y) => terminates call(?r,?x,?y) by elimination(terminating,2),
+        terminates call(?r,?x,?y),
+        terminates r_ordered(?l,?r),
+        terminates ((?x = ?y \/ call(?r,?x,?y)) & r_ordered([?y|?l1],?r))],
+       terminates ((?x = ?y \/ call(?r,?x,?y)) & r_ordered([?y|?l1],?r))),
+      all [y,l1]: ?l = [?y|?l1] => 
+       terminates ((?x = ?y \/ call(?r,?x,?y)) & r_ordered([?y|?l1],?r)),
+      terminates r_ordered([?x|?l],?r) by completion],
+     terminates r_ordered([?x|?l],?r)),
+    terminating(?d,?r) & gr([?x|?l]) => terminates r_ordered([?x|?l],?r))]),
+ assume(succeeds d_list(?l,?d) & terminating(?d,?r) & gr(?l),
+  [terminating(?d,?r) & gr(?l) => terminates r_ordered(?l,?r),
+   terminates r_ordered(?l,?r)],
+  terminates r_ordered(?l,?r))]
+).
+
+:- lemma(delete:d_list,
+all [x,l1,l2,d]: succeeds delete(?x,?l1,?l2) & succeeds d_list(?l1,?d) => 
+ succeeds call(?d,?x) & succeeds d_list(?l2,?d),
+[induction(
+  [all [x,l1,l2]: succeeds delete(?x,?l1,?l2) => succeeds d_list(?l1,?d) 
+    => succeeds call(?d,?x) & succeeds d_list(?l2,?d)],
+  [step([x,l],
+    [],
+    assume(succeeds d_list([?x|?l],?d),
+     [def succeeds d_list([?x|?l],?d) by completion,
+      succeeds call(?d,?x),
+      succeeds d_list(?l,?d)],
+     succeeds call(?d,?x) & succeeds d_list(?l,?d)),
+    succeeds d_list([?x|?l],?d) => succeeds call(?d,?x) & 
+    succeeds d_list(?l,?d)),
+   step([x,y,l1,l2],
+    [succeeds d_list(?l1,?d) => succeeds call(?d,?x) & 
+     succeeds d_list(?l2,?d),
+     succeeds delete(?x,?l1,?l2)],
+    assume(succeeds d_list([?y|?l1],?d),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      succeeds call(?d,?x) & succeeds d_list(?l2,?d),
+      succeeds d_list([?y|?l2],?d) by sld],
+     succeeds call(?d,?x) & succeeds d_list([?y|?l2],?d)),
+    succeeds d_list([?y|?l1],?d) => succeeds call(?d,?x) & 
+    succeeds d_list([?y|?l2],?d))]),
+ assume(succeeds delete(?x,?l1,?l2) & succeeds d_list(?l1,?d),
+  [succeeds d_list(?l1,?d) => succeeds call(?d,?x) & 
+   succeeds d_list(?l2,?d),
+   succeeds call(?d,?x) & succeeds d_list(?l2,?d)],
+  succeeds call(?d,?x) & succeeds d_list(?l2,?d))]
+).
+
+:- lemma(permutation:d_list,
+all [l1,l2,d]: succeeds permutation(?l1,?l2) & succeeds d_list(?l1,?d) => 
+ succeeds d_list(?l2,?d),
+[induction(
+  [all [l1,l2]: succeeds permutation(?l1,?l2) => succeeds d_list(?l1,?d) 
+    => succeeds d_list(?l2,?d)],
+  [step([],[],[],succeeds d_list([],?d) => succeeds d_list([],?d)),
+   step([l1,x,l3,l2],
+    [succeeds d_list(?l2,?d) => succeeds d_list(?l3,?d),
+     succeeds delete(?x,?l1,?l2),
+     succeeds permutation(?l2,?l3)],
+    assume(succeeds d_list(?l1,?d),
+     [succeeds call(?d,?x) & succeeds d_list(?l2,?d) by 
+       lemma(delete:d_list),
+      succeeds d_list(?l3,?d),
+      succeeds d_list([?x|?l3],?d) by sld],
+     succeeds d_list([?x|?l3],?d)),
+    succeeds d_list(?l1,?d) => succeeds d_list([?x|?l3],?d))]),
+ assume(succeeds permutation(?l1,?l2) & succeeds d_list(?l1,?d),
+  [succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+   succeeds d_list(?l2,?d)],
+  succeeds d_list(?l2,?d))]
+).
+
+:- theorem(permutation_sort:termination,
+all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) =>
+ terminates permutation_sort(?l1,?l2,?r),
+assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r),
+ [succeeds list(?l1) by lemma(d_list:list),
+  terminates permutation(?l1,?l2) by theorem(permutation:termination),
+  assume(succeeds permutation(?l1,?l2),
+   [succeeds d_list(?l2,?d) by lemma(permutation:d_list),
+    gr(?l2) by lemma(permutation:ground),
+    terminates r_ordered(?l2,?r) by lemma(r_ordered:termination)],
+   terminates r_ordered(?l2,?r)),
+  terminates (permutation(?l1,?l2) & r_ordered(?l2,?r)),
+  terminates permutation_sort(?l1,?l2,?r) by completion],
+ terminates permutation_sort(?l1,?l2,?r))
+).
+
+:- lemma(insert:termination,
+all [x,l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+ succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) => 
+ terminates insert(?x,?l1,?l2,?r),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => 
+    (all [x,l2,r]: gr(?l1) & succeeds call(?d,?x) & gr(?x) & 
+      terminating(?d,?r) & gr(?r) => terminates insert(?x,?l1,?l2,?r))],
+  [step([d],
+    [],
+    gr([]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) =>
+    terminates insert(?x,[],?l2,?r),
+    all [x,l2,r]: gr([]) & succeeds call(?d,?x) & gr(?x) & 
+     terminating(?d,?r) & gr(?r) => terminates insert(?x,[],?l2,?r)),
+   step([x,l,d],
+    [all [x,l2,r]: gr(?l) & succeeds call(?d,?x) & gr(?x) & 
+      terminating(?d,?r) & gr(?r) => terminates insert(?x,?l,?l2,?r),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(gr([?x|?l]) & succeeds call(?d,?y) & gr(?y) & terminating(?d,?r)
+     & gr(?r),
+     [all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+       gr(?y) => terminates call(?r,?x,?y) by elimination(terminating,2),
+      terminates call(?r,?y,?x),
+      terminates (call(?r,?y,?x) & ?l2 = [?y,?x|?l]),
+      gr(?r),
+      terminates (~ call(?r,?y,?x) & ?l2 = [?x|?l3] & insert(?y,?l,?l3,?r)),
+      terminates (call(?r,?y,?x) & ?l2 = [?y,?x|?l]) & 
+      terminates (~ call(?r,?y,?x) & ?l2 = [?x|?l3] & insert(?y,?l,?l3,?r)),
+      all l3: terminates (call(?r,?y,?x) & ?l2 = [?y,?x|?l]) & 
+       terminates 
+       (~ call(?r,?y,?x) & ?l2 = [?x|?l3] & insert(?y,?l,?l3,?r)),
+      terminates insert(?y,[?x|?l],?l2,?r) by completion],
+     terminates insert(?y,[?x|?l],?l2,?r)),
+    all [y,l2,r]: gr([?x|?l]) & succeeds call(?d,?y) & gr(?y) & 
+     terminating(?d,?r) & gr(?r) => terminates insert(?y,[?x|?l],?l2,?r))]),
+ assume(succeeds d_list(?l1,?d) & gr(?l1) & succeeds call(?d,?x) & gr(?x) &
+  terminating(?d,?r) & gr(?r),
+  [all [x,l2,r]: gr(?l1) & succeeds call(?d,?x) & gr(?x) & 
+    terminating(?d,?r) & gr(?r) => terminates insert(?x,?l1,?l2,?r),
+   gr(?l1) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) =>
+   terminates insert(?x,?l1,?l2,?r),
+   terminates insert(?x,?l1,?l2,?r)],
+  terminates insert(?x,?l1,?l2,?r))]
+).
+
+:- lemma(insert:ground,
+all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) & gr(?x) & gr(?l1) => 
+ gr(?l2),
+[induction(
+  [all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => gr(?x) & gr(?l1) => 
+    gr(?l2)],
+  [step([x,0],
+    [],
+    assume(gr(?x) & gr([]),
+     [],
+     gr([?x])),
+    gr(?x) & gr([]) => gr([?x])),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?r,?x,?y),
+     ?l3 = [?x,?y|?l1]],
+    assume(gr(?x) & gr([?y|?l1]),
+     [gr([?x,?y|?l1]),
+      gr(?l3)],
+     gr(?l3)),
+    gr(?x) & gr([?y|?l1]) => gr(?l3)),
+   step([x,y,l1,l3,r,l2],
+    [gr(?x) & gr(?l1) => gr(?l2),
+     fails call(?r,?x,?y),
+     ?l3 = [?y|?l2],
+     succeeds insert(?x,?l1,?l2,?r)],
+    assume(gr(?x) & gr([?y|?l1]),
+     [gr(?x) & gr(?l1),
+      gr([?y|?l2]),
+      gr(?l3)],
+     gr(?l3)),
+    gr(?x) & gr([?y|?l1]) => gr(?l3))]),
+ assume(succeeds insert(?x,?l1,?l2,?r) & gr(?x) & gr(?l1),
+  [gr(?x) & gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- lemma(insert_sort:ground,
+all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) & gr(?l1) => gr(?l2),
+[induction(
+  [all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => gr(?l1) => gr(?l2)],
+  [step([0],[],[],gr([]) => gr([])),
+   step([x,l1,l3,r,l2],
+    [gr(?l1) => gr(?l2),
+     succeeds insert_sort(?l1,?l2,?r),
+     succeeds insert(?x,?l2,?l3,?r)],
+    assume(gr([?x|?l1]),
+     [gr(?l2),
+      gr(?x),
+      gr(?l3) by lemma(insert:ground)],
+     gr(?l3)),
+    gr([?x|?l1]) => gr(?l3))]),
+ assume(succeeds insert_sort(?l1,?l2,?r) & gr(?l1),
+  [gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- lemma(insert:d_list,
+all [x,l1,l2,d,r]: succeeds insert(?x,?l1,?l2,?r) & succeeds call(?d,?x) &
+ succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+[induction(
+  [all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => succeeds call(?d,?x)
+    & succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d)],
+  [step([x,0],
+    [],
+    assume(succeeds call(?d,?x) & succeeds d_list([],?d),
+     [],
+     succeeds d_list([?x],?d)),
+    succeeds call(?d,?x) & succeeds d_list([],?d) => 
+    succeeds d_list([?x],?d)),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?r,?x,?y),
+     ?l3 = [?x,?y|?l1]],
+    assume(succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d),
+     [],
+     succeeds d_list(?l3,?d)),
+    succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d) => 
+    succeeds d_list(?l3,?d)),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?d,?x) & succeeds d_list(?l1,?d) => 
+     succeeds d_list(?l2,?d),
+     fails call(?r,?x,?y),
+     ?l3 = [?y|?l2],
+     succeeds insert(?x,?l1,?l2,?r)],
+    assume(succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      succeeds d_list(?l2,?d),
+      succeeds d_list([?y|?l2],?d) by sld,
+      succeeds d_list(?l3,?d)],
+     succeeds d_list(?l3,?d)),
+    succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d) => 
+    succeeds d_list(?l3,?d))]),
+ assume(succeeds insert(?x,?l1,?l2,?r) & succeeds call(?d,?x) & 
+  succeeds d_list(?l1,?d),
+  [succeeds call(?d,?x) & succeeds d_list(?l1,?d) => 
+   succeeds d_list(?l2,?d),
+   succeeds d_list(?l2,?d)],
+  succeeds d_list(?l2,?d))]
+).
+
+:- lemma(insert_sort:d_list,
+all [l1,l2,d,r]: succeeds insert_sort(?l1,?l2,?r) & 
+ succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+[induction(
+  [all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => 
+    succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d)],
+  [step([r],[],[],succeeds d_list([],?d) => succeeds d_list([],?d)),
+   step([x,l1,l3,r,l2],
+    [succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+     succeeds insert_sort(?l1,?l2,?r),
+     succeeds insert(?x,?l2,?l3,?r)],
+    assume(succeeds d_list([?x|?l1],?d),
+     [def succeeds d_list([?x|?l1],?d) by completion,
+      succeeds d_list(?l2,?d),
+      succeeds d_list(?l3,?d) by lemma(insert:d_list)],
+     succeeds d_list(?l3,?d)),
+    succeeds d_list([?x|?l1],?d) => succeeds d_list(?l3,?d))]),
+ assume(succeeds insert_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d),
+  [succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+   succeeds d_list(?l2,?d)],
+  succeeds d_list(?l2,?d))]
+).
+
+:- theorem(insert_sort:termination,
+all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & 
+ gr(?r) => terminates insert_sort(?l1,?l2,?r),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => 
+    (all [l2,r]: gr(?l1) & terminating(?d,?r) & gr(?r) => 
+      terminates insert_sort(?l1,?l2,?r))],
+  [step([d],
+    [],
+    gr([]) & terminating(?d,?r) & gr(?r) => 
+    terminates insert_sort([],?l2,?r),
+    all [l2,r]: gr([]) & terminating(?d,?r) & gr(?r) => 
+     terminates insert_sort([],?l2,?r)),
+   step([x,l,d],
+    [all [l2,r]: gr(?l) & terminating(?d,?r) & gr(?r) => 
+      terminates insert_sort(?l,?l2,?r),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(gr([?x|?l]) & terminating(?d,?r) & gr(?r),
+     [terminates insert_sort(?l,?l1,?r),
+      assume(succeeds insert_sort(?l,?l1,?r),
+       [succeeds d_list(?l1,?d) by lemma(insert_sort:d_list),
+        gr(?x),
+        gr(?l),
+        gr(?l1) by lemma(insert_sort:ground),
+        terminates insert(?x,?l1,?l2,?r) by lemma(insert:termination)],
+       terminates insert(?x,?l1,?l2,?r)),
+      terminates (insert_sort(?l,?l1,?r) & insert(?x,?l1,?l2,?r)),
+      all l1: terminates (insert_sort(?l,?l1,?r) & insert(?x,?l1,?l2,?r)),
+      terminates insert_sort([?x|?l],?l2,?r) by completion],
+     terminates insert_sort([?x|?l],?l2,?r)),
+    all [l2,r]: gr([?x|?l]) & terminating(?d,?r) & gr(?r) => 
+     terminates insert_sort([?x|?l],?l2,?r))]),
+ assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & gr(?r),
+  [all [l2,r]: gr(?l1) & terminating(?d,?r) & gr(?r) => 
+    terminates insert_sort(?l1,?l2,?r),
+   gr(?l1) & terminating(?d,?r) & gr(?r) => 
+   terminates insert_sort(?l1,?l2,?r),
+   terminates insert_sort(?l1,?l2,?r)],
+  terminates insert_sort(?l1,?l2,?r))]
+).
+
+:- lemma(insert:existence,
+all [x,l1,d,r]: succeeds d_list(?l1,?d) & succeeds call(?d,?x) & gr(?x) & 
+ gr(?l1) & terminating(?d,?r) => (ex l2: succeeds insert(?x,?l1,?l2,?r)),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => succeeds call(?d,?x) & gr(?x) & 
+    gr(?l1) & terminating(?d,?r) => 
+    (ex l2: succeeds insert(?x,?l1,?l2,?r))],
+  [step([d],
+    [],
+    assume(succeeds call(?d,?x) & gr(?x) & gr([]) & terminating(?d,?r),
+     [succeeds insert(?x,[],[?x],?r) by sld,
+      ex l2: succeeds insert(?x,[],?l2,?r)],
+     ex l2: succeeds insert(?x,[],?l2,?r)),
+    succeeds call(?d,?x) & gr(?x) & gr([]) & terminating(?d,?r) => 
+    (ex l2: succeeds insert(?x,[],?l2,?r))),
+   step([y,l,d],
+    [succeeds call(?d,?x) & gr(?x) & gr(?l) & terminating(?d,?r) => 
+     (ex l2: succeeds insert(?x,?l,?l2,?r)),
+     succeeds call(?d,?y),
+     succeeds d_list(?l,?d)],
+    assume(succeeds call(?d,?x) & gr(?x) & gr([?y|?l]) & terminating(?d,?r),
+     [all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+       gr(?y) => terminates call(?r,?x,?y) by elimination(terminating,2),
+      terminates call(?r,?x,?y),
+      succeeds call(?r,?x,?y) \/ fails call(?r,?x,?y),
+      cases(succeeds call(?r,?x,?y),
+       [[?x,?y|?l] = [?x,?y|?l],
+        succeeds insert(?x,[?y|?l],[?x,?y|?l],?r) by sld,
+        ex l2: succeeds insert(?x,[?y|?l],?l2,?r)],
+       fails call(?r,?x,?y),
+       [ex l2: succeeds insert(?x,?l,?l2,?r),
+        exist(l2,
+         succeeds insert(?x,?l,?l2,?r),
+         [[?y|?l2] = [?y|?l2],
+          succeeds insert(?x,[?y|?l],[?y|?l2],?r) by sld,
+          ex l2: succeeds insert(?x,[?y|?l],?l2,?r)],
+         ex l2: succeeds insert(?x,[?y|?l],?l2,?r))],
+       ex l2: succeeds insert(?x,[?y|?l],?l2,?r))],
+     ex l2: succeeds insert(?x,[?y|?l],?l2,?r)),
+    succeeds call(?d,?x) & gr(?x) & gr([?y|?l]) & terminating(?d,?r) => 
+    (ex l2: succeeds insert(?x,[?y|?l],?l2,?r)))]),
+ assume(succeeds d_list(?l1,?d) & succeeds call(?d,?x) & gr(?x) & gr(?l1) &
+  terminating(?d,?r),
+  [succeeds call(?d,?x) & gr(?x) & gr(?l1) & terminating(?d,?r) => 
+   (ex l2: succeeds insert(?x,?l1,?l2,?r)),
+   ex l2: succeeds insert(?x,?l1,?l2,?r)],
+  ex l2: succeeds insert(?x,?l1,?l2,?r))]
+).
+
+:- theorem(insert_sort:existence,
+all [l1,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) => 
+ (ex l2: succeeds insert_sort(?l1,?l2,?r)),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => gr(?l1) & terminating(?d,?r) => 
+    (ex l2: succeeds insert_sort(?l1,?l2,?r))],
+  [step([d],
+    [],
+    assume(gr([]) & terminating(?d,?r),
+     [succeeds insert_sort([],[],?r) by sld,
+      ex l2: succeeds insert_sort([],?l2,?r)],
+     ex l2: succeeds insert_sort([],?l2,?r)),
+    gr([]) & terminating(?d,?r) => 
+    (ex l2: succeeds insert_sort([],?l2,?r))),
+   step([x,l,d],
+    [gr(?l) & terminating(?d,?r) => 
+     (ex l2: succeeds insert_sort(?l,?l2,?r)),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(gr([?x|?l]) & terminating(?d,?r),
+     [ex l2: succeeds insert_sort(?l,?l2,?r),
+      exist(l2,
+       succeeds insert_sort(?l,?l2,?r),
+       [succeeds d_list(?l2,?d) by lemma(insert_sort:d_list),
+        gr(?l),
+        gr(?x),
+        gr(?l2) by lemma(insert_sort:ground),
+        ex l3: succeeds insert(?x,?l2,?l3,?r) by lemma(insert:existence),
+        exist(l3,
+         succeeds insert(?x,?l2,?l3,?r),
+         [succeeds insert_sort([?x|?l],?l3,?r) by sld,
+          ex l2: succeeds insert_sort([?x|?l],?l2,?r)],
+         ex l2: succeeds insert_sort([?x|?l],?l2,?r))],
+       ex l2: succeeds insert_sort([?x|?l],?l2,?r))],
+     ex l2: succeeds insert_sort([?x|?l],?l2,?r)),
+    gr([?x|?l]) & terminating(?d,?r) => 
+    (ex l2: succeeds insert_sort([?x|?l],?l2,?r)))]),
+ assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r),
+  [gr(?l1) & terminating(?d,?r) => 
+   (ex l2: succeeds insert_sort(?l1,?l2,?r)),
+   ex l2: succeeds insert_sort(?l1,?l2,?r)],
+  ex l2: succeeds insert_sort(?l1,?l2,?r))]
+).
+
+:- lemma(insert:r_ordered,
+all [x,l1,l2,d,r]: succeeds insert(?x,?l1,?l2,?r) & succeeds call(?d,?x) &
+ gr(?x) & succeeds d_list(?l1,?d) & gr(?l1) & succeeds r_ordered(?l1,?r) & 
+ total(?d,?r) => succeeds r_ordered(?l2,?r),
+[induction(
+  [all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => succeeds call(?d,?x)
+    & gr(?x) & succeeds d_list(?l1,?d) & gr(?l1) & 
+    succeeds r_ordered(?l1,?r) & total(?d,?r) => succeeds r_ordered(?l2,?r)],
+  [step([x,r],
+    [],
+    [],
+    succeeds call(?d,?x) & gr(?x) & succeeds d_list([],?d) & gr([]) & 
+    succeeds r_ordered([],?r) & total(?d,?r) => succeeds r_ordered([?x],?r)),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?r,?x,?y),
+     ?l3 = [?x,?y|?l1]],
+    assume(succeeds call(?d,?x) & gr(?x) & succeeds d_list([?y|?l1],?d) & 
+     gr([?y|?l1]) & succeeds r_ordered([?y|?l1],?r) & total(?d,?r),
+     [?x = ?y \/ succeeds call(?r,?x,?y),
+      succeeds r_ordered([?x,?y|?l1],?r) by sld,
+      succeeds r_ordered(?l3,?r)],
+     succeeds r_ordered(?l3,?r)),
+    succeeds call(?d,?x) & gr(?x) & succeeds d_list([?y|?l1],?d) & 
+    gr([?y|?l1]) & succeeds r_ordered([?y|?l1],?r) & total(?d,?r) => 
+    succeeds r_ordered(?l3,?r)),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?d,?x) & gr(?x) & succeeds d_list(?l1,?d) & gr(?l1) & 
+     succeeds r_ordered(?l1,?r) & total(?d,?r) => 
+     succeeds r_ordered(?l2,?r),
+     fails call(?r,?x,?y),
+     ?l3 = [?y|?l2],
+     succeeds insert(?x,?l1,?l2,?r)],
+    assume(succeeds call(?d,?x) & gr(?x) & succeeds d_list([?y|?l1],?d) & 
+     gr([?y|?l1]) & succeeds r_ordered([?y|?l1],?r) & total(?d,?r),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+       gr(?y) => succeeds call(?r,?x,?y) \/ ?x = ?y \/ 
+       succeeds call(?r,?y,?x) by elimination(total,2),
+      succeeds call(?r,?x,?y) \/ ?x = ?y \/ succeeds call(?r,?y,?x),
+      cases(
+       [case(succeeds call(?r,?x,?y),[]),
+        case(?x = ?y,
+         []),
+        case(succeeds call(?r,?y,?x),
+         [])],
+       ?y = ?x \/ succeeds call(?r,?y,?x)),
+      def succeeds r_ordered([?y|?l1],?r) by completion,
+      cases(?l1 = [],
+       [def succeeds insert(?x,[],?l2,?r) by completion,
+        ?l2 = [?x],
+        succeeds r_ordered([?x],?r) by sld,
+        succeeds r_ordered([?y,?x],?r),
+        succeeds r_ordered(?l3,?r)],
+       ex [z,l]: ?l1 = [?z|?l] & (?y = ?z \/ succeeds call(?r,?y,?z)) & 
+        succeeds r_ordered([?z|?l],?r),
+       exist([z,l],
+        ?l1 = [?z|?l] & (?y = ?z \/ succeeds call(?r,?y,?z)) & 
+        succeeds r_ordered([?z|?l],?r),
+        [succeeds r_ordered(?l1,?r),
+         succeeds r_ordered(?l2,?r),
+         def succeeds insert(?x,[?z|?l],?l2,?r) by completion,
+         exist(l4,
+          succeeds call(?r,?x,?z) & ?l2 = [?x,?z|?l] \/ 
+          fails call(?r,?x,?z) & ?l2 = [?z|?l4] & 
+          succeeds insert(?x,?l,?l4,?r),
+          cases(succeeds call(?r,?x,?z) & ?l2 = [?x,?z|?l],
+           [succeeds r_ordered([?x,?z|?l],?r),
+            succeeds r_ordered([?y,?x,?z|?l],?r),
+            succeeds r_ordered(?l3,?r)],
+           fails call(?r,?x,?z) & ?l2 = [?z|?l4] & 
+           succeeds insert(?x,?l,?l4,?r),
+           [succeeds r_ordered([?z|?l4],?r),
+            succeeds r_ordered([?y,?z|?l4],?r),
+            succeeds r_ordered(?l3,?r)],
+           succeeds r_ordered(?l3,?r)),
+          succeeds r_ordered(?l3,?r))],
+        succeeds r_ordered(?l3,?r)),
+       succeeds r_ordered(?l3,?r))],
+     succeeds r_ordered(?l3,?r)),
+    succeeds call(?d,?x) & gr(?x) & succeeds d_list([?y|?l1],?d) & 
+    gr([?y|?l1]) & succeeds r_ordered([?y|?l1],?r) & total(?d,?r) => 
+    succeeds r_ordered(?l3,?r))]),
+ assume(succeeds insert(?x,?l1,?l2,?r) & succeeds call(?d,?x) & gr(?x) & 
+  succeeds d_list(?l1,?d) & gr(?l1) & succeeds r_ordered(?l1,?r) & 
+  total(?d,?r),
+  [succeeds call(?d,?x) & gr(?x) & succeeds d_list(?l1,?d) & gr(?l1) & 
+   succeeds r_ordered(?l1,?r) & total(?d,?r) => succeeds r_ordered(?l2,?r),
+   succeeds r_ordered(?l2,?r)],
+  succeeds r_ordered(?l2,?r))]
+).
+
+:- lemma(insert_sort:r_ordered,
+all [l1,l2,d,r]: succeeds insert_sort(?l1,?l2,?r) & 
+ succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) => 
+ succeeds r_ordered(?l2,?r),
+[induction(
+  [all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => 
+    succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) => 
+    succeeds r_ordered(?l2,?r)],
+  [step([r],
+    [],
+    [],
+    succeeds d_list([],?d) & gr([]) & total(?d,?r) => 
+    succeeds r_ordered([],?r)),
+   step([x,l1,l3,r,l2],
+    [succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) => 
+     succeeds r_ordered(?l2,?r),
+     succeeds insert_sort(?l1,?l2,?r),
+     succeeds insert(?x,?l2,?l3,?r)],
+    assume(succeeds d_list([?x|?l1],?d) & gr([?x|?l1]) & total(?d,?r),
+     [def succeeds d_list([?x|?l1],?d) by completion,
+      succeeds r_ordered(?l2,?r),
+      succeeds d_list(?l2,?d) by lemma(insert_sort:d_list),
+      gr(?l2) by lemma(insert_sort:ground),
+      gr(?x),
+      succeeds r_ordered(?l3,?r) by lemma(insert:r_ordered)],
+     succeeds r_ordered(?l3,?r)),
+    succeeds d_list([?x|?l1],?d) & gr([?x|?l1]) & total(?d,?r) => 
+    succeeds r_ordered(?l3,?r))]),
+ assume(succeeds insert_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d) & 
+  gr(?l1) & total(?d,?r),
+  [succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) => 
+   succeeds r_ordered(?l2,?r),
+   succeeds r_ordered(?l2,?r)],
+  succeeds r_ordered(?l2,?r))]
+).
+
+:- lemma(insert:delete,
+all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => 
+ succeeds delete(?x,?l2,?l1),
+[induction(
+  [all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => 
+    succeeds delete(?x,?l2,?l1)],
+  [step([x,r],[],[],succeeds delete(?x,[?x],[])),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?r,?x,?y),
+     ?l3 = [?x,?y|?l1]],
+    [],
+    succeeds delete(?x,?l3,[?y|?l1])),
+   step([x,y,l1,l3,r,l2],
+    [succeeds delete(?x,?l2,?l1),
+     fails call(?r,?x,?y),
+     ?l3 = [?y|?l2],
+     succeeds insert(?x,?l1,?l2,?r)],
+    [],
+    succeeds delete(?x,?l3,[?y|?l1]))]),
+ assume(succeeds insert(?x,?l1,?l2,?r),
+  succeeds delete(?x,?l2,?l1),
+  succeeds delete(?x,?l2,?l1))]
+).
+
+:- lemma(insert_sort:permutation,
+all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => 
+ succeeds permutation(?l1,?l2),
+induction(
+ [all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => 
+   succeeds permutation(?l1,?l2)],
+ [step([r],[],[],succeeds permutation([],[])),
+  step([x,l1,l3,r,l2],
+   [succeeds permutation(?l1,?l2),
+    succeeds insert_sort(?l1,?l2,?r),
+    succeeds insert(?x,?l2,?l3,?r)],
+   [succeeds permutation(?l2,?l1) by theorem(permutation:symmetric),
+    succeeds delete(?x,?l3,?l2) by lemma(insert:delete),
+    succeeds permutation(?l3,[?x|?l1]) by sld,
+    succeeds permutation([?x|?l1],?l3) by theorem(permutation:symmetric)],
+   succeeds permutation([?x|?l1],?l3))])
+).
+
+:- theorem(insert_sort:permutation_sort,
+all [l1,l2,d,r]: succeeds d_list(?l1,?d) & 
+ succeeds insert_sort(?l1,?l2,?r) & gr(?l1) & total(?d,?r) => 
+ succeeds permutation_sort(?l1,?l2,?r),
+assume(succeeds d_list(?l1,?d) & succeeds insert_sort(?l1,?l2,?r) & gr(?l1)
+ & total(?d,?r),
+ [succeeds permutation(?l1,?l2) by lemma(insert_sort:permutation),
+  succeeds r_ordered(?l2,?r) by lemma(insert_sort:r_ordered),
+  succeeds permutation_sort(?l1,?l2,?r) by sld],
+ succeeds permutation_sort(?l1,?l2,?r))
+).
+
+:- lemma(insert:uniqueness,
+all [x,l1,l2,l3,r]: succeeds insert(?x,?l1,?l2,?r) & 
+ succeeds insert(?x,?l1,?l3,?r) => ?l2 = ?l3,
+[induction(
+  [all [x,l1,l2,r]: succeeds insert(?x,?l1,?l2,?r) => 
+    (all l3: succeeds insert(?x,?l1,?l3,?r) => ?l2 = ?l3)],
+  [step([x,r],
+    [],
+    assume(succeeds insert(?x,[],?l3,?r),
+     [def succeeds insert(?x,[],?l3,?r) by completion,
+      [?x] = ?l3],
+     [?x] = ?l3),
+    all l3: succeeds insert(?x,[],?l3,?r) => [?x] = ?l3),
+   step([x,y,l1,l3,r,l2],
+    [succeeds call(?r,?x,?y),
+     ?l3 = [?x,?y|?l1]],
+    assume(succeeds insert(?x,[?y|?l1],?l4,?r),
+     [def succeeds insert(?x,[?y|?l1],?l4,?r) by completion,
+      exist(l2,
+       succeeds call(?r,?x,?y) & ?l4 = [?x,?y|?l1] \/ fails call(?r,?x,?y) 
+       & ?l4 = [?y|?l2] & succeeds insert(?x,?l1,?l2,?r),
+       cases(succeeds call(?r,?x,?y) & ?l4 = [?x,?y|?l1],
+        [],
+        fails call(?r,?x,?y) & ?l4 = [?y|?l2] & 
+        succeeds insert(?x,?l1,?l2,?r),
+        [],
+        ?l3 = ?l4),
+       ?l3 = ?l4)],
+     ?l3 = ?l4),
+    all l4: succeeds insert(?x,[?y|?l1],?l4,?r) => ?l3 = ?l4),
+   step([x,y,l1,l3,r,l2],
+    [all l3: succeeds insert(?x,?l1,?l3,?r) => ?l2 = ?l3,
+     fails call(?r,?x,?y),
+     ?l3 = [?y|?l2],
+     succeeds insert(?x,?l1,?l2,?r)],
+    assume(succeeds insert(?x,[?y|?l1],?l4,?r),
+     [def succeeds insert(?x,[?y|?l1],?l4,?r) by completion,
+      exist(0,
+       succeeds call(?r,?x,?y) & ?l4 = [?x,?y|?l1] \/ fails call(?r,?x,?y) 
+       & ?l4 = [?y|?0] & succeeds insert(?x,?l1,?0,?r),
+       cases(succeeds call(?r,?x,?y) & ?l4 = [?x,?y|?l1],
+        [],
+        fails call(?r,?x,?y) & ?l4 = [?y|?0] & 
+        succeeds insert(?x,?l1,?0,?r),
+        [?l2 = ?0,
+         ?l3 = ?l4],
+        ?l3 = ?l4),
+       ?l3 = ?l4)],
+     ?l3 = ?l4),
+    all l4: succeeds insert(?x,[?y|?l1],?l4,?r) => ?l3 = ?l4)]),
+ assume(succeeds insert(?x,?l1,?l2,?r) & succeeds insert(?x,?l1,?l3,?r),
+  [all l3: succeeds insert(?x,?l1,?l3,?r) => ?l2 = ?l3,
+   succeeds insert(?x,?l1,?l3,?r) => ?l2 = ?l3,
+   ?l2 = ?l3],
+  ?l2 = ?l3)]
+).
+
+:- theorem(insert_sort:uniqueness,
+all [l1,l2,l3,r]: succeeds insert_sort(?l1,?l2,?r) & 
+ succeeds insert_sort(?l1,?l3,?r) => ?l2 = ?l3,
+[induction(
+  [all [l1,l2,r]: succeeds insert_sort(?l1,?l2,?r) => 
+    (all l3: succeeds insert_sort(?l1,?l3,?r) => ?l2 = ?l3)],
+  [step([r],
+    [],
+    assume(succeeds insert_sort([],?l3,?r),
+     [def succeeds insert_sort([],?l3,?r) by completion,
+      [] = ?l3],
+     [] = ?l3),
+    all l3: succeeds insert_sort([],?l3,?r) => [] = ?l3),
+   step([x,l1,l3,r,l2],
+    [all l3: succeeds insert_sort(?l1,?l3,?r) => ?l2 = ?l3,
+     succeeds insert_sort(?l1,?l2,?r),
+     succeeds insert(?x,?l2,?l3,?r)],
+    assume(succeeds insert_sort([?x|?l1],?l4,?r),
+     [def succeeds insert_sort([?x|?l1],?l4,?r) by completion,
+      exist(0,
+       succeeds insert_sort(?l1,?0,?r) & succeeds insert(?x,?0,?l4,?r),
+       [?l2 = ?0,
+        succeeds insert(?x,?l2,?l4,?r),
+        ?l3 = ?l4 by lemma(insert:uniqueness)],
+       ?l3 = ?l4)],
+     ?l3 = ?l4),
+    all l4: succeeds insert_sort([?x|?l1],?l4,?r) => ?l3 = ?l4)]),
+ assume(succeeds insert_sort(?l1,?l2,?r) & succeeds insert_sort(?l1,?l3,?r),
+  [all l3: succeeds insert_sort(?l1,?l3,?r) => ?l2 = ?l3,
+   succeeds insert_sort(?l1,?l3,?r) => ?l2 = ?l3,
+   ?l2 = ?l3],
+  ?l2 = ?l3)]
+).
+
+:- lemma(split:ground,
+all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) & gr(?x) & gr(?l1) 
+ => gr(?l2) & gr(?l3),
+[induction(
+  [all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => gr(?x) & 
+    gr(?l1) => gr(?l2) & gr(?l3)],
+  [step([x,r],[],[],gr(?x) & gr([]) => gr([]) & gr([])),
+   step([x,y,l1,l2,l3,r,l4,l5],
+    [gr(?x) & gr(?l1) => gr(?l4) & gr(?l5),
+     succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+     fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5,?r)],
+    assume(gr(?x) & gr([?y|?l1]),
+     [gr(?l4) & gr(?l5),
+      cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+       [gr([?y|?l4]),
+        gr(?l2)],
+       fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+       [gr([?y|?l5]),
+        gr(?l3)],
+       gr(?l2) & gr(?l3))],
+     gr(?l2) & gr(?l3)),
+    gr(?x) & gr([?y|?l1]) => gr(?l2) & gr(?l3))]),
+ assume(succeeds split(?x,?l1,?l2,?l3,?r) & gr(?x) & gr(?l1),
+  [gr(?x) & gr(?l1) => gr(?l2) & gr(?l3),
+   gr(?l2) & gr(?l3)],
+  gr(?l2) & gr(?l3))]
+).
+
+:- lemma(split:d_list,
+all [x,l1,l2,l3,d,r]: succeeds split(?x,?l1,?l2,?l3,?r) & 
+ succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d) & 
+ succeeds d_list(?l3,?d),
+[induction(
+  [all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+    succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d) & 
+    succeeds d_list(?l3,?d)],
+  [step([x,r],
+    [],
+    [],
+    succeeds d_list([],?d) => succeeds d_list([],?d) & 
+    succeeds d_list([],?d)),
+   step([x,y,l1,l2,l3,r,l4,l5],
+    [succeeds d_list(?l1,?d) => succeeds d_list(?l4,?d) & 
+     succeeds d_list(?l5,?d),
+     succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+     fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5,?r)],
+    assume(succeeds d_list([?y|?l1],?d),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      succeeds d_list(?l4,?d) & succeeds d_list(?l5,?d),
+      cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+       [],
+       fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+       [],
+       succeeds d_list(?l2,?d) & succeeds d_list(?l3,?d))],
+     succeeds d_list(?l2,?d) & succeeds d_list(?l3,?d)),
+    succeeds d_list([?y|?l1],?d) => succeeds d_list(?l2,?d) & 
+    succeeds d_list(?l3,?d))]),
+ assume(succeeds split(?x,?l1,?l2,?l3,?r) & succeeds d_list(?l1,?d),
+  [succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d) & 
+   succeeds d_list(?l3,?d),
+   succeeds d_list(?l2,?d) & succeeds d_list(?l3,?d)],
+  succeeds d_list(?l2,?d) & succeeds d_list(?l3,?d))]
+).
+
+:- lemma(split:termination,
+all [x,l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+ succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) => 
+ terminates split(?x,?l1,?l2,?l3,?r),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => 
+    (all [x,l2,l3,r]: gr(?l1) & succeeds call(?d,?x) & gr(?x) & 
+      terminating(?d,?r) & gr(?r) => terminates split(?x,?l1,?l2,?l3,?r))],
+  [step([d],
+    [],
+    gr([]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) =>
+    terminates split(?x,[],?l2,?l3,?r),
+    all [x,l2,l3,r]: gr([]) & succeeds call(?d,?x) & gr(?x) & 
+     terminating(?d,?r) & gr(?r) => terminates split(?x,[],?l2,?l3,?r)),
+   step([x,l,d],
+    [all [x,l2,l3,r]: gr(?l) & succeeds call(?d,?x) & gr(?x) & 
+      terminating(?d,?r) & gr(?r) => terminates split(?x,?l,?l2,?l3,?r),
+     succeeds call(?d,?x),
+     succeeds d_list(?l,?d)],
+    assume(gr([?x|?l]) & succeeds call(?d,?y) & gr(?y) & terminating(?d,?r)
+     & gr(?r),
+     [terminates split(?y,?l,?l4,?l5,?r),
+      all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+       gr(?y) => terminates call(?r,?x,?y) by elimination(terminating,2),
+      terminates call(?r,?y,?x),
+      terminates 
+      ((call(?r,?y,?x) & ?l2 = [?x|?l4] & ?l3 = ?l5 \/ ~ call(?r,?y,?x) & 
+        ?l2 = ?l4 & ?l3 = [?x|?l5]) & split(?y,?l,?l4,?l5,?r)),
+      all [l4,l5]: 
+       terminates 
+       ((call(?r,?y,?x) & ?l2 = [?x|?l4] & ?l3 = ?l5 \/ ~ call(?r,?y,?x) & 
+         ?l2 = ?l4 & ?l3 = [?x|?l5]) & split(?y,?l,?l4,?l5,?r)),
+      terminates split(?y,[?x|?l],?l2,?l3,?r) by completion],
+     terminates split(?y,[?x|?l],?l2,?l3,?r)),
+    all [y,l2,l3,r]: gr([?x|?l]) & succeeds call(?d,?y) & gr(?y) & 
+     terminating(?d,?r) & gr(?r) => terminates split(?y,[?x|?l],?l2,?l3,?r))]),
+ assume(succeeds d_list(?l1,?d) & gr(?l1) & succeeds call(?d,?x) & gr(?x) &
+  terminating(?d,?r) & gr(?r),
+  [all [x,l2,l3,r]: gr(?l1) & succeeds call(?d,?x) & gr(?x) & 
+    terminating(?d,?r) & gr(?r) => terminates split(?x,?l1,?l2,?l3,?r),
+   gr(?l1) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) & gr(?r) =>
+   terminates split(?x,?l1,?l2,?l3,?r),
+   terminates split(?x,?l1,?l2,?l3,?r)],
+  terminates split(?x,?l1,?l2,?l3,?r))]
+).
+
+:- lemma(quick_sort:3:ground,
+all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) & gr(?l1) & gr(?l2) 
+ => gr(?l3),
+[induction(
+  [all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) => gr(?l1) & 
+    gr(?l2) => gr(?l3)],
+  [step([l,r],
+    [],
+    assume(gr([]) & gr(?l),
+     [],
+     gr(?l)),
+    gr([]) & gr(?l) => gr(?l)),
+   step([x,l1,l2,l6,r,l3,l4,l5],
+    [gr(?l3) & gr(?l2) => gr(?l5),
+     gr(?l4) & gr([?x|?l5]) => gr(?l6),
+     succeeds split(?x,?l1,?l3,?l4,?r),
+     succeeds quick_sort(?l3,?l2,?l5,?r),
+     succeeds quick_sort(?l4,[?x|?l5],?l6,?r)],
+    assume(gr([?x|?l1]) & gr(?l2),
+     [gr(?l3) & gr(?l4) by lemma(split:ground),
+      gr(?l6)],
+     gr(?l6)),
+    gr([?x|?l1]) & gr(?l2) => gr(?l6))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3,?r) & gr(?l1) & gr(?l2),
+  [gr(?l1) & gr(?l2) => gr(?l3),
+   gr(?l1) & gr(?l2) => gr(?l3),
+   gr(?l3)],
+  gr(?l3))]
+).
+
+:- lemma(quick_sort:3:d_list,
+all [l1,l2,l3,d,r]: succeeds quick_sort(?l1,?l2,?l3,?r) & 
+ succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) => 
+ succeeds d_list(?l3,?d),
+[induction(
+  [all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) => 
+    succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) => 
+    succeeds d_list(?l3,?d)],
+  [step([l,r],
+    [],
+    assume(succeeds d_list([],?d) & succeeds d_list(?l,?d),
+     [],
+     succeeds d_list(?l,?d)),
+    succeeds d_list([],?d) & succeeds d_list(?l,?d) => 
+    succeeds d_list(?l,?d)),
+   step([x,l1,l2,l6,r,l3,l4,l5],
+    [succeeds d_list(?l3,?d) & succeeds d_list(?l2,?d) => 
+     succeeds d_list(?l5,?d),
+     succeeds d_list(?l4,?d) & succeeds d_list([?x|?l5],?d) => 
+     succeeds d_list(?l6,?d),
+     succeeds split(?x,?l1,?l3,?l4,?r),
+     succeeds quick_sort(?l3,?l2,?l5,?r),
+     succeeds quick_sort(?l4,[?x|?l5],?l6,?r)],
+    assume(succeeds d_list([?x|?l1],?d) & succeeds d_list(?l2,?d),
+     [def succeeds d_list([?x|?l1],?d) by completion,
+      succeeds d_list(?l3,?d) & succeeds d_list(?l4,?d) by 
+       lemma(split:d_list),
+      succeeds d_list(?l5,?d),
+      succeeds d_list([?x|?l5],?d) by sld,
+      succeeds d_list(?l6,?d)],
+     succeeds d_list(?l6,?d)),
+    succeeds d_list([?x|?l1],?d) & succeeds d_list(?l2,?d) => 
+    succeeds d_list(?l6,?d))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3,?r) & succeeds d_list(?l1,?d) & 
+  succeeds d_list(?l2,?d),
+  [succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) => 
+   succeeds d_list(?l3,?d),
+   succeeds d_list(?l3,?d)],
+  succeeds d_list(?l3,?d))]
+).
+
+:- lemma(split:list,
+all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+ succeeds list(?l1) & succeeds list(?l2) & succeeds list(?l3),
+induction(
+ [all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+   succeeds list(?l1) & succeeds list(?l2) & succeeds list(?l3)],
+ [step([x,r],
+   [],
+   [],
+   succeeds list([]) & succeeds list([]) & succeeds list([])),
+  step([x,y,l1,l2,l3,r,l4,l5],
+   [succeeds list(?l1) & succeeds list(?l4) & succeeds list(?l5),
+    succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+    fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+    succeeds split(?x,?l1,?l4,?l5,?r)],
+   cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+    [],
+    fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+    [],
+    succeeds list(?l2) & succeeds list(?l3)),
+   succeeds list([?y|?l1]) & succeeds list(?l2) & succeeds list(?l3))])
+).
+
+:- lemma(split:permutation,
+all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+ succeeds permutation(?l3 ** ?l2,?l1),
+induction(
+ [all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+   succeeds permutation(?l3 ** ?l2,?l1)],
+ [step([x,r],
+   [],
+   [[] ** [] = [] by lemma(app:nil),
+    succeeds permutation([],[]) by sld,
+    succeeds permutation([] ** [],[])],
+   succeeds permutation([] ** [],[])),
+  step([x,y,l1,l2,l3,r,l4,l5],
+   [succeeds permutation(?l5 ** ?l4,?l1),
+    succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+    fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+    succeeds split(?x,?l1,?l4,?l5,?r)],
+   [succeeds list(?l1) & succeeds list(?l4) & succeeds list(?l5) by 
+     lemma(split:list),
+    cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+     [succeeds delete(?y,?l5 ** [?y|?l4],?l5 ** ?l4) by 
+       theorem(delete:app:1),
+      succeeds permutation(?l5 ** [?y|?l4],[?y|?l1]) by sld,
+      succeeds permutation(?l3 ** ?l2,[?y|?l1])],
+     fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     [succeeds delete(?y,[?y|?l5] ** ?l4,?l5 ** ?l4) by 
+       corollary(app:cons),
+      succeeds permutation([?y|?l5] ** ?l4,[?y|?l1]) by sld,
+      succeeds permutation(?l3 ** ?l2,[?y|?l1])],
+     succeeds permutation(?l3 ** ?l2,[?y|?l1]))],
+   succeeds permutation(?l3 ** ?l2,[?y|?l1]))])
+).
+
+:- lemma(split:lh,
+all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+ lh(?l1) = lh(?l2) @+ lh(?l3),
+assume(succeeds split(?x,?l1,?l2,?l3,?r),
+ [succeeds permutation(?l3 ** ?l2,?l1) by lemma(split:permutation),
+  lh(?l3 ** ?l2) = lh(?l1) by lemma(permutation:length),
+  succeeds list(?l1) & succeeds list(?l2) & succeeds list(?l3) by 
+   lemma(split:list),
+  lh(?l3 ** ?l2) = lh(?l3) @+ lh(?l2) by theorem(app:lh),
+  succeeds nat(lh(?l2)) by corollary(lh:types),
+  succeeds nat(lh(?l3)) by corollary(lh:types),
+  lh(?l3) @+ lh(?l2) = lh(?l2) @+ lh(?l3) by theorem(plus:commutative),
+  lh(?l1) = lh(?l3 ** ?l2) = lh(?l3) @+ lh(?l2) = lh(?l2) @+ lh(?l3)],
+ lh(?l1) = lh(?l2) @+ lh(?l3))
+).
+
+:- lemma(quick_sort:3:termination,
+all [n,l1,l2,l3,d,r]: succeeds nat(?n) & succeeds d_list(?l1,?d) & 
+ succeeds d_list(?l2,?d) & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) 
+ & succeeds lh(?l1) @< ?n => terminates quick_sort(?l1,?l2,?l3,?r),
+[induction(
+  [all n: succeeds nat(?n) => 
+    (all [l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d)
+      & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) & 
+      succeeds lh(?l1) @< ?n => terminates quick_sort(?l1,?l2,?l3,?r))],
+  [step([],
+    [],
+    assume(succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) & gr(?l1) & 
+     gr(?l2) & terminating(?d,?r) & gr(?r) & succeeds lh(?l1) @< 0,
+     [fails lh(?l1) @< 0 by completion,
+      ff],
+     terminates quick_sort(?l1,?l2,?l3,?r)),
+    all [l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) 
+     & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) & 
+     succeeds lh(?l1) @< 0 => terminates quick_sort(?l1,?l2,?l3,?r)),
+   step([n],
+    [all [l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d)
+      & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) & 
+      succeeds lh(?l1) @< ?n => terminates quick_sort(?l1,?l2,?l3,?r),
+     succeeds nat(?n)],
+    assume(succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) & gr(?l1) & 
+     gr(?l2) & terminating(?d,?r) & gr(?r) & succeeds lh(?l1) @< s(?n),
+     [assume(?l1 = [?x|?l],
+       [def succeeds d_list([?x|?l],?d) by completion,
+        gr([?x|?l]),
+        gr(?x),
+        gr(?l),
+        terminates split(?x,?l,?l3,?l4,?r) by lemma(split:termination),
+        assume(succeeds split(?x,?l,?l3,?l4,?r),
+         [succeeds lh([?x|?l]) @< s(?n),
+          succeeds list(?l) by lemma(d_list:list),
+          lh([?x|?l]) = s(lh(?l)) by theorem(delete:length),
+          def succeeds s(lh(?l)) @< s(?n) by completion,
+          succeeds lh(?l) @< ?n,
+          lh(?l) = lh(?l3) @+ lh(?l4) by lemma(split:lh),
+          succeeds d_list(?l3,?d) & succeeds d_list(?l4,?d) by 
+           lemma(split:d_list),
+          succeeds list(?l3) by lemma(d_list:list),
+          succeeds list(?l4) by lemma(d_list:list),
+          succeeds nat(lh(?l3)) by corollary(lh:types),
+          succeeds nat(lh(?l4)) by corollary(lh:types),
+          succeeds lh(?l3) @=< lh(?l3) @+ lh(?l4) by 
+           corollary(leq:plus:first),
+          succeeds lh(?l4) @=< lh(?l3) @+ lh(?l4) by 
+           corollary(leq:plus:second),
+          succeeds lh(?l3) @=< lh(?l),
+          succeeds lh(?l4) @=< lh(?l),
+          succeeds lh(?l3) @< ?n by theorem(leq:less:transitive),
+          succeeds lh(?l4) @< ?n by theorem(leq:less:transitive),
+          gr(?l3) & gr(?l4) by lemma(split:ground),
+          terminates quick_sort(?l3,?l2,?l5,?r),
+          assume(succeeds quick_sort(?l3,?l2,?l5,?r),
+           [succeeds d_list(?l5,?d) by lemma(quick_sort:3:d_list),
+            succeeds d_list([?x|?l5],?d) by sld,
+            gr(?l5) by lemma(quick_sort:3:ground),
+            gr([?x|?l5]),
+            terminates quick_sort(?l4,[?x|?l5],?l6,?r)],
+           terminates quick_sort(?l4,[?x|?l5],?l6,?r)),
+          terminates 
+          (quick_sort(?l3,?l2,?l5,?r) & quick_sort(?l4,[?x|?l5],?l6,?r))],
+         terminates 
+         (quick_sort(?l3,?l2,?l5,?r) & quick_sort(?l4,[?x|?l5],?l6,?r))),
+        terminates 
+        (split(?x,?l,?l3,?l4,?r) & quick_sort(?l3,?l2,?l5,?r) & 
+         quick_sort(?l4,[?x|?l5],?l6,?r))],
+       terminates 
+       (split(?x,?l,?l3,?l4,?r) & quick_sort(?l3,?l2,?l5,?r) & 
+        quick_sort(?l4,[?x|?l5],?l6,?r))),
+      all [x,l,l3,l4,l5]: ?l1 = [?x|?l] => 
+       terminates 
+       (split(?x,?l,?l3,?l4,?r) & quick_sort(?l3,?l2,?l5,?r) & 
+        quick_sort(?l4,[?x|?l5],?l6,?r)),
+      terminates quick_sort(?l1,?l2,?l6,?r) by completion],
+     terminates quick_sort(?l1,?l2,?l6,?r)),
+    all [l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) 
+     & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) & 
+     succeeds lh(?l1) @< s(?n) => terminates quick_sort(?l1,?l2,?l3,?r))]),
+ assume(succeeds nat(?n) & succeeds d_list(?l1,?d) & 
+  succeeds d_list(?l2,?d) & gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r)
+  & succeeds lh(?l1) @< ?n,
+  [all [l1,l2,l3,d,r]: succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) &
+    gr(?l1) & gr(?l2) & terminating(?d,?r) & gr(?r) & 
+    succeeds lh(?l1) @< ?n => terminates quick_sort(?l1,?l2,?l3,?r),
+   succeeds d_list(?l1,?d) & succeeds d_list(?l2,?d) & gr(?l1) & gr(?l2) & 
+   terminating(?d,?r) & gr(?r) & succeeds lh(?l1) @< ?n => 
+   terminates quick_sort(?l1,?l2,?l3,?r),
+   terminates quick_sort(?l1,?l2,?l3,?r)],
+  terminates quick_sort(?l1,?l2,?l3,?r))]
+).
+
+:- theorem(quick_sort:termination,
+all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & 
+ gr(?r) => terminates quick_sort(?l1,?l2,?r),
+assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & gr(?r),
+ [succeeds list(?l1) by lemma(d_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  succeeds nat(s(lh(?l1))) by sld,
+  succeeds d_list([],?d) by sld,
+  gr([]),
+  terminates quick_sort(?l1,[],?l2,?r) by 
+   lemma(quick_sort:3:termination),
+  terminates quick_sort(?l1,?l2,?r) by completion],
+ terminates quick_sort(?l1,?l2,?r))
+).
+
+:- lemma(quick_sort:3:permutation,
+all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) => 
+ (ex m: succeeds permutation(?m,?l1) & ?m ** ?l2 = ?l3),
+induction(
+ [all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) => 
+   (ex m: succeeds permutation(?m,?l1) & ?m ** ?l2 = ?l3)],
+ [step([l,r],
+   [],
+   [succeeds permutation([],[]) by sld,
+    [] ** ?l = ?l by corollary(app:nil),
+    ex m: succeeds permutation(?m,[]) & ?m ** ?l = ?l],
+   ex m: succeeds permutation(?m,[]) & ?m ** ?l = ?l),
+  step([x,l1,l2,l6,r,l3,l4,l5],
+   [ex m2: succeeds permutation(?m2,?l3) & ?m2 ** ?l2 = ?l5,
+    ex m1: succeeds permutation(?m1,?l4) & ?m1 ** [?x|?l5] = ?l6,
+    succeeds split(?x,?l1,?l3,?l4,?r),
+    succeeds quick_sort(?l3,?l2,?l5,?r),
+    succeeds quick_sort(?l4,[?x|?l5],?l6,?r)],
+   exist(m1,
+    succeeds permutation(?m1,?l4) & ?m1 ** [?x|?l5] = ?l6,
+    exist(m2,
+     succeeds permutation(?m2,?l3) & ?m2 ** ?l2 = ?l5,
+     [succeeds list(?m1) & succeeds list(?l4) by lemma(permutation:types),
+      succeeds list(?m2) & succeeds list(?l3) by lemma(permutation:types),
+      ?m1 ** [?x|?m2 ** ?l2] = ?m1 ** [?x|?l5],
+      ?m1 ** [?x|?m2 ** ?l2] = ?l6,
+      [?x|?m2] ** ?l2 = [?x|?m2 ** ?l2] by corollary(app:cons),
+      ?m1 ** [?x|?m2] ** ?l2 = ?m1 ** ([?x|?m2] ** ?l2) by 
+       theorem(app:associative),
+      ?m1 ** [?x|?m2] ** ?l2 = ?m1 ** [?x|?m2 ** ?l2],
+      ?m1 ** [?x|?m2] ** ?l2 = ?l6,
+      succeeds permutation(?m1 ** ?m2,?l4 ** ?l3) by 
+       theorem(permutation:app),
+      succeeds permutation(?l4 ** ?l3,?l1) by lemma(split:permutation),
+      succeeds permutation(?m1 ** ?m2,?l1) by 
+       theorem(permutation:transitive),
+      succeeds delete(?x,?m1 ** [?x|?m2],?m1 ** ?m2) by 
+       theorem(delete:app:1),
+      succeeds permutation(?m1 ** [?x|?m2],[?x|?l1]) by sld,
+      ex m: succeeds permutation(?m,[?x|?l1]) & ?m ** ?l2 = ?l6],
+     ex m: succeeds permutation(?m,[?x|?l1]) & ?m ** ?l2 = ?l6),
+    ex m: succeeds permutation(?m,[?x|?l1]) & ?m ** ?l2 = ?l6),
+   ex m: succeeds permutation(?m,[?x|?l1]) & ?m ** ?l2 = ?l6)])
+).
+
+:- lemma(quick_sort:permutation,
+all [l1,l2,r]: succeeds quick_sort(?l1,?l2,?r) => 
+ succeeds permutation(?l1,?l2),
+assume(succeeds quick_sort(?l1,?l2,?r),
+ [def succeeds quick_sort(?l1,?l2,?r) by completion,
+  ex m: succeeds permutation(?m,?l1) & ?m ** [] = ?l2 by 
+   lemma(quick_sort:3:permutation),
+  exist(m,
+   succeeds permutation(?m,?l1) & ?m ** [] = ?l2,
+   [succeeds list(?m) & succeeds list(?l1) by lemma(permutation:types),
+    ?m ** [] = ?m by lemma(app:nil),
+    ?m = ?l2,
+    succeeds permutation(?l2,?l1),
+    succeeds permutation(?l1,?l2) by theorem(permutation:symmetric)],
+   succeeds permutation(?l1,?l2))],
+ succeeds permutation(?l1,?l2))
+).
+
+:- definition_pred(lower_bound,3,
+ all [x,l,r]: lower_bound(?x,?l,?r) <=> ?l = [] \/ 
+  (ex [y,l1]: ?l = [?y|?l1] & (?x = ?y \/ succeeds call(?r,?x,?y)))
+).
+
+:- lemma(lower_bound:r_ordered,
+all [x,l,r]: lower_bound(?x,?l,?r) & succeeds r_ordered(?l,?r) => 
+ succeeds r_ordered([?x|?l],?r),
+assume(lower_bound(?x,?l,?r) & succeeds r_ordered(?l,?r),
+ [?l = [] \/ 
+  (ex [y,l1]: ?l = [?y|?l1] & (?x = ?y \/ succeeds call(?r,?x,?y))) by 
+   elimination(lower_bound,3),
+  cases(?l = [],
+   [succeeds r_ordered([?x],?r) by sld],
+   ex [y,l1]: ?l = [?y|?l1] & (?x = ?y \/ succeeds call(?r,?x,?y)),
+   exist([y,l1],
+    ?l = [?y|?l1] & (?x = ?y \/ succeeds call(?r,?x,?y)),
+    [succeeds r_ordered([?x,?y|?l1],?r),
+     succeeds r_ordered([?x|?l],?r)],
+    succeeds r_ordered([?x|?l],?r)),
+   succeeds r_ordered([?x|?l],?r))],
+ succeeds r_ordered([?x|?l],?r))
+).
+
+:- lemma(split,
+all [x,l1,l3,l4,d,r]: succeeds split(?x,?l1,?l3,?l4,?r) & gr(?x) & 
+ succeeds call(?d,?x) & gr(?l1) & succeeds d_list(?l1,?d) & total(?d,?r) =>
+ (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+ (all y: succeeds member(?y,?l4) => ?y = ?x \/ succeeds call(?r,?y,?x)),
+[induction(
+  [all [x,l1,l3,l4,r]: succeeds split(?x,?l1,?l3,?l4,?r) => gr(?x) & 
+    succeeds call(?d,?x) & gr(?l1) & succeeds d_list(?l1,?d) & total(?d,?r)
+    => (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+    (all y: succeeds member(?y,?l4) => ?y = ?x \/ succeeds call(?r,?y,?x))],
+  [step([x,r],
+    [],
+    assume(gr(?x) & succeeds call(?d,?x) & gr([]) & succeeds d_list([],?d) 
+     & total(?d,?r),
+     [assume(succeeds member(?y,[]),
+       [def succeeds member(?y,[]) by completion,
+        ff],
+       succeeds call(?r,?x,?y)),
+      assume(succeeds member(?y,[]),
+       [def succeeds member(?y,[]) by completion,
+        ff],
+       ?y = ?x \/ succeeds call(?r,?y,?x))],
+     (all y: succeeds member(?y,[]) => succeeds call(?r,?x,?y)) & 
+     (all y: succeeds member(?y,[]) => ?y = ?x \/ succeeds call(?r,?y,?x))),
+    gr(?x) & succeeds call(?d,?x) & gr([]) & succeeds d_list([],?d) & 
+    total(?d,?r) => 
+    (all y: succeeds member(?y,[]) => succeeds call(?r,?x,?y)) & 
+    (all y: succeeds member(?y,[]) => ?y = ?x \/ succeeds call(?r,?y,?x))),
+   step([x,y,l1,l2,l3,r,l4,l5],
+    [gr(?x) & succeeds call(?d,?x) & gr(?l1) & succeeds d_list(?l1,?d) & 
+     total(?d,?r) => 
+     (all y: succeeds member(?y,?l4) => succeeds call(?r,?x,?y)) & 
+     (all y: succeeds member(?y,?l5) => ?y = ?x \/ succeeds call(?r,?y,?x)
+      ),
+     succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+     fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5,?r)],
+    assume(gr(?x) & succeeds call(?d,?x) & gr([?y|?l1]) & 
+     succeeds d_list([?y|?l1],?d) & total(?d,?r),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      (all y: succeeds member(?y,?l4) => succeeds call(?r,?x,?y)) & 
+      (all y: succeeds member(?y,?l5) => ?y = ?x \/ 
+        succeeds call(?r,?y,?x)),
+      assume(succeeds member(?z,?l2),
+       cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+        [def succeeds member(?z,[?y|?l4]) by completion,
+         cases(?z = ?y,
+          succeeds call(?r,?x,?y),
+          succeeds member(?z,?l4),
+          succeeds call(?r,?x,?z),
+          succeeds call(?r,?x,?z))],
+        fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+        succeeds call(?r,?x,?z),
+        succeeds call(?r,?x,?z)),
+       succeeds call(?r,?x,?z)),
+      assume(succeeds member(?z,?l3),
+       cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+        [],
+        fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+        [def succeeds member(?z,[?y|?l5]) by completion,
+         cases(?z = ?y,
+          [all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x)
+            & gr(?y) => succeeds call(?r,?x,?y) \/ ?x = ?y \/ 
+            succeeds call(?r,?y,?x) by elimination(total,2),
+           succeeds call(?r,?x,?y) \/ ?x = ?y \/ succeeds call(?r,?y,?x),
+           cases(
+            [case(succeeds call(?r,?x,?y),[]),
+             case(?x = ?y,
+              []),
+             case(succeeds call(?r,?y,?x),
+              [])],
+            ?z = ?x \/ succeeds call(?r,?z,?x))],
+          succeeds member(?z,?l5),
+          [],
+          ?z = ?x \/ succeeds call(?r,?z,?x))],
+        ?z = ?x \/ succeeds call(?r,?z,?x)),
+       ?z = ?x \/ succeeds call(?r,?z,?x))],
+     (all z: succeeds member(?z,?l2) => succeeds call(?r,?x,?z)) & 
+     (all z: succeeds member(?z,?l3) => ?z = ?x \/ succeeds call(?r,?z,?x)
+      )),
+    gr(?x) & succeeds call(?d,?x) & gr([?y|?l1]) & 
+    succeeds d_list([?y|?l1],?d) & total(?d,?r) => 
+    (all z: succeeds member(?z,?l2) => succeeds call(?r,?x,?z)) & 
+    (all z: succeeds member(?z,?l3) => ?z = ?x \/ succeeds call(?r,?z,?x)))]),
+ assume(succeeds split(?x,?l1,?l3,?l4,?r) & gr(?x) & succeeds call(?d,?x) &
+  gr(?l1) & succeeds d_list(?l1,?d) & total(?d,?r),
+  [gr(?x) & succeeds call(?d,?x) & gr(?l1) & succeeds d_list(?l1,?d) & 
+   total(?d,?r) => 
+   (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+   (all y: succeeds member(?y,?l4) => ?y = ?x \/ succeeds call(?r,?y,?x)),
+   (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+   (all y: succeeds member(?y,?l4) => ?y = ?x \/ succeeds call(?r,?y,?x))],
+  (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+  (all y: succeeds member(?y,?l4) => ?y = ?x \/ succeeds call(?r,?y,?x)))]
+).
+
+:- lemma(split:member,
+all [x,y,l1,l3,l4,r]: succeeds split(?x,?l1,?l3,?l4,?r) & 
+ succeeds member(?y,?l3) => succeeds member(?y,?l1),
+assume(succeeds split(?x,?l1,?l3,?l4,?r) & succeeds member(?y,?l3),
+ [succeeds permutation(?l4 ** ?l3,?l1) by lemma(split:permutation),
+  succeeds list(?l1) & succeeds list(?l3) & succeeds list(?l4) by 
+   lemma(split:list),
+  succeeds member(?y,?l4 ** ?l3) by corollary(app:member:2),
+  succeeds member(?y,?l1) by theorem(permutation:member)],
+ succeeds member(?y,?l1))
+).
+
+:- lemma(quick_sort:3:lower_bound,
+all [x,l3,l2,l5,r]: succeeds quick_sort(?l3,?l2,?l5,?r) & 
+ lower_bound(?x,?l2,?r) & 
+ (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) => 
+ lower_bound(?x,?l5,?r),
+assume(succeeds quick_sort(?l3,?l2,?l5,?r) & lower_bound(?x,?l2,?r) & 
+ (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)),
+ [ex m: succeeds permutation(?m,?l3) & ?m ** ?l2 = ?l5 by 
+   lemma(quick_sort:3:permutation),
+  exist(m,
+   succeeds permutation(?m,?l3) & ?m ** ?l2 = ?l5,
+   [succeeds list(?m) & succeeds list(?l3) by lemma(permutation:types),
+    def succeeds list(?m) by completion,
+    cases(?m = [],
+     [[] ** ?l2 = ?l2 by corollary(app:nil),
+      [] ** ?l2 = ?l5,
+      ?l2 = ?l5,
+      lower_bound(?x,?l5,?r)],
+     ex [x,l]: ?m = [?x|?l] & succeeds list(?l),
+     exist([y,l],
+      ?m = [?y|?l] & succeeds list(?l),
+      [succeeds permutation([?y|?l],?l3),
+       succeeds member(?y,[?y|?l]) by sld,
+       succeeds member(?y,?l3) by theorem(permutation:member),
+       succeeds call(?r,?x,?y),
+       [?y|?l] ** ?l2 = ?l5,
+       [?y|?l] ** ?l2 = [?y|?l ** ?l2] by corollary(app:cons),
+       [?y|?l ** ?l2] = ?l5,
+       [?y|?l ** ?l2] = [?y|?l ** ?l2] & 
+       (?x = ?y \/ succeeds call(?r,?x,?y)),
+       [?y|?l ** ?l2] = [] \/ 
+       (ex [z,l1]: [?y|?l ** ?l2] = [?z|?l1] & 
+         (?x = ?z \/ succeeds call(?r,?x,?z))),
+       lower_bound(?x,[?y|?l ** ?l2],?r) by introduction(lower_bound,3),
+       lower_bound(?x,?l5,?r)],
+      lower_bound(?x,?l5,?r)),
+     lower_bound(?x,?l5,?r))],
+   lower_bound(?x,?l5,?r))],
+ lower_bound(?x,?l5,?r))
+).
+
+:- lemma(quick_sort:3:r_ordered,
+all [l1,l2,l3,d,r]: succeeds quick_sort(?l1,?l2,?l3,?r) & gr(?l1) & 
+ succeeds d_list(?l1,?d) & succeeds r_ordered(?l2,?r) & total(?d,?r) & 
+ (all z: succeeds member(?z,?l1) => lower_bound(?z,?l2,?r)) => 
+ succeeds r_ordered(?l3,?r),
+[induction(
+  [all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?l3,?r) => gr(?l1) & 
+    succeeds d_list(?l1,?d) & succeeds r_ordered(?l2,?r) & total(?d,?r) & 
+    (all z: succeeds member(?z,?l1) => lower_bound(?z,?l2,?r)) => 
+    succeeds r_ordered(?l3,?r)],
+  [step([l,r],
+    [],
+    assume(gr([]) & succeeds d_list([],?d) & succeeds r_ordered(?l,?r) & 
+     total(?d,?r) & 
+     (all z: succeeds member(?z,[]) => lower_bound(?z,?l,?r)),
+     [],
+     succeeds r_ordered(?l,?r)),
+    gr([]) & succeeds d_list([],?d) & succeeds r_ordered(?l,?r) & 
+    total(?d,?r) & 
+    (all z: succeeds member(?z,[]) => lower_bound(?z,?l,?r)) => 
+    succeeds r_ordered(?l,?r)),
+   step([x,l1,l2,l6,r,l3,l4,l5],
+    [gr(?l3) & succeeds d_list(?l3,?d) & succeeds r_ordered(?l2,?r) & 
+     total(?d,?r) & 
+     (all z: succeeds member(?z,?l3) => lower_bound(?z,?l2,?r)) => 
+     succeeds r_ordered(?l5,?r),
+     gr(?l4) & succeeds d_list(?l4,?d) & succeeds r_ordered([?x|?l5],?r) & 
+     total(?d,?r) & 
+     (all z: succeeds member(?z,?l4) => lower_bound(?z,[?x|?l5],?r)) => 
+     succeeds r_ordered(?l6,?r),
+     succeeds split(?x,?l1,?l3,?l4,?r),
+     succeeds quick_sort(?l3,?l2,?l5,?r),
+     succeeds quick_sort(?l4,[?x|?l5],?l6,?r)],
+    assume(gr([?x|?l1]) & succeeds d_list([?x|?l1],?d) & 
+     succeeds r_ordered(?l2,?r) & total(?d,?r) & 
+     (all z: succeeds member(?z,[?x|?l1]) => lower_bound(?z,?l2,?r)),
+     [def succeeds d_list([?x|?l1],?d) by completion,
+      succeeds d_list(?l3,?d) & succeeds d_list(?l4,?d) by 
+       lemma(split:d_list),
+      gr(?l3) & gr(?l4) by lemma(split:ground),
+      (all y: succeeds member(?y,?l3) => succeeds call(?r,?x,?y)) & 
+      (all y: succeeds member(?y,?l4) => ?y = ?x \/ 
+        succeeds call(?r,?y,?x)) by lemma(split),
+      assume(succeeds member(?z,?l3),
+       [succeeds member(?z,?l1) by lemma(split:member),
+        succeeds member(?z,[?x|?l1]) by sld,
+        lower_bound(?z,?l2,?r)],
+       lower_bound(?z,?l2,?r)),
+      all z: succeeds member(?z,?l3) => lower_bound(?z,?l2,?r),
+      succeeds r_ordered(?l5,?r),
+      lower_bound(?x,?l5,?r) by lemma(quick_sort:3:lower_bound),
+      succeeds r_ordered([?x|?l5],?r) by lemma(lower_bound:r_ordered),
+      assume(succeeds member(?z,?l4),
+       [?z = ?x \/ succeeds call(?r,?z,?x),
+        [?x|?l5] = [?x|?l5] & (?z = ?x \/ succeeds call(?r,?z,?x)),
+        [?x|?l5] = [] \/ 
+        (ex [y,l1]: [?x|?l5] = [?y|?l1] & 
+          (?z = ?y \/ succeeds call(?r,?z,?y))),
+        lower_bound(?z,[?x|?l5],?r) by introduction(lower_bound,3)],
+       lower_bound(?z,[?x|?l5],?r)),
+      all z: succeeds member(?z,?l4) => lower_bound(?z,[?x|?l5],?r),
+      succeeds r_ordered(?l6,?r)],
+     succeeds r_ordered(?l6,?r)),
+    gr([?x|?l1]) & succeeds d_list([?x|?l1],?d) & 
+    succeeds r_ordered(?l2,?r) & total(?d,?r) & 
+    (all z: succeeds member(?z,[?x|?l1]) => lower_bound(?z,?l2,?r)) => 
+    succeeds r_ordered(?l6,?r))]),
+ assume(succeeds quick_sort(?l1,?l2,?l3,?r) & gr(?l1) & 
+  succeeds d_list(?l1,?d) & succeeds r_ordered(?l2,?r) & total(?d,?r) & 
+  (all z: succeeds member(?z,?l1) => lower_bound(?z,?l2,?r)),
+  [gr(?l1) & succeeds d_list(?l1,?d) & succeeds r_ordered(?l2,?r) & 
+   total(?d,?r) & 
+   (all z: succeeds member(?z,?l1) => lower_bound(?z,?l2,?r)) => 
+   succeeds r_ordered(?l3,?r),
+   succeeds r_ordered(?l3,?r)],
+  succeeds r_ordered(?l3,?r))]
+).
+
+:- lemma(quick_sort:r_ordered,
+all [l1,l2,d,r]: succeeds quick_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d)
+ & gr(?l1) & total(?d,?r) => succeeds r_ordered(?l2,?r),
+assume(succeeds quick_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d) & gr(?l1) 
+ & total(?d,?r),
+ [def succeeds quick_sort(?l1,?l2,?r) by completion,
+  succeeds quick_sort(?l1,[],?l2,?r),
+  assume(succeeds member(?z,?l1),
+   lower_bound(?z,[],?r) by introduction(lower_bound,3),
+   lower_bound(?z,[],?r)),
+  all z: succeeds member(?z,?l1) => lower_bound(?z,[],?r),
+  succeeds r_ordered([],?r) by sld,
+  succeeds r_ordered(?l2,?r) by lemma(quick_sort:3:r_ordered)],
+ succeeds r_ordered(?l2,?r))
+).
+
+:- theorem(quick_sort:permutation_sort,
+all [l1,l2,d,r]: succeeds quick_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d)
+ & gr(?l1) & total(?d,?r) => succeeds permutation_sort(?l1,?l2,?r),
+assume(succeeds quick_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d) & gr(?l1) 
+ & total(?d,?r),
+ [succeeds permutation(?l1,?l2) by lemma(quick_sort:permutation),
+  succeeds r_ordered(?l2,?r) by lemma(quick_sort:r_ordered),
+  succeeds permutation_sort(?l1,?l2,?r) by sld],
+ succeeds permutation_sort(?l1,?l2,?r))
+).
+
+:- lemma(split:uniqueness,
+all [x,l1,l2,l3,m2,m3,r]: succeeds split(?x,?l1,?l2,?l3,?r) & 
+ succeeds split(?x,?l1,?m2,?m3,?r) => ?l2 = ?m2 & ?l3 = ?m3,
+[induction(
+  [all [x,l1,l2,l3,r]: succeeds split(?x,?l1,?l2,?l3,?r) => 
+    (all [m2,m3]: succeeds split(?x,?l1,?m2,?m3,?r) => ?l2 = ?m2 & 
+      ?l3 = ?m3)],
+  [step([x,r],
+    [],
+    assume(succeeds split(?x,[],?m2,?m3,?r),
+     [def succeeds split(?x,[],?m2,?m3,?r) by completion,
+      [] = ?m2,
+      [] = ?m3],
+     [] = ?m2 & [] = ?m3),
+    all [m2,m3]: succeeds split(?x,[],?m2,?m3,?r) => [] = ?m2 & [] = ?m3),
+   step([x,y,l1,l2,l3,r,l4,l5],
+    [all [m2,m3]: succeeds split(?x,?l1,?m2,?m3,?r) => ?l4 = ?m2 & 
+      ?l5 = ?m3,
+     succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5 \/ 
+     fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+     succeeds split(?x,?l1,?l4,?l5,?r)],
+    assume(succeeds split(?x,[?y|?l1],?m2,?m3,?r),
+     [def succeeds split(?x,[?y|?l1],?m2,?m3,?r) by completion,
+      exist([m4,m5],
+       (succeeds call(?r,?x,?y) & ?m2 = [?y|?m4] & ?m3 = ?m5 \/ 
+        fails call(?r,?x,?y) & ?m2 = ?m4 & ?m3 = [?y|?m5]) & 
+       succeeds split(?x,?l1,?m4,?m5,?r),
+       [?l4 = ?m4 & ?l5 = ?m5,
+        cases(succeeds call(?r,?x,?y) & ?m2 = [?y|?m4] & ?m3 = ?m5,
+         cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+          [],
+          fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+          [],
+          ?l2 = ?m2 & ?l3 = ?m3),
+         fails call(?r,?x,?y) & ?m2 = ?m4 & ?m3 = [?y|?m5],
+         cases(succeeds call(?r,?x,?y) & ?l2 = [?y|?l4] & ?l3 = ?l5,
+          [],
+          fails call(?r,?x,?y) & ?l2 = ?l4 & ?l3 = [?y|?l5],
+          [],
+          ?l2 = ?m2 & ?l3 = ?m3),
+         ?l2 = ?m2 & ?l3 = ?m3)],
+       ?l2 = ?m2 & ?l3 = ?m3)],
+     ?l2 = ?m2 & ?l3 = ?m3),
+    all [m2,m3]: succeeds split(?x,[?y|?l1],?m2,?m3,?r) => ?l2 = ?m2 & 
+     ?l3 = ?m3)]),
+ assume(succeeds split(?x,?l1,?l2,?l3,?r) & 
+  succeeds split(?x,?l1,?m2,?m3,?r),
+  [all [m2,m3]: succeeds split(?x,?l1,?m2,?m3,?r) => ?l2 = ?m2 & ?l3 = ?m3,
+   succeeds split(?x,?l1,?m2,?m3,?r) => ?l2 = ?m2 & ?l3 = ?m3,
+   ?l2 = ?m2 & ?l3 = ?m3],
+  ?l2 = ?m2 & ?l3 = ?m3)]
+).
+
+:- lemma(quick_sort:3:uniqueness,
+all [l1,l2,l6,m6,r]: succeeds quick_sort(?l1,?l2,?l6,?r) & 
+ succeeds quick_sort(?l1,?l2,?m6,?r) => ?l6 = ?m6,
+[induction(
+  [all [l1,l2,l6,r]: succeeds quick_sort(?l1,?l2,?l6,?r) => 
+    (all m6: succeeds quick_sort(?l1,?l2,?m6,?r) => ?l6 = ?m6)],
+  [step([l,r],
+    [],
+    assume(succeeds quick_sort([],?l,?m6,?r),
+     [def succeeds quick_sort([],?l,?m6,?r) by completion,
+      ?l = ?m6],
+     ?l = ?m6),
+    all m6: succeeds quick_sort([],?l,?m6,?r) => ?l = ?m6),
+   step([x,l1,l2,l6,r,l3,l4,l5],
+    [all m6: succeeds quick_sort(?l3,?l2,?m6,?r) => ?l5 = ?m6,
+     all m6: succeeds quick_sort(?l4,[?x|?l5],?m6,?r) => ?l6 = ?m6,
+     succeeds split(?x,?l1,?l3,?l4,?r),
+     succeeds quick_sort(?l3,?l2,?l5,?r),
+     succeeds quick_sort(?l4,[?x|?l5],?l6,?r)],
+    assume(succeeds quick_sort([?x|?l1],?l2,?m6,?r),
+     [def succeeds quick_sort([?x|?l1],?l2,?m6,?r) by completion,
+      exist([m3,m4,m5],
+       succeeds split(?x,?l1,?m3,?m4,?r) & 
+       succeeds quick_sort(?m3,?l2,?m5,?r) & 
+       succeeds quick_sort(?m4,[?x|?m5],?m6,?r),
+       [?l3 = ?m3 & ?l4 = ?m4 by lemma(split:uniqueness),
+        succeeds quick_sort(?l3,?l2,?m5,?r),
+        ?l5 = ?m5,
+        succeeds quick_sort(?l4,[?x|?l5],?m6,?r),
+        ?l6 = ?m6],
+       ?l6 = ?m6)],
+     ?l6 = ?m6),
+    all m6: succeeds quick_sort([?x|?l1],?l2,?m6,?r) => ?l6 = ?m6)]),
+ assume(succeeds quick_sort(?l1,?l2,?l6,?r) & 
+  succeeds quick_sort(?l1,?l2,?m6,?r),
+  [all m6: succeeds quick_sort(?l1,?l2,?m6,?r) => ?l6 = ?m6,
+   succeeds quick_sort(?l1,?l2,?m6,?r) => ?l6 = ?m6,
+   ?l6 = ?m6],
+  ?l6 = ?m6)]
+).
+
+:- theorem(quick_sort:uniqueness,
+all [l1,l2,l3,r]: succeeds quick_sort(?l1,?l2,?r) & 
+ succeeds quick_sort(?l1,?l3,?r) => ?l2 = ?l3,
+assume(succeeds quick_sort(?l1,?l2,?r) & succeeds quick_sort(?l1,?l3,?r),
+ [def succeeds quick_sort(?l1,?l2,?r) by completion,
+  succeeds quick_sort(?l1,[],?l2,?r),
+  def succeeds quick_sort(?l1,?l3,?r) by completion,
+  succeeds quick_sort(?l1,[],?l3,?r),
+  ?l2 = ?l3 by lemma(quick_sort:3:uniqueness)],
+ ?l2 = ?l3)
+).
+
+:- lemma(split:existence,
+all [x,l1,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & succeeds call(?d,?x) &
+ gr(?x) & terminating(?d,?r) => 
+ (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3,?r)),
+[induction(
+  [all [l1,d]: succeeds d_list(?l1,?d) => gr(?l1) & succeeds call(?d,?x) &
+    gr(?x) & terminating(?d,?r) => 
+    (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3,?r))],
+  [step([d],
+    [],
+    assume(gr([]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r),
+     [succeeds split(?x,[],[],[],?r) by sld,
+      ex [l2,l3]: succeeds split(?x,[],?l2,?l3,?r)],
+     ex [l2,l3]: succeeds split(?x,[],?l2,?l3,?r)),
+    gr([]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) => 
+    (ex [l2,l3]: succeeds split(?x,[],?l2,?l3,?r))),
+   step([y,l,d],
+    [gr(?l) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) => 
+     (ex [l2,l3]: succeeds split(?x,?l,?l2,?l3,?r)),
+     succeeds call(?d,?y),
+     succeeds d_list(?l,?d)],
+    assume(gr([?y|?l]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r),
+     [gr(?y),
+      gr(?l),
+      ex [l2,l3]: succeeds split(?x,?l,?l2,?l3,?r),
+      exist([l2,l3],
+       succeeds split(?x,?l,?l2,?l3,?r),
+       [all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) & 
+         gr(?y) => terminates call(?r,?x,?y) by elimination(terminating,2),
+        terminates call(?r,?x,?y),
+        succeeds call(?r,?x,?y) \/ fails call(?r,?x,?y),
+        cases(succeeds call(?r,?x,?y),
+         [[?y|?l2] = [?y|?l2],
+          ?l3 = ?l3,
+          succeeds split(?x,[?y|?l],[?y|?l2],?l3,?r) by sld,
+          ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r)],
+         fails call(?r,?x,?y),
+         [?l2 = ?l2,
+          [?y|?l3] = [?y|?l3],
+          succeeds split(?x,[?y|?l],?l2,[?y|?l3],?r) by sld,
+          ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r)],
+         ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r))],
+       ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r))],
+     ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r)),
+    gr([?y|?l]) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) => 
+    (ex [l2,l3]: succeeds split(?x,[?y|?l],?l2,?l3,?r)))]),
+ assume(succeeds d_list(?l1,?d) & gr(?l1) & succeeds call(?d,?x) & gr(?x) &
+  terminating(?d,?r),
+  [gr(?l1) & succeeds call(?d,?x) & gr(?x) & terminating(?d,?r) => 
+   (ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3,?r)),
+   ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3,?r)],
+  ex [l2,l3]: succeeds split(?x,?l1,?l2,?l3,?r))]
+).
+
+:- lemma(quick_sort:3:existence,
+all [n,l1,l2,d,r]: succeeds nat(?n) & succeeds d_list(?l1,?d) & gr(?l1) & 
+ terminating(?d,?r) & succeeds lh(?l1) @< ?n => 
+ (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+[induction(
+  [all n: succeeds nat(?n) => 
+    (all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+      terminating(?d,?r) & succeeds lh(?l1) @< ?n => 
+      (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)))],
+  [step([],
+    [],
+    assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & 
+     succeeds lh(?l1) @< 0,
+     [def succeeds lh(?l1) @< 0 by completion,
+      ff],
+     ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+    all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+     terminating(?d,?r) & succeeds lh(?l1) @< 0 => 
+     (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r))),
+   step([n],
+    [all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+      terminating(?d,?r) & succeeds lh(?l1) @< ?n => 
+      (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+     succeeds nat(?n)],
+    assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & 
+     succeeds lh(?l1) @< s(?n),
+     [def succeeds d_list(?l1,?d) by completion,
+      cases(?l1 = [],
+       [succeeds quick_sort([],?l2,?l2,?r) by sld,
+        succeeds quick_sort(?l1,?l2,?l2,?r),
+        ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)],
+       ex [x,l]: ?l1 = [?x|?l] & succeeds call(?d,?x) & 
+        succeeds d_list(?l,?d),
+       exist([x,l],
+        ?l1 = [?x|?l] & succeeds call(?d,?x) & succeeds d_list(?l,?d),
+        [gr([?x|?l]),
+         gr(?x),
+         gr(?l),
+         ex [l3,l4]: succeeds split(?x,?l,?l3,?l4,?r) by 
+          lemma(split:existence),
+         exist([l3,l4],
+          succeeds split(?x,?l,?l3,?l4,?r),
+          [succeeds list(?l) & succeeds list(?l3) & succeeds list(?l4) by 
+            lemma(split:list),
+           succeeds lh([?x|?l]) @< s(?n),
+           lh([?x|?l]) = s(lh(?l)) by theorem(delete:length),
+           def succeeds s(lh(?l)) @< s(?n) by completion,
+           succeeds lh(?l) @< ?n,
+           lh(?l) = lh(?l3) @+ lh(?l4) by lemma(split:lh),
+           succeeds nat(lh(?l3)) by corollary(lh:types),
+           succeeds nat(lh(?l4)) by corollary(lh:types),
+           succeeds lh(?l3) @=< lh(?l3) @+ lh(?l4) by 
+            corollary(leq:plus:first),
+           succeeds lh(?l4) @=< lh(?l3) @+ lh(?l4) by 
+            corollary(leq:plus:second),
+           succeeds lh(?l3) @=< lh(?l),
+           succeeds lh(?l4) @=< lh(?l),
+           succeeds lh(?l3) @< ?n by theorem(leq:less:transitive),
+           succeeds lh(?l4) @< ?n by theorem(leq:less:transitive),
+           gr(?l3) & gr(?l4) by lemma(split:ground),
+           succeeds d_list(?l3,?d) & succeeds d_list(?l4,?d) by 
+            lemma(split:d_list),
+           ex l5: succeeds quick_sort(?l3,?l2,?l5,?r),
+           exist(l5,
+            succeeds quick_sort(?l3,?l2,?l5,?r),
+            [ex l6: succeeds quick_sort(?l4,[?x|?l5],?l6,?r),
+             exist(l6,
+              succeeds quick_sort(?l4,[?x|?l5],?l6,?r),
+              [succeeds quick_sort([?x|?l],?l2,?l6,?r) by sld,
+               succeeds quick_sort(?l1,?l2,?l6,?r),
+               ex l6: succeeds quick_sort(?l1,?l2,?l6,?r)],
+              ex l6: succeeds quick_sort(?l1,?l2,?l6,?r))],
+            ex l6: succeeds quick_sort(?l1,?l2,?l6,?r))],
+          ex l6: succeeds quick_sort(?l1,?l2,?l6,?r))],
+        ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+       ex l3: succeeds quick_sort(?l1,?l2,?l3,?r))],
+     ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+    all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & 
+     terminating(?d,?r) & succeeds lh(?l1) @< s(?n) => 
+     (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)))]),
+ assume(succeeds nat(?n) & succeeds d_list(?l1,?d) & gr(?l1) & 
+  terminating(?d,?r) & succeeds lh(?l1) @< ?n,
+  [all [l1,l2,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r)
+    & succeeds lh(?l1) @< ?n => 
+    (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+   succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) & 
+   succeeds lh(?l1) @< ?n => (ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)),
+   ex l3: succeeds quick_sort(?l1,?l2,?l3,?r)],
+  ex l3: succeeds quick_sort(?l1,?l2,?l3,?r))]
+).
+
+:- theorem(quick_sort:existence,
+all [l1,d,r]: succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r) => 
+ (ex l2: succeeds quick_sort(?l1,?l2,?r)),
+assume(succeeds d_list(?l1,?d) & gr(?l1) & terminating(?d,?r),
+ [succeeds list(?l1) by lemma(d_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  succeeds nat(s(lh(?l1))) by sld,
+  ex l2: succeeds quick_sort(?l1,[],?l2,?r) by 
+   lemma(quick_sort:3:existence),
+  exist(l2,
+   succeeds quick_sort(?l1,[],?l2,?r),
+   [succeeds quick_sort(?l1,?l2,?r) by sld,
+    ex l2: succeeds quick_sort(?l1,?l2,?r)],
+   ex l2: succeeds quick_sort(?l1,?l2,?r))],
+ ex l2: succeeds quick_sort(?l1,?l2,?r))
+).
+
+:- bye(callsort).

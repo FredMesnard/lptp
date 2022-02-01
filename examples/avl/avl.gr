@@ -1,0 +1,138 @@
+
+:- assert_clauses(n(a_tree,1),[
+ clause([n(a_tree,1),[n(t,0)]],
+  [&],
+  []/0),
+ clause([n(a_tree,1),[n(t,4),$(v),$(0),$(t1),$(t2)]],
+  [&,[n(a,1),$(v)],[n(a_tree,1),$(t1)],[n(a_tree,1),$(t2)]],
+  [v,0,t1,t2]/1)
+]).
+
+:- assert_clauses(n(addavl,3),[
+ clause([n(addavl,3),$(v),$(t1),$(t2)],
+  [n(insert,4),$(v),$(t1),$(t2),$(0)],
+  [v,t1,t2,0]/1)
+]).
+
+:- assert_clauses(n(avl,1),[
+ clause([n(avl,1),$(t)],
+  [&,[n(ordered,1),$(t)],[n(balanced,1),$(t)]],
+  [t]/0)
+]).
+
+:- assert_clauses(n(balanced,1),[
+ clause([n(balanced,1),$(t)],
+  [n(balanced,2),$(t),$(0)],
+  [t,0]/1)
+]).
+
+:- assert_clauses(n(balanced,2),[
+ clause([n(balanced,2),[n(t,0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(balanced,2),[n(t,4),$(0),$(x),$(t1),$(t2)],$(n)],
+  [&,[n(balanced,2),$(t1),$(n1)],[n(balanced,2),$(t2),$(n2)],[n(diff,4),$(n1),$(n2),$(x),$(n)]],
+  [0,x,t1,t2,n,n1,n2]/1)
+]).
+
+:- assert_clauses(n(diff,4),[
+ clause([n(diff,4),$(n),$(n),[n(0,0)],[n(s,1),$(n)]],
+  [&],
+  [n]/0),
+ clause([n(diff,4),$(n),[n(s,1),$(n)],[n(1,0)],[n(s,1),[n(s,1),$(n)]]],
+  [&],
+  [n]/0),
+ clause([n(diff,4),[n(s,1),$(n)],$(n),[n(-1,0)],[n(s,1),[n(s,1),$(n)]]],
+  [&],
+  [n]/0)
+]).
+
+:- assert_clauses(n(flip,3),[
+ clause([n(flip,3),[n(1,0)],[n(-1,0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(flip,3),[n(0,0)],[n(0,0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(flip,3),[n(-1,0)],[n(0,0)],[n(1,0)]],
+  [&],
+  []/0)
+]).
+
+:- assert_clauses(n(in,2),[
+ clause([n(in,2),$(v),[n(t,4),$(v),$(0),$(1),$(2)]],
+  [&],
+  [v,0,1,2]/3),
+ clause([n(in,2),$(v),[n(t,4),$(0),$(1),$(t),$(2)]],
+  [n(in,2),$(v),$(t)],
+  [v,0,1,t,2]/3),
+ clause([n(in,2),$(v),[n(t,4),$(0),$(1),$(2),$(t)]],
+  [n(in,2),$(v),$(t)],
+  [v,0,1,2,t]/3)
+]).
+
+:- assert_clauses(n(insert,4),[
+ clause([n(insert,4),$(u),[n(t,0)],[n(t,4),$(u),[n(0,0)],[n(t,0)],[n(t,0)]],[n(grows,0)]],
+  [&],
+  [u]/0),
+ clause([n(insert,4),$(u),[n(t,4),$(v),$(b),$(t1),$(t2)],$(t),$(g)],
+  [\/,[&,[n(r,2),$(u),$(v)],[n(insert,4),$(u),$(t1),$(t3),$(g1)],[\/,[&,[=,$(g1),[n(stable,0)]],[=,$(t),[n(t,4),$(v),$(b),$(t3),$(t2)]],[=,$(g),[n(stable,0)]]],[&,[~,[=,$(g1),[n(stable,0)]]],[n(left_combine,6),$(b),$(t3),$(v),$(t2),$(t),$(g)]]]],[&,[~,[n(r,2),$(u),$(v)]],[n(insert,4),$(u),$(t2),$(t3),$(g1)],[\/,[&,[=,$(g1),[n(stable,0)]],[=,$(t),[n(t,4),$(v),$(b),$(t1),$(t3)]],[=,$(g),[n(stable,0)]]],[&,[~,[=,$(g1),[n(stable,0)]]],[n(right_combine,6),$(b),$(t1),$(v),$(t3),$(t),$(g)]]]]],
+  [u,v,b,t1,t2,t,g,t3,g1]/0)
+]).
+
+:- assert_clauses(n(left_combine,6),[
+ clause([n(left_combine,6),[n(1,0)],$(t1),$(v),$(t2),[n(t,4),$(v),[n(0,0)],$(t1),$(t2)],[n(stable,0)]],
+  [&],
+  [t1,v,t2]/0),
+ clause([n(left_combine,6),[n(0,0)],$(t1),$(v),$(t2),[n(t,4),$(v),[n(-1,0)],$(t1),$(t2)],[n(grows,0)]],
+  [&],
+  [t1,v,t2]/0),
+ clause([n(left_combine,6),[n(-1,0)],[n(t,4),$(u),[n(-1,0)],$(s1),$(s2)],$(v),$(t2),[n(t,4),$(u),[n(0,0)],$(s1),[n(t,4),$(v),[n(0,0)],$(s2),$(t2)]],[n(stable,0)]],
+  [&],
+  [u,s1,s2,v,t2]/0),
+ clause([n(left_combine,6),[n(-1,0)],[n(t,4),$(u),[n(1,0)],$(s1),[n(t,4),$(w),$(b),$(s2),$(s3)]],$(v),$(t2),[n(t,4),$(w),[n(0,0)],[n(t,4),$(u),$(b1),$(s1),$(s2)],[n(t,4),$(v),$(b2),$(s3),$(t2)]],[n(stable,0)]],
+  [n(flip,3),$(b),$(b1),$(b2)],
+  [u,s1,w,b,s2,s3,v,t2,b1,b2]/0)
+]).
+
+:- assert_clauses(n(lower_bound,2),[
+ clause([n(lower_bound,2),[n(t,0)],$(0)],
+  [&],
+  [0]/1),
+ clause([n(lower_bound,2),[n(t,4),$(u),$(0),$(t1),$(t2)],$(v)],
+  [&,[n(r,2),$(v),$(u)],[n(lower_bound,2),$(t1),$(v)],[n(lower_bound,2),$(t2),$(v)]],
+  [u,0,t1,t2,v]/1)
+]).
+
+:- assert_clauses(n(ordered,1),[
+ clause([n(ordered,1),[n(t,0)]],
+  [&],
+  []/0),
+ clause([n(ordered,1),[n(t,4),$(v),$(0),$(t1),$(t2)]],
+  [&,[n(a,1),$(v)],[n(ordered,1),$(t1)],[n(ordered,1),$(t2)],[n(upper_bound,2),$(t1),$(v)],[n(lower_bound,2),$(t2),$(v)]],
+  [v,0,t1,t2]/1)
+]).
+
+:- assert_clauses(n(right_combine,6),[
+ clause([n(right_combine,6),[n(-1,0)],$(t1),$(v),$(t2),[n(t,4),$(v),[n(0,0)],$(t1),$(t2)],[n(stable,0)]],
+  [&],
+  [t1,v,t2]/0),
+ clause([n(right_combine,6),[n(0,0)],$(t1),$(v),$(t2),[n(t,4),$(v),[n(1,0)],$(t1),$(t2)],[n(grows,0)]],
+  [&],
+  [t1,v,t2]/0),
+ clause([n(right_combine,6),[n(1,0)],$(t1),$(v),[n(t,4),$(u),[n(1,0)],$(s1),$(s2)],[n(t,4),$(u),[n(0,0)],[n(t,4),$(v),[n(0,0)],$(t1),$(s1)],$(s2)],[n(stable,0)]],
+  [&],
+  [t1,v,u,s1,s2]/0),
+ clause([n(right_combine,6),[n(1,0)],$(t1),$(v),[n(t,4),$(u),[n(-1,0)],[n(t,4),$(w),$(b),$(s1),$(s2)],$(s3)],[n(t,4),$(w),[n(0,0)],[n(t,4),$(v),$(b1),$(t1),$(s1)],[n(t,4),$(u),$(b2),$(s2),$(s3)]],[n(stable,0)]],
+  [n(flip,3),$(b),$(b1),$(b2)],
+  [t1,v,u,w,b,s1,s2,s3,b1,b2]/0)
+]).
+
+:- assert_clauses(n(upper_bound,2),[
+ clause([n(upper_bound,2),[n(t,0)],$(0)],
+  [&],
+  [0]/1),
+ clause([n(upper_bound,2),[n(t,4),$(u),$(0),$(t1),$(t2)],$(v)],
+  [&,[n(r,2),$(u),$(v)],[n(upper_bound,2),$(t1),$(v)],[n(upper_bound,2),$(t2),$(v)]],
+  [u,0,t1,t2,v]/1)
+]).

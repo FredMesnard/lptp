@@ -1,0 +1,12 @@
+
+:- assert_clauses(n(ackermann,3),[
+ clause([n(ackermann,3),[n(0,0)],$(n),[n(s,1),$(n)]],
+  [&],
+  [n]/0),
+ clause([n(ackermann,3),[n(s,1),$(m)],[n(0,0)],$(n)],
+  [n(ackermann,3),$(m),[n(s,1),[n(0,0)]],$(n)],
+  [m,n]/0),
+ clause([n(ackermann,3),[n(s,1),$(m)],[n(s,1),$(n)],$(k2)],
+  [&,[n(ackermann,3),[n(s,1),$(m)],$(n),$(k1)],[n(ackermann,3),$(m),$(k1),$(k2)]],
+  [m,n,k2,k1]/0)
+]).

@@ -1,0 +1,582 @@
+%   Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+%  Created: Fri Jun  5 12:20:59 1998 
+% Filename: bubble.pr 
+% Abstract: Bubble sort with call/3.
+
+:- initialize.
+
+:- tex_file($(tmp)/bubble).
+:- thm_file($(tmp)/bubble).
+
+:- needs_gr($(lib)/builtin/bubble).
+
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(lib)/list/permutation).
+:- needs_gr($(lib)/builtin/callsort).
+
+:- needs_thm($(lib)/nat/nat).
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/list/permutation).
+:- needs_thm($(lib)/builtin/callsort).
+
+:- definition_pred(transitive,2,
+all [d,r]: transitive(?d,?r) <=>
+ (all [x,y,z]: succeeds call(?d,?x) & succeeds call(?d,?y) &
+   succeeds call(?d,?z) & gr(?x) & gr(?y) & gr(?z) &
+   succeeds call(?r,?x,?y) & succeeds call(?r,?y,?z) =>
+    succeeds call(?r,?x,?z))
+).
+
+:- lemma(bubble:permutation,
+all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) =>
+  succeeds permutation([?x|?l1],?l2),
+induction(
+ [all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) => 
+    succeeds permutation([?x|?l1],?l2)],
+ [step([x,r],
+   [],
+   succeeds permutation([?x],[?x]) by theorem(permutation:reflexive),
+   succeeds permutation([?x],[?x])),
+  step([x,y,l1,l3,r,z,l2],
+   [succeeds permutation([?y|?l1],[?z|?l2]),
+    succeeds bubble(?y,?l1,[?z|?l2],?r),
+    succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2] \/
+    fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2]],
+   cases(succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2],
+    [succeeds delete(?x,[?z,?x|?l2],[?z|?l2]),
+     succeeds permutation([?z|?l2],[?y|?l1]) by 
+      theorem(permutation:symmetric),
+     succeeds permutation([?z,?x|?l2],[?x,?y|?l1]) by sld,
+     succeeds permutation([?x,?y|?l1],[?z,?x|?l2]) by 
+      theorem(permutation:symmetric),
+     succeeds permutation([?x,?y|?l1],?l3)],
+    fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2],
+    [succeeds delete(?x,[?x,?y|?l1],[?y|?l1]),
+     succeeds permutation([?x,?y|?l1],[?x,?z|?l2]) by sld,
+     succeeds permutation([?x,?y|?l1],?l3)],
+    succeeds permutation([?x,?y|?l1],?l3)),
+   succeeds permutation([?x,?y|?l1],?l3))])
+).
+
+:- theorem(bubble_sort:permutation,
+all [l1,l2,r]: succeeds bubble_sort(?l1,?l2,?r) =>
+  succeeds permutation(?l1,?l2),
+induction(
+ [all [l1,l2,r]: succeeds bubble_sort(?l1,?l2,?r) => 
+    succeeds permutation(?l1,?l2)],
+ [step([r],[],[],succeeds permutation([],[])),
+  step([x,l1,y,l3,r,l2],
+   [succeeds permutation(?l2,?l3),
+    succeeds bubble(?x,?l1,[?y|?l2],?r),
+    succeeds bubble_sort(?l2,?l3,?r)],
+   [succeeds permutation([?x|?l1],[?y|?l2]) by lemma(bubble:permutation),
+    succeeds delete(?y,[?y|?l2],?l2),
+    succeeds permutation([?y|?l2],[?y|?l3]) by sld,
+    succeeds permutation([?x|?l1],[?y|?l3]) by 
+     theorem(permutation:transitive)],
+   succeeds permutation([?x|?l1],[?y|?l3]))])
+).
+
+:- lemma(bubble:gr,
+all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) & gr(?x) & gr(?l1) =>
+  gr(?l2),
+[induction(
+  [all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) => gr(?x) & gr(?l1) => 
+      gr(?l2)],
+  [step([x,r],
+    [],
+    assume(gr(?x) & gr([]),
+     [],
+     gr([?x])),
+    gr(?x) & gr([]) => gr([?x])),
+   step([x,y,l1,l3,r,z,l2],
+    [gr(?y) & gr(?l1) => gr([?z|?l2]),
+     succeeds bubble(?y,?l1,[?z|?l2],?r),
+     succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2] \/
+     fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2]],
+    assume(gr(?x) & gr([?y|?l1]),
+     [gr(?y) & gr(?l1),
+      gr([?z|?l2]),
+      gr(?z), gr(?l2),
+      cases(succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2],
+       [gr([?z,?x|?l2]),
+	gr(?l3)],
+       fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2],
+       [gr([?x,?z|?l2]),
+	gr(?l3)],
+       gr(?l3))],
+     gr(?l3)),
+    gr(?x) & gr([?y|?l1]) => gr(?l3))]),
+ assume(succeeds bubble(?x,?l1,?l2,?r) & gr(?x) & gr(?l1),
+  [gr(?x) & gr(?l1) => gr(?l2),
+   gr(?x) & gr(?l1) => gr(?l2),
+   gr(?l2)],
+  gr(?l2))]
+).
+
+:- lemma(bubble:d_list,
+all [x,l1,l2,r,d]: succeeds bubble(?x,?l1,?l2,?r) & succeeds call(?d,?x) &
+ succeeds d_list(?l1,?d) => succeeds d_list(?l2,?d),
+[induction(
+  [all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) => 
+     (all d: succeeds call(?d,?x) & succeeds d_list(?l1,?d) => 
+        succeeds d_list(?l2,?d))],
+  [step([x,r],
+    [],
+    assume(succeeds call(?d,?x) & succeeds d_list([],?d),
+     [],
+     succeeds d_list([?x],?d)),
+    all d: succeeds call(?d,?x) & succeeds d_list([],?d) => 
+      succeeds d_list([?x],?d)),
+   step([x,y,l1,l3,r,z,l2],
+    [all d: succeeds call(?d,?y) & succeeds d_list(?l1,?d) => 
+       succeeds d_list([?z|?l2],?d),
+     succeeds bubble(?y,?l1,[?z|?l2],?r),
+     succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2] \/
+     fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2]],
+    assume(succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d),
+     [def succeeds d_list([?y|?l1],?d) by completion,
+      succeeds call(?d,?y) & succeeds d_list(?l1,?d),
+      succeeds d_list([?z|?l2],?d),
+      def succeeds d_list([?z|?l2],?d) by completion,
+      succeeds call(?d,?z) & succeeds d_list(?l2,?d),
+      cases(succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2],
+       [succeeds d_list([?z,?x|?l2],?d),
+	succeeds d_list(?l3,?d)],
+       fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2],
+       [],
+       succeeds d_list(?l3,?d))],
+     succeeds d_list(?l3,?d)),
+    all d: succeeds call(?d,?x) & succeeds d_list([?y|?l1],?d) => 
+      succeeds d_list(?l3,?d))]),
+ assume(succeeds bubble(?x,?l1,?l2,?r) & succeeds call(?d,?x) &
+  succeeds d_list(?l1,?d),
+  [all d: succeeds call(?d,?x) & succeeds d_list(?l1,?d) => 
+     succeeds d_list(?l2,?d),
+   succeeds call(?d,?x) & succeeds d_list(?l1,?d) => 
+    succeeds d_list(?l2,?d),
+   succeeds d_list(?l2,?d)],
+  succeeds d_list(?l2,?d))]
+).
+
+:- lemma(member:d_list,
+all [x,l,d]: succeeds member(?x,?l) & succeeds d_list(?l,?d) =>
+  succeeds call(?d,?x),
+[induction(
+  [all [x,l]: succeeds member(?x,?l) => 
+     (all d: succeeds d_list(?l,?d) => succeeds call(?d,?x))],
+  [step([x,l],
+    [],
+    assume(succeeds d_list([?x|?l],?d),
+     [def succeeds d_list([?x|?l],?d) by completion,
+      succeeds call(?d,?x)],
+     succeeds call(?d,?x)),
+    all d: succeeds d_list([?x|?l],?d) => succeeds call(?d,?x)),
+   step([x,y,l],
+    [all d: succeeds d_list(?l,?d) => succeeds call(?d,?x),
+     succeeds member(?x,?l)],
+    assume(succeeds d_list([?y|?l],?d),
+     [def succeeds d_list([?y|?l],?d) by completion,
+      succeeds call(?d,?x)],
+     succeeds call(?d,?x)),
+    all d: succeeds d_list([?y|?l],?d) => succeeds call(?d,?x))]),
+ assume(succeeds member(?x,?l) & succeeds d_list(?l,?d),
+  [all d: succeeds d_list(?l,?d) => succeeds call(?d,?x),
+   succeeds d_list(?l,?d) => succeeds call(?d,?x),
+   succeeds call(?d,?x)],
+  succeeds call(?d,?x))]
+).
+
+:- definition_pred(bound,3,
+all [x,l,r]: bound(?x,?l,?r) <=>
+ (all y: succeeds member(?y,?l) => ?x = ?y \/ succeeds call(?r,?x,?y))
+).
+
+:- lemma(bubble:bound,
+all [x,l1,l2,r,d,a,m]: succeeds bubble(?x,?l1,?l2,?r) & total(?d,?r) &
+ transitive(?d,?r) & succeeds call(?d,?x) & succeeds d_list(?l1,?d) &
+ gr(?x) & gr(?l1) & ?l2 = [?a|?m] => bound(?a,?m,?r),
+[induction(
+  [all [x,l1,l2,r]: succeeds bubble(?x,?l1,?l2,?r) => 
+     (all [d,a,m]: total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+       succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & ?l2 = [?a|?m] => 
+        bound(?a,?m,?r))],
+  [step([x,r],
+    [],
+    assume(total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list([],?d) & gr(?x) & gr([]) & [?x] = [?a|?m],
+     [?m = [],
+      assume(succeeds member(?y,[]),
+       def succeeds member(?y,[]) by completion,
+       ?a = ?y \/ succeeds call(?r,?a,?y)),
+      bound(?a,[],?r) by introduction(bound,3),
+      bound(?a,?m,?r)],
+     bound(?a,?m,?r)),
+    all [d,a,m]: total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list([],?d) & gr(?x) & gr([]) & [?x] = [?a|?m] => 
+      bound(?a,?m,?r)),
+   step([x,y,l1,l3,r,z,l2],
+    [all [d,a,m]: total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?y) &
+      succeeds d_list(?l1,?d) & gr(?y) & gr(?l1) & [?z|?l2] = [?a|?m] => 
+       bound(?a,?m,?r),
+     succeeds bubble(?y,?l1,[?z|?l2],?r),
+     succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2] \/
+     fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2]],
+    assume(total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list([?y|?l1],?d) & gr(?x) & gr([?y|?l1]) & ?l3 = [?a|?m],
+     [assume(succeeds member(?b,?m),
+       [gr(?y), gr(?l1),
+	def succeeds d_list([?y|?l1],?d) by completion,
+	succeeds call(?d,?y) & succeeds d_list(?l1,?d),
+	bound(?z,?l2,?r),
+	all y: succeeds member(?y,?l2) => ?z = ?y \/
+	  succeeds call(?r,?z,?y) by elimination(bound,3),
+	cases(succeeds call(?r,?z,?x) & ?l3 = [?z,?x|?l2],
+	 [?m = [?x|?l2],
+	  ?a = ?z,
+	  def succeeds member(?b,[?x|?l2]) by completion,
+	  cases(?b = ?x,
+	   [],
+	   succeeds member(?b,?l2),
+	   [?z = ?b \/ succeeds call(?r,?z,?b),
+	    ?a = ?b \/ succeeds call(?r,?a,?b)],
+	   ?a = ?b \/ succeeds call(?r,?a,?b))],
+	 fails call(?r,?z,?x) & ?l3 = [?x,?z|?l2],
+	 [?m = [?z|?l2],
+	  ?a = ?x,
+	  gr([?z|?l2]) by lemma(bubble:gr),
+	  gr(?z),
+	  succeeds d_list([?z|?l2],?d) by lemma(bubble:d_list),
+	  def succeeds d_list([?z|?l2],?d) by completion,
+	  succeeds call(?d,?z) & succeeds d_list(?l2,?d),
+	  all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) &
+           gr(?y) => succeeds call(?r,?x,?y) \/ ?x = ?y \/
+            succeeds call(?r,?y,?x) by elimination(total,2),
+	  succeeds call(?r,?x,?z) \/ ?x = ?z \/
+            succeeds call(?r,?z,?x),
+	  cases(
+           [case(succeeds call(?r,?x,?z),[]),
+            case(?x = ?z,
+             []),
+            case(succeeds call(?r,?z,?x),
+             [])],
+           succeeds call(?r,?x,?z) \/ ?x = ?z),
+	  def succeeds member(?b,[?z|?l2]) by completion,
+	  cases(?b = ?z,
+           cases(succeeds call(?r,?x,?z),
+            [],
+            ?x = ?z,
+            [],
+            ?x = ?b \/ succeeds call(?r,?x,?b)),
+           succeeds member(?b,?l2),
+           [?z = ?b \/ succeeds call(?r,?z,?b),
+	    all [x,y,z]: succeeds call(?d,?x) & succeeds call(?d,?y) &
+	     succeeds call(?d,?z) & gr(?x) & gr(?y) & gr(?z) &
+	     succeeds call(?r,?x,?y) & succeeds call(?r,?y,?z) =>
+	      succeeds call(?r,?x,?z) by elimination(transitive,2),
+	    cases(succeeds call(?r,?x,?z),
+	     cases(?z = ?b,
+              [],
+              succeeds call(?r,?z,?b),
+              [succeeds call(?d,?b) by lemma(member:d_list),
+	       gr(?b) by lemma(member2:ground),
+	       succeeds call(?r,?x,?b),
+	       ?x = ?b \/ succeeds call(?r,?x,?b)],
+              ?x = ?b \/ succeeds call(?r,?x,?b)),
+	     ?x = ?z,
+	     cases(?z = ?b,
+              [],
+              succeeds call(?r,?z,?b),
+              [],
+              ?x = ?b \/ succeeds call(?r,?x,?b)),
+	     ?x = ?b \/ succeeds call(?r,?x,?b))],
+           ?x = ?b \/ succeeds call(?r,?x,?b)),
+	  ?a = ?b \/ succeeds call(?r,?a,?b)],
+	 ?a = ?b \/ succeeds call(?r,?a,?b))],
+       ?a = ?b \/ succeeds call(?r,?a,?b)),
+      all b: succeeds member(?b,?m) => ?a = ?b \/ succeeds call(?r,?a,?b),
+      bound(?a,?m,?r) by introduction(bound,3)],
+     bound(?a,?m,?r)),
+    all [d,a,m]: total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list([?y|?l1],?d) & gr(?x) & gr([?y|?l1]) & ?l3 = [?a|?m] =>
+      bound(?a,?m,?r))]),
+ assume(succeeds bubble(?x,?l1,?l2,?r) & total(?d,?r) & transitive(?d,?r) &
+  succeeds call(?d,?x) & succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) &
+  ?l2 = [?a|?m],
+  [all [d,a,m]: total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+    succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & ?l2 = [?a|?m] => 
+     bound(?a,?m,?r),
+   total(?d,?r) & transitive(?d,?r) & succeeds call(?d,?x) &
+   succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & ?l2 = [?a|?m] => 
+    bound(?a,?m,?r),
+   bound(?a,?m,?r)],
+  bound(?a,?m,?r))]
+).
+
+:- lemma(r_ordered:bound:permutation,
+all [x,l1,l2,r,d]: bound(?x,?l1,?r) & succeeds permutation(?l1,?l2) &
+ succeeds r_ordered(?l2,?r) => succeeds r_ordered([?x|?l2],?r),
+assume(bound(?x,?l1,?r) &
+ succeeds permutation(?l1,?l2) & succeeds r_ordered(?l2,?r),
+ [def succeeds r_ordered(?l2,?r) by completion,
+  cases(
+   [case(?l2 = [],[]),
+    case(ex x: ?l2 = [?x],
+     exist(y,
+      ?l2 = [?y],
+      [succeeds permutation(?l1,[?y]),
+       succeeds permutation([?y],?l1) by theorem(permutation:symmetric),
+       succeeds member(?y,[?y]) by sld,
+       succeeds member(?y,?l1) by theorem(permutation:member),
+       all y: succeeds member(?y,?l1) => ?x = ?y \/ 
+	 succeeds call(?r,?x,?y) by elimination(bound,3),
+       ?x = ?y \/ succeeds call(?r,?x,?y),
+       cases(?x = ?y,
+        [],
+        succeeds call(?r,?x,?y),
+        [],
+        succeeds r_ordered([?x,?y],?r)),
+       succeeds r_ordered([?x|?l2],?r)],
+      succeeds r_ordered([?x|?l2],?r))),
+    case(
+     ex [x,y,l]: ?l2 = [?x,?y|?l] & (?x = ?y \/ succeeds call(?r,?x,?y)) &
+      succeeds r_ordered([?y|?l],?r),
+     exist([z,y,l],
+      ?l2 = [?z,?y|?l] & (?z = ?y \/ succeeds call(?r,?z,?y)) &
+      succeeds r_ordered([?y|?l],?r),
+      [succeeds permutation(?l1,[?z,?y|?l]),
+       succeeds permutation([?z,?y|?l],?l1) by 
+        theorem(permutation:symmetric),
+       succeeds member(?z,[?z,?y|?l]) by sld,
+       succeeds member(?z,?l1) by theorem(permutation:member),
+       all y: succeeds member(?y,?l1) => ?x = ?y \/ 
+	 succeeds call(?r,?x,?y) by elimination(bound,3),
+       ?x = ?z \/ succeeds call(?r,?x,?z),
+       cases(?x = ?z,
+        [],
+        succeeds call(?r,?x,?z),
+        [],
+        succeeds r_ordered([?x,?z,?y|?l],?r)),
+       succeeds r_ordered([?x|?l2],?r)],
+      succeeds r_ordered([?x|?l2],?r)))],
+   succeeds r_ordered([?x|?l2],?r))],
+ succeeds r_ordered([?x|?l2],?r))
+).
+
+:- theorem(bubble_sort:r_ordered,
+all [l1,l2,r,d]: succeeds bubble_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d) &
+ gr(?l1) & total(?d,?r) & transitive(?d,?r) =>
+  succeeds r_ordered(?l2,?r),
+[induction(
+  [all [l1,l2,r]: succeeds bubble_sort(?l1,?l2,?r) => 
+     (all d: succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) &
+       transitive(?d,?r) => succeeds r_ordered(?l2,?r))],
+  [step([r],
+    [],
+    succeeds d_list([],?d) & gr([]) & total(?d,?r) & transitive(?d,?r) => 
+     succeeds r_ordered([],?r),
+    all d: succeeds d_list([],?d) & gr([]) & total(?d,?r) &
+     transitive(?d,?r) => succeeds r_ordered([],?r)),
+   step([x,l1,y,l3,r,l2],
+    [all d: succeeds d_list(?l2,?d) & gr(?l2) & total(?d,?r) &
+      transitive(?d,?r) => succeeds r_ordered(?l3,?r),
+     succeeds bubble(?x,?l1,[?y|?l2],?r),
+     succeeds bubble_sort(?l2,?l3,?r)],
+    assume(succeeds d_list([?x|?l1],?d) & gr([?x|?l1]) & total(?d,?r) &
+     transitive(?d,?r),
+     [def succeeds d_list([?x|?l1],?d) by completion,
+      succeeds call(?d,?x) & succeeds d_list(?l1,?d),
+      gr(?x), gr(?l1),
+      succeeds d_list([?y|?l2],?d) by lemma(bubble:d_list),
+      def succeeds d_list([?y|?l2],?d) by completion,
+      succeeds call(?d,?y) & succeeds d_list(?l2,?d),
+      gr([?y|?l2]) by lemma(bubble:gr),
+      succeeds r_ordered(?l3,?r),
+      [?y|?l2] = [?y|?l2],
+      bound(?y,?l2,?r) by lemma(bubble:bound),
+      succeeds permutation(?l2,?l3) by theorem(bubble_sort:permutation),
+      succeeds r_ordered([?y|?l3],?r) by 
+       lemma(r_ordered:bound:permutation)],
+     succeeds r_ordered([?y|?l3],?r)),
+    all d: succeeds d_list([?x|?l1],?d) & gr([?x|?l1]) & total(?d,?r) &
+     transitive(?d,?r) => succeeds r_ordered([?y|?l3],?r))]),
+ assume(succeeds bubble_sort(?l1,?l2,?r) & succeeds d_list(?l1,?d) & 
+  gr(?l1) & total(?d,?r) & transitive(?d,?r),
+  [all d: succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) &
+    transitive(?d,?r) => succeeds r_ordered(?l2,?r),
+   succeeds d_list(?l1,?d) & gr(?l1) & total(?d,?r) & transitive(?d,?r) => 
+    succeeds r_ordered(?l2,?r),
+   succeeds r_ordered(?l2,?r)],
+  succeeds r_ordered(?l2,?r))]
+).
+
+:- lemma(bubble:termination,
+all [n,x,l1,l2,r,d]: succeeds nat(?n) & terminating(?d,?r) &
+ succeeds call(?d,?x) & succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+ succeeds lh(?l1) @< ?n => terminates bubble(?x,?l1,?l2,?r),
+[induction(
+  [all n: succeeds nat(?n) => 
+     (all [x,l1,l2,r,d]: terminating(?d,?r) & succeeds call(?d,?x) &
+       succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+       succeeds lh(?l1) @< ?n =>
+        terminates bubble(?x,?l1,?l2,?r))],
+  [step([],
+    [],
+    assume(terminating(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< 0,
+     [def succeeds lh(?l1) @< 0 by completion,
+      ff],
+     terminates bubble(?x,?l1,?l2,?r)),
+    all [x,l1,l2,r,d]: terminating(?d,?r) & succeeds call(?d,?x) &
+     succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< 0 => 
+      terminates bubble(?x,?l1,?l2,?r)),
+   step([n],
+    [all [y,l1,l2,r,d]: terminating(?d,?r) & succeeds call(?d,?y) &
+      succeeds d_list(?l1,?d) & gr(?y) & gr(?l1) & gr(?r) &
+      succeeds lh(?l1) @< ?n =>
+       terminates bubble(?y,?l1,?l2,?r),
+     succeeds nat(?n)],
+    assume(terminating(?d,?r) & succeeds call(?d,?y) &
+     succeeds d_list(?l1,?d) & gr(?y) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< s(?n),
+     [assume(?l1 = [?x|?1],
+       [def succeeds d_list([?x|?1],?d) by completion,
+	succeeds call(?d,?x) & succeeds d_list(?1,?d),
+	gr([?x|?1]), gr(?x), gr(?1),
+	succeeds list(?1) by lemma(d_list:list),
+	lh([?x|?1]) = s(lh(?1)) by corollary(lh:cons),
+	lh(?l1) = s(lh(?1)),
+	def succeeds s(lh(?1)) @< s(?n) by completion,
+	succeeds lh(?1) @< ?n,
+	terminates bubble(?x,?1,[?z|?3],?r),
+	assume(succeeds bubble(?x,?1,[?z|?3],?r),
+	 [gr([?z|?3]) by lemma(bubble:gr),
+	  succeeds d_list([?z|?3],?d) by lemma(bubble:d_list),
+	  gr(?z),
+	  def succeeds d_list([?z|?3],?d) by completion,
+	  all [x,y]: succeeds call(?d,?x) & succeeds call(?d,?y) & gr(?x) &
+	   gr(?y) => terminates call(?r,?x,?y) by 
+	   elimination(terminating,2),
+	  terminates call(?r,?z,?y),
+	  terminates (call(?r,?z,?y) & ?l2 = [?z,?y|?3]),
+	  terminates (~ call(?r,?z,?y) & ?l2 = [?y,?z|?3])],
+	 terminates (call(?r,?z,?y) & ?l2 = [?z,?y|?3]) &
+	 terminates (~ call(?r,?z,?y) & ?l2 = [?y,?z|?3])),
+	terminates 
+	(bubble(?x,?1,[?z|?3],?r) &
+	 (call(?r,?z,?y) & ?l2 = [?z,?y|?3] \/
+	  ~ call(?r,?z,?y) & ?l2 = [?y,?z|?3]))],
+       terminates 
+       (bubble(?x,?1,[?z|?3],?r) &
+        (call(?r,?z,?y) & ?l2 = [?z,?y|?3] \/
+         ~ call(?r,?z,?y) & ?l2 = [?y,?z|?3]))),
+      all [x,1,z,3]: ?l1 = [?x|?1] => 
+        terminates 
+        (bubble(?x,?1,[?z|?3],?r) &
+         (call(?r,?z,?y) & ?l2 = [?z,?y|?3] \/
+          ~ call(?r,?z,?y) & ?l2 = [?y,?z|?3])),
+      terminates bubble(?y,?l1,?l2,?r) by completion],
+     terminates bubble(?y,?l1,?l2,?r)),
+    all [y,l1,l2,r,d]: terminating(?d,?r) & succeeds call(?d,?y) &
+     succeeds d_list(?l1,?d) & gr(?y) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< s(?n) =>
+      terminates bubble(?y,?l1,?l2,?r))]),
+ assume(succeeds nat(?n) & terminating(?d,?r) & succeeds call(?d,?x) &
+  succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+  succeeds lh(?l1) @< ?n,
+  [all [x,l1,l2,r,d]: terminating(?d,?r) & succeeds call(?d,?x) &
+    succeeds d_list(?l1,?d) & gr(?x) & gr(?l1) & gr(?r) &
+    succeeds lh(?l1) @< ?n => 
+     terminates bubble(?x,?l1,?l2,?r),
+   terminating(?d,?r) & succeeds call(?d,?x) & succeeds d_list(?l1,?d) &
+   gr(?x) & gr(?l1) & gr(?r) & succeeds lh(?l1) @< ?n => 
+    terminates bubble(?x,?l1,?l2,?r),
+   terminates bubble(?x,?l1,?l2,?r)],
+  terminates bubble(?x,?l1,?l2,?r))]
+).
+
+:- lemma(bubble_sort:termination,
+all [n,l1,l2,r,d]: succeeds nat(?n) & terminating(?d,?r) &
+ succeeds d_list(?l1,?d) & gr(?l1) & gr(?r) &
+ succeeds lh(?l1) @< ?n => terminates bubble_sort(?l1,?l2,?r),
+[induction(
+  [all n: succeeds nat(?n) => 
+     (all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) &
+       gr(?l1) & gr(?r) & succeeds lh(?l1) @< ?n => 
+        terminates bubble_sort(?l1,?l2,?r))],
+  [step([],
+    [],
+    assume(terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< 0,
+     [def succeeds lh(?l1) @< 0 by completion,
+      ff],
+     terminates bubble_sort(?l1,?l2,?r)),
+    all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) &
+     gr(?r) & succeeds lh(?l1) @< 0 => terminates bubble_sort(?l1,?l2,?r)),
+   step([n],
+    [all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) & 
+      gr(?l1) & gr(?r) & succeeds lh(?l1) @< ?n => 
+       terminates bubble_sort(?l1,?l2,?r),
+     succeeds nat(?n)],
+    assume(terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) & gr(?r) &
+     succeeds lh(?l1) @< s(?n),
+     [assume(?l1 = [?x|?l4] & ?l2 = [?y|?l3],
+       [def succeeds d_list([?x|?l4],?d) by completion,
+	succeeds call(?d,?x) & succeeds d_list(?l4,?d),
+	gr([?x|?l4]), gr(?x), gr(?l4),
+	succeeds list(?l4) by lemma(d_list:list),
+	lh([?x|?l4]) = s(lh(?l4)) by corollary(lh:cons),
+	lh(?l1) = s(lh(?l4)),
+	def succeeds s(lh(?l4)) @< s(?n) by completion,
+	succeeds lh(?l4) @< ?n,
+	terminates bubble(?x,?l4,[?y|?l5],?r) by lemma(bubble:termination),
+	assume(succeeds bubble(?x,?l4,[?y|?l5],?r),
+	 [succeeds d_list([?y|?l5],?d) by lemma(bubble:d_list),
+	  def succeeds d_list([?y|?l5],?d) by completion,
+	  gr([?y|?l5]) by lemma(bubble:gr),
+	  gr(?l5),
+	  succeeds permutation([?x|?l4],[?y|?l5]) by 
+           lemma(bubble:permutation),
+	  lh([?x|?l4]) = lh([?y|?l5]) by lemma(permutation:length),
+	  succeeds list(?l5) by lemma(d_list:list),
+	  lh([?y|?l5]) = s(lh(?l5)) by corollary(lh:cons),
+	  s(lh(?l4)) = s(lh(?l5)),
+	  lh(?l4) = lh(?l5),
+	  succeeds lh(?l5) @< ?n,
+	  terminates bubble_sort(?l5,?l3,?r)],
+	 terminates bubble_sort(?l5,?l3,?r)),
+	terminates (bubble(?x,?l4,[?y|?l5],?r) & bubble_sort(?l5,?l3,?r))],
+       terminates (bubble(?x,?l4,[?y|?l5],?r) & bubble_sort(?l5,?l3,?r))),
+      all [x,l4,y,l3,l5]: ?l1 = [?x|?l4] & ?l2 = [?y|?l3] => 
+        terminates (bubble(?x,?l4,[?y|?l5],?r) & bubble_sort(?l5,?l3,?r)),
+      terminates bubble_sort(?l1,?l2,?r) by completion],
+     terminates bubble_sort(?l1,?l2,?r)),
+    all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) &
+     gr(?r) & succeeds lh(?l1) @< s(?n) => 
+      terminates bubble_sort(?l1,?l2,?r))]),
+ assume(succeeds nat(?n) & terminating(?d,?r) & succeeds d_list(?l1,?d) &
+  gr(?l1) & gr(?r) & succeeds lh(?l1) @< ?n,
+  [all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) &
+    gr(?r) & succeeds lh(?l1) @< ?n => terminates bubble_sort(?l1,?l2,?r),
+   terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) & gr(?r) &
+   succeeds lh(?l1) @< ?n => terminates bubble_sort(?l1,?l2,?r),
+   terminates bubble_sort(?l1,?l2,?r)],
+  terminates bubble_sort(?l1,?l2,?r))]
+).
+
+:- theorem(bubble_sort:termination,
+all [l1,l2,r,d]: terminating(?d,?r) & succeeds d_list(?l1,?d) &
+ gr(?l1) & gr(?r) => terminates bubble_sort(?l1,?l2,?r),
+assume(terminating(?d,?r) & succeeds d_list(?l1,?d) & gr(?l1) & gr(?r),
+ [succeeds list(?l1) by lemma(d_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  succeeds nat(s(lh(?l1))) by sld,
+  terminates bubble_sort(?l1,?l2,?r) by lemma(bubble_sort:termination)],
+ terminates bubble_sort(?l1,?l2,?r))
+).
+
+:- bye(bubble).

@@ -1,0 +1,36 @@
+
+:- assert_clauses(n(int,1),[
+ clause([n(int,1),$(x)],
+  [n(nat,1),$(x)],
+  [x]/0),
+ clause([n(int,1),[n(-,1),[n(s,1),$(x)]]],
+  [n(nat,1),$(x)],
+  [x]/0)
+]).
+
+:- assert_clauses(n(minus,2),[
+ clause([n(minus,2),[n(s,1),$(x)],[n(-,1),[n(s,1),$(x)]]],
+  [&],
+  [x]/0),
+ clause([n(minus,2),[n(0,0)],[n(0,0)]],
+  [&],
+  []/0),
+ clause([n(minus,2),[n(-,1),$(x)],$(x)],
+  [&],
+  [x]/0)
+]).
+
+:- assert_clauses(n(minus,3),[
+ clause([n(minus,3),$(x),$(y),$(z)],
+  [&,[n(plus,3),$(y),$(z),$(x)],[~,[n(negative,1),$(z)]]],
+  [x,y,z]/0),
+ clause([n(minus,3),$(x),$(y),[n(-,1),[n(s,1),$(z)]]],
+  [n(plus,3),$(x),[n(s,1),$(z)],$(y)],
+  [x,y,z]/0)
+]).
+
+:- assert_clauses(n(negative,1),[
+ clause([n(negative,1),[n(-,1),[n(s,1),$(x)]]],
+  [&],
+  [x]/0)
+]).

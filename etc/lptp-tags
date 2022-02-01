@@ -1,0 +1,7 @@
+#!/bin/csh -f
+#   Author: Robert Staerk <staerk@saul.cis.upenn.edu> 
+#  Created: Fri Mar  8 17:28:39 1996 
+# Filename: lptp-tags
+# Abstract: Creates emacs tags table for proof files.
+
+etags --language=none --regex='/:- *\(axiom\|lemma\|corollary\|theorem\|definition_pred\|definition_fun\)[^,]*/' $argv

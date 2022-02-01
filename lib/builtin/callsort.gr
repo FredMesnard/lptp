@@ -1,0 +1,69 @@
+
+:- assert_clauses(n(d_list,2),[
+ clause([n(d_list,2),[n([],0)],$(d)],
+  [&],
+  [d]/0),
+ clause([n(d_list,2),[n('.',2),$(x),$(l)],$(d)],
+  [&,[n(call,2),$(d),$(x)],[n(d_list,2),$(l),$(d)]],
+  [x,l,d]/0)
+]).
+
+:- assert_clauses(n(insert,4),[
+ clause([n(insert,4),$(x),[n([],0)],[n('.',2),$(x),[n([],0)]],$(r)],
+  [&],
+  [x,r]/0),
+ clause([n(insert,4),$(x),[n('.',2),$(y),$(l1)],$(l3),$(r)],
+  [\/,[&,[n(call,3),$(r),$(x),$(y)],[=,$(l3),[n('.',2),$(x),[n('.',2),$(y),$(l1)]]]],[&,[~,[n(call,3),$(r),$(x),$(y)]],[=,$(l3),[n('.',2),$(y),$(l2)]],[n(insert,4),$(x),$(l1),$(l2),$(r)]]],
+  [x,y,l1,l3,r,l2]/0)
+]).
+
+:- assert_clauses(n(insert_sort,3),[
+ clause([n(insert_sort,3),[n([],0)],[n([],0)],$(r)],
+  [&],
+  [r]/0),
+ clause([n(insert_sort,3),[n('.',2),$(x),$(l1)],$(l3),$(r)],
+  [&,[n(insert_sort,3),$(l1),$(l2),$(r)],[n(insert,4),$(x),$(l2),$(l3),$(r)]],
+  [x,l1,l3,r,l2]/0)
+]).
+
+:- assert_clauses(n(permutation_sort,3),[
+ clause([n(permutation_sort,3),$(l1),$(l2),$(r)],
+  [&,[n(permutation,2),$(l1),$(l2)],[n(r_ordered,2),$(l2),$(r)]],
+  [l1,l2,r]/0)
+]).
+
+:- assert_clauses(n(quick_sort,3),[
+ clause([n(quick_sort,3),$(l1),$(l2),$(r)],
+  [n(quick_sort,4),$(l1),[n([],0)],$(l2),$(r)],
+  [l1,l2,r]/0)
+]).
+
+:- assert_clauses(n(quick_sort,4),[
+ clause([n(quick_sort,4),[n([],0)],$(l),$(l),$(r)],
+  [&],
+  [l,r]/0),
+ clause([n(quick_sort,4),[n('.',2),$(x),$(l1)],$(l2),$(l6),$(r)],
+  [&,[n(split,5),$(x),$(l1),$(l3),$(l4),$(r)],[n(quick_sort,4),$(l3),$(l2),$(l5),$(r)],[n(quick_sort,4),$(l4),[n('.',2),$(x),$(l5)],$(l6),$(r)]],
+  [x,l1,l2,l6,r,l3,l4,l5]/0)
+]).
+
+:- assert_clauses(n(r_ordered,2),[
+ clause([n(r_ordered,2),[n([],0)],$(r)],
+  [&],
+  [r]/0),
+ clause([n(r_ordered,2),[n('.',2),$(x),[n([],0)]],$(r)],
+  [&],
+  [x,r]/0),
+ clause([n(r_ordered,2),[n('.',2),$(x),[n('.',2),$(y),$(l)]],$(r)],
+  [&,[\/,[=,$(x),$(y)],[n(call,3),$(r),$(x),$(y)]],[n(r_ordered,2),[n('.',2),$(y),$(l)],$(r)]],
+  [x,y,l,r]/0)
+]).
+
+:- assert_clauses(n(split,5),[
+ clause([n(split,5),$(x),[n([],0)],[n([],0)],[n([],0)],$(r)],
+  [&],
+  [x,r]/0),
+ clause([n(split,5),$(x),[n('.',2),$(y),$(l1)],$(l2),$(l3),$(r)],
+  [&,[\/,[&,[n(call,3),$(r),$(x),$(y)],[=,$(l2),[n('.',2),$(y),$(l4)]],[=,$(l3),$(l5)]],[&,[~,[n(call,3),$(r),$(x),$(y)]],[=,$(l2),$(l4)],[=,$(l3),[n('.',2),$(y),$(l5)]]]],[n(split,5),$(x),$(l1),$(l4),$(l5),$(r)]],
+  [x,y,l1,l2,l3,r,l4,l5]/0)
+]).

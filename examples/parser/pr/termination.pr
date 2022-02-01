@@ -1,0 +1,1298 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Sun Mar  3 14:32:14 1996 */
+/* Filename: termination.pr */
+/* Abstract: Termination proof for term/4 and more/6. */
+
+:- initialize.
+
+:- tex_file($(tmp)/termination).
+:- thm_file($(tmp)/termination).
+
+:- needs_gr($(lib)/nat/nat).
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(examples)/parser/src/grammar).
+:- needs_gr($(examples)/parser/src/read).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(lib)/nat/nat).
+:- needs_thm($(tmp)/axioms).
+:- needs_thm($(tmp)/grammar).
+:- needs_thm($(tmp)/soundness).
+:- needs_thm($(tmp)/precedence).
+
+:- lemma(term:lh:error,
+all [l1,n,l2,t]: succeeds term(?l1,?n,?l2,?t) & succeeds token_list(?l1) &
+ gr(?l1) & succeeds 0 =< ?n => 
+ gr(?l2) & succeeds error(?l2) \/ 
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1),
+assume(succeeds term(?l1,?n,?l2,?t) & succeeds token_list(?l1) & gr(?l1) &
+ succeeds 0 =< ?n,
+ [succeeds token_list(?l1) => term_ok(?l1,?n,?l2,?t) \/ err_msg(?l1,?l2) by
+   lemma(term:wf_term),
+  term_ok(?l1,?n,?l2,?t) \/ err_msg(?l1,?l2),
+  cases(term_ok(?l1,?n,?l2,?t),
+   [succeeds 0 =< ?n => 
+    (ex [e3,k]: succeeds ?k =< ?n & ?e3 ** ?l2 = ?l1 &
+      succeeds wf_term(?e3,?k,?t)) by elimination(term_ok,4),
+    ex [e3,k]: succeeds ?k =< ?n & ?e3 ** ?l2 = ?l1 &
+     succeeds wf_term(?e3,?k,?t),
+    exist([e3,k],
+     succeeds ?k =< ?n & ?e3 ** ?l2 = ?l1 & succeeds wf_term(?e3,?k,?t),
+     [succeeds list(?e3) by corollary(wf_term:list),
+      succeeds token_list(?e3 ** ?l2),
+      succeeds token_list(?l2) by corollary(token_list:app:2),
+      succeeds list(?l2) by lemma(token_list:list),
+      succeeds lh(?l2) @=< lh(?e3 ** ?l2) by 
+       corollary(app:lh:leq:second),
+      succeeds lh(?l2) @=< lh(?l1),
+      gr(?e3 ** ?l2),
+      gr(?e3) & gr(?l2) by corollary(app:ground:2)],
+     succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+   err_msg(?l1,?l2),
+   [gr(?l2) by lemma(err_msg:gr),
+    succeeds error(?l2) by lemma(err_msg:error)],
+   gr(?l2) & succeeds error(?l2) \/
+   succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+ gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))
+).
+
+:- lemma(term:error:termination,
+all [l1,n,l2,t]: succeeds error(?l1) & gr(?l1) =>
+ terminates term(?l1,?n,?l2,?t),
+assume(succeeds error(?l1) & gr(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [gr(error(?x)),
+    ?l2 = error(term_begin / error(?x)) & ?t = error => 
+     terminates term_begin(error(?x)) & gr(?x),
+    terminates term(error(?x),?n,?l2,?t) by completion,
+    terminates term(?l1,?n,?l2,?t)],
+   terminates term(?l1,?n,?l2,?t))],
+ terminates term(?l1,?n,?l2,?t))
+).
+
+:- lemma(expect:lh:error,
+all [x,l1,l2]: succeeds expect(?l1,?x,?l2) & succeeds token_list(?l1) &
+ gr(?l1) & gr(?x) => gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1),
+assume(succeeds expect(?l1,?x,?l2) & succeeds token_list(?l1) & gr(?l1) &
+ gr(?x),
+ [def succeeds expect(?l1,?x,?l2) by completion,
+  cases(
+   [case(
+     ex [y,l3]: ?l1 = [?y|?l3] &
+      (?x = ?y & ?l2 = ?l3 \/ ?x <> ?y & ?l2 = error(expect(?x) / [?y|?l3])),
+     exist([y,l3],
+      ?l1 = [?y|?l3] &
+      (?x = ?y & ?l2 = ?l3 \/ ?x <> ?y & ?l2 = error(expect(?x) / [?y|?l3])),
+      cases(?x = ?y & ?l2 = ?l3,
+       [def succeeds token_list([?y|?l3]) by completion,
+	succeeds list(?l3) by lemma(token_list:list),
+	succeeds lh(?l3) @=< lh([?y|?l3]) by corollary(lh:cons:leq),
+	succeeds lh(?l2) @=< lh(?l1),
+	succeeds token_list(?l2),
+	gr([?y|?l3]), gr(?l3), gr(?l2)],
+       ?x <> ?y & ?l2 = error(expect(?x) / [?y|?l3]),
+       [succeeds error(error(expect(?x) / [?y|?l3])) by sld,
+	succeeds error(?l2),
+	gr([?y|?l3]), gr(error(expect(?x) / [?y|?l3])),
+	gr(?l2)],
+       gr(?l2) & succeeds error(?l2) \/
+       succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1)),
+      gr(?l2) & succeeds error(?l2) \/
+      succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))),
+    case(?l1 = [] & ?l2 = error(expect(?x) / []),
+     [succeeds error(error(expect(?x) / [])) by sld,
+      succeeds error(?l2),
+      gr(error(expect(?x) / [])),
+      gr(?l2)]),
+    case(ex 1: ?l1 = error(?1) & ?l2 = error(?1),
+     exist(1,
+      ?l1 = error(?1) & ?l2 = error(?1),
+      [],
+      gr(?l2) & succeeds error(?l2) \/
+      succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1)))],
+   gr(?l2) & succeeds error(?l2) \/
+   succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+ gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))
+).
+
+:- lemma(expect:termination,
+all [l1,x,l2]: gr(?l1) & gr(?x) => terminates expect(?l1,?x,?l2),
+assume(gr(?l1) & gr(?x),
+ [assume(?l1 = [?y|?0],
+   [gr([?y|?0]),
+    terminates (~ ?x = ?y & ?l2 = error(expect(?x) / [?y|?0]))],
+   terminates (?x = ?y & ?l2 = ?0) &
+   terminates (~ ?x = ?y & ?l2 = error(expect(?x) / [?y|?0]))),
+  all [y,0]: ?l1 = [?y|?0] => terminates (?x = ?y & ?l2 = ?0) &
+   terminates (~ ?x = ?y & ?l2 = error(expect(?x) / [?y|?0])),
+  terminates expect(?l1,?x,?l2) by completion],
+ terminates expect(?l1,?x,?l2))
+).
+
+:- lemma(expect:error:termination,
+all [l1,x,l2]: succeeds error(?l1) => terminates expect(?l1,?x,?l2),
+assume(succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(y,
+   ?l1 = error(?y),
+   terminates expect( error(?y),?x,?l2) by completion,
+   terminates expect(?l1,?x,?l2))],
+ terminates expect(?l1,?x,?l2))
+).
+
+:- lemma(expect:success:error,
+all [l1,x,l2]: succeeds error(?l1) & succeeds expect(?l1,?x,?l2) =>
+  ?l1 = ?l2,
+assume(succeeds error(?l1) & succeeds expect(?l1,?x,?l2),
+ [def succeeds error(?l1) by completion,
+  exist(y,
+   ?l1 = error(?y),
+   [def succeeds expect(error(?y),?x,?l2) by completion,
+    ?l2 = error(?y),
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(one_arg:lh:error,
+all [l1,l2,t]: succeeds one_arg(?l1,?l2,?t) & succeeds token_list(?l1) &
+ gr(?l1) => gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1),
+assume(succeeds one_arg(?l1,?l2,?t) & succeeds token_list(?l1) & gr(?l1),
+ [succeeds token_list(?l1) => one_arg_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2) by
+   lemma(term:wf_term),
+  one_arg_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2),
+  cases(one_arg_ok(?l1,?l2,?t),
+   [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t) by 
+     elimination(one_arg_ok,3),
+    exist(e3,
+     ?e3 ** ?l2 = ?l1 & succeeds wf_one_arg(?e3,?t),
+     [succeeds list(?e3) by lemma(wf_term:types),
+      succeeds token_list(?e3 ** ?l2),
+      succeeds token_list(?l2) by corollary(token_list:app:2),
+      succeeds list(?l2) by lemma(token_list:list),
+      gr(?e3 ** ?l2),
+      gr(?e3) & gr(?l2) by corollary(app:ground:2),
+      succeeds lh(?l2) @=< lh(?e3 ** ?l2) by 
+       corollary(app:lh:leq:second),
+      succeeds lh(?l2) @=< lh(?l1)],
+     succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+   err_msg(?l1,?l2),
+   [gr(?l2) by lemma(err_msg:gr),
+    succeeds error(?l2) by lemma(err_msg:error)],
+   gr(?l2) & succeeds error(?l2) \/
+   succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+ gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))
+).
+
+:- lemma(one_arg:error:termination,
+all [l1,l2,t]: succeeds error(?l1) => terminates one_arg(?l1,?l2,?t),
+assume(succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [terminates one_arg(error(?x),?l2,?t) by completion,
+    terminates one_arg(?l1,?l2,?t)],
+   terminates one_arg(?l1,?l2,?t))],
+ terminates one_arg(?l1,?l2,?t))
+).
+
+:- lemma(arg_seq:lh:error,
+all [l1,l2,ts]: succeeds arg_seq(?l1,?l2,?ts) & succeeds token_list(?l1) &
+ gr(?l1) => gr(?l2) & succeeds error(?l2) \/ 
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1),
+assume(succeeds arg_seq(?l1,?l2,?ts) & succeeds token_list(?l1) & gr(?l1),
+ [succeeds token_list(?l1) => arg_seq_ok(?l1,?l2,?ts) \/ err_msg(?l1,?l2) by
+   lemma(term:wf_term),
+  arg_seq_ok(?l1,?l2,?ts) \/ err_msg(?l1,?l2),
+  cases(arg_seq_ok(?l1,?l2,?ts),
+   [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_arg_seq(?e3,?ts) by 
+     elimination(arg_seq_ok,3),
+    exist(e3,
+     ?e3 ** ?l2 = ?l1 & succeeds wf_arg_seq(?e3,?ts),
+     [succeeds list(?e3) by lemma(wf_term:types),
+      succeeds token_list(?e3 ** ?l2),
+      succeeds token_list(?l2) by corollary(token_list:app:2),
+      succeeds list(?l2) by lemma(token_list:list),
+      gr(?e3 ** ?l2),
+      gr(?e3) & gr(?l2) by corollary(app:ground:2),
+      succeeds lh(?l2) @=< lh(?e3 ** ?l2) by 
+       corollary(app:lh:leq:second),
+      succeeds lh(?l2) @=< lh(?l1)],
+     succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+   err_msg(?l1,?l2),
+   [gr(?l2) by lemma(err_msg:gr),
+    succeeds error(?l2) by lemma(err_msg:error)],
+   gr(?l2) & succeeds error(?l2) \/
+   succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+ gr(?l2) & succeeds error(?l2) \/
+ succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1))
+).
+
+:- lemma(arg_seq:error:termination,
+all [l1,l2,ts]: succeeds error(?l1) => terminates arg_seq(?l1,?l2,?ts),
+assume(succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [terminates arg_seq(error(?x),?l2,?ts) by completion,
+    terminates arg_seq(?l1,?l2,?ts)],
+   terminates arg_seq(?l1,?l2,?ts))],
+ terminates arg_seq(?l1,?l2,?ts))
+).
+
+:- lemma(arg_seq:error:equal,
+all [l1,l2,ts]: succeeds arg_seq(?l1,?l2,?ts) & succeeds error(?l1) =>
+  ?l1 = ?l2,
+assume(succeeds arg_seq(?l1,?l2,?ts) & succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [def succeeds arg_seq(error(?x),?l2,?ts) by completion,
+    error(?x) = ?l2,
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(list_tail:lh:error,
+all [l1,l2,t]: succeeds list_tail(?l1,?l2,?t) & succeeds token_list(?l1) &
+  gr(?l1) => gr(?l2) & succeeds error(?l2) \/
+  gr(?l2) & succeeds token_list(?l2) & succeeds lh(?l2) @=< lh(?l1),
+assume(succeeds list_tail(?l1,?l2,?t) & succeeds token_list(?l1) & gr(?l1),
+ [succeeds token_list(?l1) => list_tail_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2) by
+   lemma(term:wf_term),
+  list_tail_ok(?l1,?l2,?t) \/ err_msg(?l1,?l2),
+  cases(list_tail_ok(?l1,?l2,?t),
+   [ex e3: ?e3 ** ?l2 = ?l1 & succeeds wf_list_tail(?e3,?t) by 
+     elimination(list_tail_ok,3),
+    exist(e3,
+     ?e3 ** ?l2 = ?l1 & succeeds wf_list_tail(?e3,?t),
+     [succeeds list(?e3) by lemma(wf_term:types),
+      succeeds list(?l1) by lemma(token_list:list),
+      succeeds token_list(?e3 ** ?l2),
+      succeeds token_list(?l2) by corollary(token_list:app:2),
+      succeeds list(?l2) by lemma(token_list:list),
+      gr(?e3 ** ?l2),
+      gr(?e3) & gr(?l2) by corollary(app:ground:2),
+      succeeds lh(?l2) @=< lh(?e3 ** ?l2) by 
+       corollary(app:lh:leq:second),
+      succeeds lh(?l2) @=< lh(?l1)],
+     gr(?l2) & succeeds token_list(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+   err_msg(?l1,?l2),
+   [gr(?l2) by lemma(err_msg:gr),
+    succeeds error(?l2) by lemma(err_msg:error)],
+   gr(?l2) & succeeds error(?l2) \/
+   gr(?l2) & succeeds token_list(?l2) & succeeds lh(?l2) @=< lh(?l1))],
+ gr(?l2) & succeeds error(?l2) \/
+ gr(?l2) & succeeds token_list(?l2) & succeeds lh(?l2) @=< lh(?l1))
+).
+
+:- lemma(list_tail:error:termination,
+all [l1,l2,t]: succeeds error(?l1) => terminates list_tail(?l1,?l2,?t),
+assume(succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [terminates list_tail(error(?x),?l2,?t) by completion,
+    terminates list_tail(?l1,?l2,?t)],
+   terminates list_tail(?l1,?l2,?t))],
+ terminates list_tail(?l1,?l2,?t))
+).
+
+:- lemma(list_tail:error:equal,
+all [l1,l2,t]: succeeds list_tail(?l1,?l2,?t) & succeeds error(?l1) =>
+  ?l1 = ?l2,
+assume(succeeds list_tail(?l1,?l2,?t) & succeeds error(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [def succeeds list_tail(error(?x),?l2,?t) by completion,
+    error(?x) = ?l2,
+    ?l1 = ?l2],
+   ?l1 = ?l2)],
+ ?l1 = ?l2)
+).
+
+:- lemma(more:error:termination,
+all [l1,l2,m,n,t1,t2]: succeeds error(?l1) & gr(?l1) =>
+ terminates more(?l1,?m,?n,?t1,?l2,?t2),
+assume(succeeds error(?l1) & gr(?l1),
+ [def succeeds error(?l1) by completion,
+  exist(x,
+   ?l1 = error(?x),
+   [gr(error(?x)),
+    ?l2 = error(?x) & ?t1 = ?t2 => terminates more_begin(error(?x)) &
+    gr(?x),
+    terminates more(error(?x),?m,?n,?t1,?l2,?t2) by completion,
+    terminates more(?l1,?m,?n,?t1,?l2,?t2)],
+   terminates more(?l1,?m,?n,?t1,?l2,?t2))],
+ terminates more(?l1,?m,?n,?t1,?l2,?t2))
+).
+
+:- lemma(lh:cons:less,
+all [x,l,k]: succeeds token_list(?l) & succeeds lh([?x|?l]) @< s(?k) =>
+ succeeds lh(?l) @< ?k,
+assume(succeeds token_list(?l) & succeeds lh([?x|?l]) @< s(?k),
+ [succeeds list(?l) by lemma(token_list:list),
+  lh([?x|?l]) = s(lh(?l)) by corollary(lh:cons),
+  def succeeds s(lh(?l)) @< s(?k) by completion,
+  succeeds lh(?l) @< ?k],
+ succeeds lh(?l) @< ?k)
+).
+
+:- lemma(lh:cons:2:less,
+all [x,y,l,k]: succeeds token_list(?l) & succeeds lh([?x,?y|?l]) @< s(?k) =>
+ succeeds lh(?l) @< ?k,
+assume(succeeds token_list(?l) & succeeds lh([?x,?y|?l]) @< s(?k),
+ [succeeds list(?l) by lemma(token_list:list),
+  lh([?y|?l]) = s(lh(?l)) by corollary(lh:cons),
+  lh([?x,?y|?l]) = s(lh([?y|?l])) by corollary(lh:cons),
+  def succeeds s(lh([?y|?l])) @< s(?k) by completion,
+  succeeds lh([?y|?l]) @< ?k,
+  succeeds nat(lh(?l)) by corollary(lh:types),
+  succeeds lh(?l) @< s(lh(?l)) by lemma(less:one),
+  succeeds lh(?l) @< lh([?y|?l]),
+  succeeds lh(?l) @< ?k by theorem(less:transitive)],
+ succeeds lh(?l) @< ?k)
+).
+
+:- lemma(minus_number_tree:termination,
+all [x,t]: succeeds token(?x) => terminates minus_number_tree(?x,?t),
+assume(succeeds token(?x),
+ [assume(?x = integer(?z) & ?t = integer(?y),
+   [def succeeds token(integer(?z)) by completion,
+    terminates ?y is - ?z by lemma((is):integer:minus:termination)],
+   terminates ?y is - ?z),
+  assume(?x = float_number(?z) & ?t = float_number(?y),
+   [def succeeds token(float_number(?z)) by completion,
+    terminates ?y is - ?z by lemma((is):number:minus:termination)],
+   terminates ?y is - ?z),
+  (all [z,y]: ?x = integer(?z) & ?t = integer(?y) => terminates ?y is - ?z) &
+  (all [z,y]: ?x = float_number(?z) & ?t = float_number(?y) => 
+     terminates ?y is - ?z),
+  terminates minus_number_tree(?x,?t) by completion],
+ terminates minus_number_tree(?x,?t))
+).
+
+:- lemma(term:termination,
+all k: succeeds nat(?k) =>
+ (all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+  succeeds lh(?e1) @< ?k & succeeds integer(?m) & succeeds 0 =< ?m =>
+   terminates term(?e1,?m,?e2,?r)) &
+ (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+  succeeds lh(?e1) @< ?k => terminates one_arg(?e1,?e2,?r)) &
+ (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+  succeeds lh(?e1) @< ?k => terminates arg_seq(?e1,?e2,?rs)) &
+ (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+  succeeds lh(?e1) @< ?k => terminates list_tail(?e1,?e2,?r)) &
+ (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+  succeeds integer(?m1) & succeeds integer(?m2) &
+  succeeds lh(?e1) @< ?k => terminates more(?e1,?m1,?m2,?r1,?e2,?r2)),
+induction(
+ [all k: succeeds nat(?k) => 
+   (all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< ?k & succeeds integer(?m) & succeeds 0 =< ?m => 
+     terminates term(?e1,?m,?e2,?r)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< ?k => terminates one_arg(?e1,?e2,?r)) &
+   (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< ?k => terminates arg_seq(?e1,?e2,?rs)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< ?k => terminates list_tail(?e1,?e2,?r)) &
+   (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds integer(?m1) & succeeds integer(?m2) & succeeds lh(?e1) @< ?k =>
+     terminates more(?e1,?m1,?m2,?r1,?e2,?r2))],
+ [step([],
+   [],
+   [assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< 0 &
+     succeeds integer(?m) & succeeds 0 =< ?m,
+     [def succeeds lh(?e1) @< 0 by completion,
+      ff],
+     terminates term(?e1,?m,?e2,?r)),
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< 0,
+     [def succeeds lh(?e1) @< 0 by completion,
+      ff],
+     terminates one_arg(?e1,?e2,?r)),
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< 0,
+     [def succeeds lh(?e1) @< 0 by completion,
+      ff],
+     terminates arg_seq(?e1,?e2,?rs)),
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< 0,
+     [def succeeds lh(?e1) @< 0 by completion,
+      ff],
+     terminates list_tail(?e1,?e2,?r)),
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds integer(?m1) &
+     succeeds integer(?m2) & succeeds lh(?e1) @< 0,
+     [def succeeds lh(?e1) @< 0 by completion,
+      ff],
+     terminates more(?e1,?m1,?m2,?r1,?e2,?r2))],
+   (all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< 0 & succeeds integer(?m) & succeeds 0 =< ?m => 
+     terminates term(?e1,?m,?e2,?r)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< 0 => terminates one_arg(?e1,?e2,?r)) &
+   (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< 0 => terminates arg_seq(?e1,?e2,?rs)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< 0 => terminates list_tail(?e1,?e2,?r)) &
+   (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds integer(?m1) & succeeds integer(?m2) & succeeds lh(?e1) @< 0 =>
+     terminates more(?e1,?m1,?m2,?r1,?e2,?r2))),
+  step([k],
+   [(all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+      succeeds lh(?e1) @< ?k & succeeds integer(?m) & succeeds 0 =< ?m => 
+      terminates term(?e1,?m,?e2,?r)) &
+    (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+      succeeds lh(?e1) @< ?k => terminates one_arg(?e1,?e2,?r)) &
+    (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+      succeeds lh(?e1) @< ?k => terminates arg_seq(?e1,?e2,?rs)) &
+    (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+      succeeds lh(?e1) @< ?k => terminates list_tail(?e1,?e2,?r)) &
+    (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+      succeeds integer(?m1) & succeeds integer(?m2) & 
+      succeeds lh(?e1) @< ?k => terminates more(?e1,?m1,?m2,?r1,?e2,?r2)),
+    succeeds nat(?k)],
+   [assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< s(?k) &
+     succeeds integer(?m) & succeeds 0 =< ?m,
+     [assume(?e1 = [variable(?x)|?l1],
+       [def succeeds token_list([variable(?x)|?l1]) by completion,
+	succeeds lh([variable(?x)|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	gr([variable(?x)|?l1]),
+	terminates more(?l1,0,?m,variable(?x),?e2,?r)],
+       terminates more(?l1,0,?m,variable(?x),?e2,?r)),
+      assume(?e1 = [integer(?x)|?l1],
+       [def succeeds token_list([integer(?x)|?l1]) by completion,
+	succeeds lh([integer(?x)|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	gr([integer(?x)|?l1]),
+	terminates more(?l1,0,?m,integer(?x),?e2,?r)],
+       terminates more(?l1,0,?m,integer(?x),?e2,?r)),
+      assume(?e1 = [float_number(?x)|?l1],
+       [def succeeds token_list([float_number(?x)|?l1]) by completion,
+	succeeds lh([float_number(?x)|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	gr([float_number(?x)|?l1]),
+	terminates more(?l1,0,?m,float_number(?x),?e2,?r)],
+       terminates more(?l1,0,?m,float_number(?x),?e2,?r)),
+      assume(?e1 = [char_code_list(?x)|?l1],
+       [def succeeds token_list([char_code_list(?x)|?l1]) by completion,
+	succeeds lh([char_code_list(?x)|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	gr([char_code_list(?x)|?l1]),
+	terminates more(?l1,0,?m,char_code_list(?x),?e2,?r)],
+       terminates more(?l1,0,?m,char_code_list(?x),?e2,?r)),
+      assume(?e1 = [name(?x),?y|?l1],
+       [def succeeds token_list([name(?x),?y|?l1]) by completion,
+	def succeeds token_list([?y|?l1]) by completion,
+	def succeeds token(name(?x)) by completion,
+	succeeds atom(?x),
+	succeeds lh([name(?x),?y|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:2:less),
+	gr([name(?x),?y|?l1]), gr(?l1),
+	terminates one_arg(?l1,?l2,?t1),
+	assume(succeeds one_arg(?l1,?l2,?t1),
+	 [gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1) by
+           lemma(one_arg:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           [terminates arg_seq(?l2,?l3,?ts) by 
+             lemma(arg_seq:error:termination),
+	    assume(succeeds arg_seq(?l2,?l3,?ts),
+	     [?l2 = ?l3 by lemma(arg_seq:error:equal),
+	      gr(?l3), succeeds error(?l3),
+	      terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r) by 
+               lemma(more:error:termination)],
+	     terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)),
+	    terminates 
+	    (arg_seq(?l2,?l3,?ts) & 
+	     more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r))],
+           succeeds token_list(?l2) & gr(?l2) & 
+           succeeds lh(?l2) @=< lh(?l1),
+           [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	    terminates arg_seq(?l2,?l3,?ts),
+	    assume(succeeds arg_seq(?l2,?l3,?ts),
+	     [gr(?l3) & succeeds error(?l3) \/
+              succeeds token_list(?l3) & gr(?l3) &
+              succeeds lh(?l3) @=< lh(?l2) by lemma(arg_seq:lh:error),
+	      cases(gr(?l3) & succeeds error(?l3),
+               terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r) by 
+                lemma(more:error:termination),
+               succeeds token_list(?l3) & gr(?l3) &
+               succeeds lh(?l3) @=< lh(?l2),
+               [succeeds lh(?l3) @< ?k by theorem(leq:less:transitive),
+		terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)],
+               terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r))],
+	     terminates more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)),
+	    terminates 
+	    (arg_seq(?l2,?l3,?ts) & 
+	     more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r))],
+           terminates 
+           (arg_seq(?l2,?l3,?ts) & more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)))],
+	 terminates 
+	 (arg_seq(?l2,?l3,?ts) & more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r))),
+	terminates 
+	(one_arg(?l1,?l2,?t1) & arg_seq(?l2,?l3,?ts) &
+	 more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)),
+	terminates 
+        (?y = open(nolayout) & one_arg(?l1,?l2,?t1) & arg_seq(?l2,?l3,?ts) &
+         more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)),
+	terminates prefix_op(?x) by lemma(prefix_op:termination),
+	terminates symbol_op(?x) by lemma(symbol_op:termination),
+	succeeds lh([?y|?l1]) @< ?k by lemma(lh:cons:less),
+	terminates more(?l1,0,?m,?t1,?e2,?r),
+	terminates minus_number_tree(?y,?t1) by 
+	 lemma(minus_number_tree:termination),
+	terminates 
+	(number_token(?y) & minus_number_tree(?y,?t1) &
+	 more(?l1,0,?m,?t1,?e2,?r)),
+	terminates 
+	(?x = (-) & number_token(?y) & minus_number_tree(?y,?t1) &
+	 more(?l1,0,?m,?t1,?e2,?r)),
+	terminates prefix_prec(?x,?n2,?n3) by 
+         lemma(prefix_prec:termination),
+	assume(succeeds prefix_prec(?x,?n2,?n3),
+	 [succeeds integer(?n2) & succeeds integer(?n3) by 
+           lemma(prefix_prec:integer),
+	  terminates ?n2 =< ?m by axiom(leq:termination),
+	  succeeds 0 =< ?n3 by corollary(prefix_prec:zero),
+	  terminates term([?y|?l1],?n3,?l2,?t1),
+	  assume(succeeds term([?y|?l1],?n3,?l2,?t1),
+	   [gr([?y|?l1]),
+	    gr(?l2) & succeeds error(?l2) \/
+            succeeds token_list(?l2) & gr(?l2) &
+            succeeds lh(?l2) @=< lh([?y|?l1]) by lemma(term:lh:error),
+	    cases(gr(?l2) & succeeds error(?l2),
+             terminates more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) by 
+              lemma(more:error:termination),
+             succeeds token_list(?l2) & gr(?l2) &
+             succeeds lh(?l2) @=< lh([?y|?l1]),
+             [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	      terminates more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r)],
+             terminates more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r))],
+	   terminates more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r)),
+	  terminates 
+	  (term([?y|?l1],?n3,?l2,?t1) &
+	   more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r)),
+	  terminates 
+	  (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	   more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r)),
+	  gr(?n2) by axiom(integer:gr),
+	  gr(?m) by axiom(integer:gr),
+	  terminates 
+	  (~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	   ?r = error)],
+	 terminates 
+	 (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	  more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r)) &
+	 terminates 
+	 (~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	  ?r = error)),
+	terminates 
+	(prefix_prec(?x,?n2,?n3) &
+	 (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	  more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+	  ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	  ?r = error)),
+	terminates 
+	(~ (?x = (-) & number_token(?y)) & prefix_prec(?x,?n2,?n3) &
+	 (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	  more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+	  ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	  ?r = error)),
+	terminates 
+	(prefix_op(?x) &
+	 (?x = (-) & number_token(?y) & minus_number_tree(?y,?t1) &
+	  more(?l1,0,?m,?t1,?e2,?r) \/
+	  ~ (?x = (-) & number_token(?y)) & prefix_prec(?x,?n2,?n3) &
+	  (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	   more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+	   ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	   ?r = error))),
+	terminates more([?y|?l1],0,?m,con(?x),?e2,?r),
+	terminates (~ symbol_op(?x) & more([?y|?l1],0,?m,con(?x),?e2,?r)),
+	terminates 
+	(~ prefix_op(?x) &
+	 (symbol_op(?x) & ?e2 = error(operator / [name(?x),?y|?l1]) &
+	  ?r = error \/
+	  ~ symbol_op(?x) & more([?y|?l1],0,?m,con(?x),?e2,?r))),
+	terminates 
+	(~ ?y = open(nolayout) &
+	 (prefix_op(?x) &
+	  (?x = (-) & number_token(?y) & minus_number_tree(?y,?t1) &
+	   more(?l1,0,?m,?t1,?e2,?r) \/
+	   ~ (?x = (-) & number_token(?y)) & prefix_prec(?x,?n2,?n3) &
+	   (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+	    more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+	    ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+	    ?r = error)) \/
+	  ~ prefix_op(?x) &
+	  (symbol_op(?x) & ?e2 = error(operator / [name(?x),?y|?l1]) &
+	   ?r = error \/
+	   ~ symbol_op(?x) & more([?y|?l1],0,?m,con(?x),?e2,?r))))],
+       terminates 
+       (?y = open(nolayout) & one_arg(?l1,?l2,?t1) & arg_seq(?l2,?l3,?ts) &
+        more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)) &
+       terminates 
+       (~ ?y = open(nolayout) &
+        (prefix_op(?x) &
+         (?x = (-) & number_token(?y) & minus_number_tree(?y,?t1) &
+          more(?l1,0,?m,?t1,?e2,?r) \/
+          ~ (?x = (-) & number_token(?y)) & prefix_prec(?x,?n2,?n3) &
+          (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+           more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+           ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+           ?r = error)) \/
+         ~ prefix_op(?x) &
+         (symbol_op(?x) & ?e2 = error(operator / [name(?x),?y|?l1]) &
+          ?r = error \/ ~ symbol_op(?x) & 
+          more([?y|?l1],0,?m,con(?x),?e2,?r))))),
+      assume(?e1 = [open_list,?y|?l1],
+       [def succeeds token_list([open_list,?y|?l1]) by completion,
+	def succeeds token_list([?y|?l1]) by completion,
+	gr([open_list,?y|?l1]),
+	succeeds lh([open_list,?y|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:2:less),
+	terminates more(?l1,0,?m,con([]),?e2,?r),
+	terminates (?y = close_list & more(?l1,0,?m,con([]),?e2,?r)),
+	succeeds lh([?y|?l1]) @< ?k by lemma(lh:cons:less),
+	terminates one_arg([?y|?l1],?l2,?t1),
+	assume(succeeds one_arg([?y|?l1],?l2,?t1),
+	 [gr([?y|?l1]),
+	  gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) &
+          succeeds lh(?l2) @=< lh([?y|?l1]) by lemma(one_arg:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           [terminates list_tail(?l2,?l3,?t2) by 
+             lemma(list_tail:error:termination),
+	    assume(succeeds list_tail(?l2,?l3,?t2),
+	     [?l2 = ?l3 by lemma(list_tail:error:equal),
+	      succeeds error(?l3), gr(?l3),
+	      terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r) by 
+               lemma(more:error:termination)],
+	     terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r)),
+	    terminates 
+	    (list_tail(?l2,?l3,?t2) &
+	     more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))],
+           succeeds token_list(?l2) & gr(?l2) &
+           succeeds lh(?l2) @=< lh([?y|?l1]),
+           [succeeds lh([?y|?l1]) @< ?k by lemma(lh:cons:less),
+	    succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	    terminates list_tail(?l2,?l3,?t2),
+	    assume(succeeds list_tail(?l2,?l3,?t2),
+	     [gr(?l3) & succeeds error(?l3) \/
+              gr(?l3) & succeeds token_list(?l3) &
+              succeeds lh(?l3) @=< lh(?l2) by lemma(list_tail:lh:error),
+	      cases(gr(?l3) & succeeds error(?l3),
+               terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r) by 
+                lemma(more:error:termination),
+               gr(?l3) & succeeds token_list(?l3) &
+               succeeds lh(?l3) @=< lh(?l2),
+               [succeeds lh(?l3) @< ?k by theorem(leq:less:transitive),
+		terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r)],
+               terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))],
+	     terminates more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r)),
+	    terminates 
+	    (list_tail(?l2,?l3,?t2) &
+	     more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))],
+           terminates 
+           (list_tail(?l2,?l3,?t2) & more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r)))],
+	 terminates 
+	 (list_tail(?l2,?l3,?t2) & more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))),
+	terminates 
+	(one_arg([?y|?l1],?l2,?t1) & list_tail(?l2,?l3,?t2) &
+	 more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r)),
+        terminates 
+        (~ ?y = close_list & one_arg([?y|?l1],?l2,?t1) &
+         list_tail(?l2,?l3,?t2) & more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))],
+       terminates (?y = close_list & more(?l1,0,?m,con([]),?e2,?r)) &
+       terminates 
+       (~ ?y = close_list & one_arg([?y|?l1],?l2,?t1) &
+        list_tail(?l2,?l3,?t2) & more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))),
+      assume(?e1 = [open(?0),?x,?y|?l1],
+       [def succeeds token_list([open(?0),?x,?y|?l1]) by completion,
+	def succeeds token_list([?x,?y|?l1]) by completion,
+	def succeeds token_list([?y|?l1]) by completion,
+	succeeds lh([open(?0),?x,?y|?l1]) @< s(?k),
+	succeeds lh([?x,?y|?l1]) @< ?k by lemma(lh:cons:less),
+	succeeds lh([?y|?l1]) @< ?k by lemma(lh:cons:2:less),
+	succeeds list(?l1) by lemma(token_list:list),
+	succeeds lh(?l1) @=< lh([?y|?l1]) by corollary(lh:cons:leq),
+	succeeds lh(?l1) @< ?k by theorem(leq:less:transitive),
+	gr([open(?0),?x,?y|?l1]),
+	terminates more(?l1,0,?m,con(?z),?e2,?r),
+	terminates 
+        (name_token(?x) & ?y = close & ?x = name(?z) &
+         more(?l1,0,?m,con(?z),?e2,?r)),
+	terminates term([?x,?y|?l1],1200,?l2,?t1),
+	assume(succeeds term([?x,?y|?l1],1200,?l2,?t1),
+	 [gr([?x,?y|?l1]),
+	  succeeds 0 =< 1200 by builtin,
+	  gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) &
+          succeeds lh(?l2) @=< lh([?x,?y|?l1]) by lemma(term:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           [terminates expect(?l2,close,?l3) by lemma(expect:termination),
+	    assume(succeeds expect(?l2,close,?l3),
+	     [?l2 = ?l3 by lemma(expect:success:error),
+	      gr(?l3), succeeds error(?l3),
+	      terminates more(?l3,0,?m,?t1,?e2,?r) by 
+               lemma(more:error:termination)],
+	     terminates more(?l3,0,?m,?t1,?e2,?r)),
+	    terminates (expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))],
+           succeeds token_list(?l2) & gr(?l2) &
+           succeeds lh(?l2) @=< lh([?x,?y|?l1]),
+           [terminates expect(?l2,close,?l3) by lemma(expect:termination),
+	    assume(succeeds expect(?l2,close,?l3),
+	     [gr(close),
+	      gr(?l3) & succeeds error(?l3) \/
+              succeeds token_list(?l3) & gr(?l3) &
+              succeeds lh(?l3) @=< lh(?l2) by lemma(expect:lh:error),
+	      cases(gr(?l3) & succeeds error(?l3),
+               terminates more(?l3,0,?m,?t1,?e2,?r) by 
+                lemma(more:error:termination),
+               succeeds token_list(?l3) & gr(?l3) &
+               succeeds lh(?l3) @=< lh(?l2),
+               [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+		succeeds lh(?l3) @< ?k by theorem(leq:less:transitive),
+		terminates more(?l3,0,?m,?t1,?e2,?r)],
+               terminates more(?l3,0,?m,?t1,?e2,?r))],
+	     terminates more(?l3,0,?m,?t1,?e2,?r)),
+	    terminates (expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))],
+           terminates (expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r)))],
+	 terminates (expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))),
+	terminates 
+	(term([?x,?y|?l1],1200,?l2,?t1) & expect(?l2,close,?l3) &
+	 more(?l3,0,?m,?t1,?e2,?r)),
+        terminates 
+        (~ (name_token(?x) & ?y = close) & term([?x,?y|?l1],1200,?l2,?t1) &
+         expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))],
+       terminates 
+       (name_token(?x) & ?y = close & ?x = name(?z) &
+        more(?l1,0,?m,con(?z),?e2,?r)) &
+       terminates 
+       (~ (name_token(?x) & ?y = close) & term([?x,?y|?l1],1200,?l2,?t1) &
+        expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))),
+      assume(?e1 = [open_curly,?y|?l1],
+       [def succeeds token_list([open_curly,?y|?l1]) by completion,
+	succeeds lh([open_curly,?y|?l1]) @< s(?k),
+	succeeds lh([?y|?l1]) @< ?k by lemma(lh:cons:less),
+	def succeeds token_list([?y|?l1]) by completion,
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:2:less),
+	gr([open_curly,?y|?l1]),
+	terminates more(?l1,0,?m,con('{}'),?e2,?r),
+	terminates (?y = close_curly & more(?l1,0,?m,con('{}'),?e2,?r)),
+	terminates term([?y|?l1],1200,?l2,?t1),
+	assume(succeeds term([?y|?l1],1200,?l2,?t1),
+	 [gr([?y|?l1]),
+	  succeeds 0 =< 1200 by builtin,
+	  gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) &
+          succeeds lh(?l2) @=< lh([?y|?l1]) by lemma(term:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           [terminates expect(?l2,close_curly,?l3) by 
+             lemma(expect:termination),
+	    assume(succeeds expect(?l2,close_curly,?l3),
+	     [?l2 = ?l3 by lemma(expect:success:error),
+	      gr(?l3), succeeds error(?l3),
+	      terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r) by 
+               lemma(more:error:termination)],
+	     terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r)),
+	    terminates 
+	    (expect(?l2,close_curly,?l3) &
+	     more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))],
+           succeeds token_list(?l2) & gr(?l2) &
+           succeeds lh(?l2) @=< lh([?y|?l1]),
+           [terminates expect(?l2,close_curly,?l3) by 
+             lemma(expect:termination),
+	    assume(succeeds expect(?l2,close_curly,?l3),
+	     [gr(close_curly),
+	      gr(?l3) & succeeds error(?l3) \/
+              succeeds token_list(?l3) & gr(?l3) &
+              succeeds lh(?l3) @=< lh(?l2) by lemma(expect:lh:error),
+	      cases(gr(?l3) & succeeds error(?l3),
+               terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r) by 
+                lemma(more:error:termination),
+               succeeds token_list(?l3) & gr(?l3) &
+               succeeds lh(?l3) @=< lh(?l2),
+               [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+		succeeds lh(?l3) @< ?k by theorem(leq:less:transitive),
+		terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r)],
+               terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))],
+	     terminates more(?l3,0,?m,fun('{}',[?t1]),?e2,?r)),
+	    terminates 
+	    (expect(?l2,close_curly,?l3) &
+	     more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))],
+           terminates 
+           (expect(?l2,close_curly,?l3) &
+            more(?l3,0,?m,fun('{}',[?t1]),?e2,?r)))],
+	 terminates 
+	 (expect(?l2,close_curly,?l3) & 
+	  more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))),
+	terminates 
+	(term([?y|?l1],1200,?l2,?t1) & expect(?l2,close_curly,?l3) &
+	 more(?l3,0,?m,fun('{}',[?t1]),?e2,?r)),
+        terminates 
+        (~ ?y = close_curly & term([?y|?l1],1200,?l2,?t1) &
+         expect(?l2,close_curly,?l3) & more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))],
+       terminates (?y = close_curly & more(?l1,0,?m,con('{}'),?e2,?r)) &
+       terminates 
+       (~ ?y = close_curly & term([?y|?l1],1200,?l2,?t1) &
+        expect(?l2,close_curly,?l3) & more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))),
+      (all [x,l1]: ?e1 = [variable(?x)|?l1] => 
+         terminates more(?l1,0,?m,variable(?x),?e2,?r)) &
+      (all [x,l1]: ?e1 = [integer(?x)|?l1] => 
+         terminates more(?l1,0,?m,integer(?x),?e2,?r)) &
+      (all [x,l1]: ?e1 = [float_number(?x)|?l1] => 
+         terminates more(?l1,0,?m,float_number(?x),?e2,?r)) &
+      (all [x,l1]: ?e1 = [char_code_list(?x)|?l1] => 
+         terminates more(?l1,0,?m,char_code_list(?x),?e2,?r)) &
+      (all [x,y,l1,l2,t1,l3,ts,n2,n3]: ?e1 = [name(?x),?y|?l1] => 
+         terminates 
+         (?y = open(nolayout) & one_arg(?l1,?l2,?t1) & arg_seq(?l2,?l3,?ts) &
+          more(?l3,0,?m,fun(?x,[?t1|?ts]),?e2,?r)) &
+         terminates 
+         (~ ?y = open(nolayout) &
+          (prefix_op(?x) &
+           (?x = (-) & number_token(?y) & minus_number_tree(?y,?t1) &
+            more(?l1,0,?m,?t1,?e2,?r) \/
+            ~ (?x = (-) & number_token(?y)) & prefix_prec(?x,?n2,?n3) &
+            (?n2 =< ?m & term([?y|?l1],?n3,?l2,?t1) &
+             more(?l2,?n2,?m,fun(?x,[?t1]),?e2,?r) \/
+             ~ ?n2 =< ?m & ?e2 = error(prefix_prec / [name(?x),?y|?l1]) &
+             ?r = error)) \/
+           ~ prefix_op(?x) &
+           (symbol_op(?x) & ?e2 = error(operator / [name(?x),?y|?l1]) &
+            ?r = error \/
+            ~ symbol_op(?x) & more([?y|?l1],0,?m,con(?x),?e2,?r))))) &
+      (all [y,l1,l2,t1,l3,t2]: ?e1 = [open_list,?y|?l1] => 
+         terminates (?y = close_list & more(?l1,0,?m,con([]),?e2,?r)) &
+         terminates 
+         (~ ?y = close_list & one_arg([?y|?l1],?l2,?t1) &
+          list_tail(?l2,?l3,?t2) & more(?l3,0,?m,fun('.',[?t1,?t2]),?e2,?r))) &
+      (all [0,x,y,l1,z,l2,t1,l3]: ?e1 = [open(?0),?x,?y|?l1] => 
+         terminates 
+         (name_token(?x) & ?y = close & ?x = name(?z) &
+          more(?l1,0,?m,con(?z),?e2,?r)) &
+         terminates 
+         (~ (name_token(?x) & ?y = close) & term([?x,?y|?l1],1200,?l2,?t1) &
+          expect(?l2,close,?l3) & more(?l3,0,?m,?t1,?e2,?r))) &
+      (all [y,l1,l2,t1,l3]: ?e1 = [open_curly,?y|?l1] => 
+         terminates (?y = close_curly & more(?l1,0,?m,con('{}'),?e2,?r)) &
+         terminates 
+         (~ ?y = close_curly & term([?y|?l1],1200,?l2,?t1) &
+          expect(?l2,close_curly,?l3) & more(?l3,0,?m,fun('{}',[?t1]),?e2,?r))) &
+      (?e2 = error(term_begin / ?e1) & ?r = error => 
+        terminates term_begin(?e1) & gr(?e1)),
+      terminates term(?e1,?m,?e2,?r) by completion],
+     terminates term(?e1,?m,?e2,?r)),
+    all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< s(?k) & succeeds integer(?m) & succeeds 0 =< ?m => 
+      terminates term(?e1,?m,?e2,?r),
+
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< s(?k),
+     [assume(?e1 = [?x,?y|?l1],
+       [terminates 
+	 (name_token(?x) & sep_token(?y) & ?x = name(?z) & ?e2 = [?y|?l1] &
+	  ?r = con(?z)),
+	gr([?x,?y|?l1]),
+	succeeds token_list(?e1) & gr(?e1) &
+	succeeds lh(?e1) @< s(?k) & succeeds integer(999) &
+	 succeeds 0 =< 999 => 
+	 terminates term(?e1,999,?e2,?r),
+	terminates term(?e1,999,?e2,?r),
+	terminates term([?x,?y|?l1],999,?e2,?r),
+	terminates (name_token(?x) & sep_token(?y)),
+	terminates 
+	 (~ (name_token(?x) & sep_token(?y)) & term([?x,?y|?l1],999,?e2,?r))],
+       terminates 
+       (name_token(?x) & sep_token(?y) & ?x = name(?z) & ?e2 = [?y|?l1] &
+        ?r = con(?z)) &
+       terminates 
+       (~ (name_token(?x) & sep_token(?y)) & term([?x,?y|?l1],999,?e2,?r))),
+      all [x,y,l1,z]: ?e1 = [?x,?y|?l1] => 
+       terminates 
+       (name_token(?x) & sep_token(?y) & ?x = name(?z) & ?e2 = [?y|?l1] &
+        ?r = con(?z)) &
+       terminates 
+       (~ (name_token(?x) & sep_token(?y)) & term([?x,?y|?l1],999,?e2,?r)),
+      terminates one_arg(?e1,?e2,?r) by completion],
+     terminates one_arg(?e1,?e2,?r)),
+
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< s(?k),
+     [assume(?e1 = [?x|?l1],
+       [gr([?x|?l1]), gr(?l1),
+	def succeeds token_list([?x|?l1]) by completion,
+	succeeds lh([?x|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	terminates one_arg(?l1,?l2,?t),
+	assume(succeeds one_arg(?l1,?l2,?t),
+	 [gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1) by
+           lemma(one_arg:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           [terminates arg_seq(?l2,?e2,?ts1) by 
+             lemma(arg_seq:error:termination),
+	    terminates (arg_seq(?l2,?e2,?ts1) & ?rs = [?t|?ts1])],
+           succeeds token_list(?l2) & gr(?l2) & 
+           succeeds lh(?l2) @=< lh(?l1),
+           [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	    terminates arg_seq(?l2,?e2,?ts1),
+	    terminates (arg_seq(?l2,?e2,?ts1) & ?rs = [?t|?ts1])],
+           terminates (arg_seq(?l2,?e2,?ts1) & ?rs = [?t|?ts1]))],
+	 terminates (arg_seq(?l2,?e2,?ts1) & ?rs = [?t|?ts1])),
+	terminates 
+	(one_arg(?l1,?l2,?t) & arg_seq(?l2,?e2,?ts1) & ?rs = [?t|?ts1]),
+	terminates (?x = comma & one_arg(?l1,?l2,?t) & arg_seq(?l2,?e2,?ts1) &
+	   ?rs = [?t|?ts1]),
+	terminates 
+	 (~ ?x = close &
+	  (?x = comma & one_arg(?l1,?l2,?t) & arg_seq(?l2,?e2,?ts1) &
+	   ?rs = [?t|?ts1] \/
+	   ~ ?x = comma & ?e2 = error(arg_seq / [?x|?l1]) & ?rs = error))],
+       terminates (?x = close & ?e2 = ?l1 & ?rs = []) &
+       terminates 
+       (~ ?x = close &
+        (?x = comma & one_arg(?l1,?l2,?t) & arg_seq(?l2,?e2,?ts1) &
+         ?rs = [?t|?ts1] \/
+         ~ ?x = comma & ?e2 = error(arg_seq / [?x|?l1]) & ?rs = error))),
+      all [x,l1,l2,t,ts1]: ?e1 = [?x|?l1] => 
+       terminates (?x = close & ?e2 = ?l1 & ?rs = []) &
+       terminates 
+       (~ ?x = close &
+        (?x = comma & one_arg(?l1,?l2,?t) & arg_seq(?l2,?e2,?ts1) &
+         ?rs = [?t|?ts1] \/
+         ~ ?x = comma & ?e2 = error(arg_seq / [?x|?l1]) & ?rs = error)),
+      terminates arg_seq(?e1,?e2,?rs) by completion],
+     terminates arg_seq(?e1,?e2,?rs)),
+
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds lh(?e1) @< s(?k),
+     [assume(?e1 = [?x|?l1],
+       [gr([?x|?l1]), gr(?l1),
+	def succeeds token_list([?x|?l1]) by completion,
+	succeeds lh([?x|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	terminates one_arg(?l1,?l2,?t1),
+	assume(succeeds one_arg(?l1,?l2,?t1),
+	 [gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1) by
+           lemma(one_arg:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           terminates list_tail(?l2,?e2,?t2) by 
+            lemma(list_tail:error:termination),
+           succeeds token_list(?l2) & gr(?l2) & 
+           succeeds lh(?l2) @=< lh(?l1),
+           [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	    terminates list_tail(?l2,?e2,?t2)],
+           terminates list_tail(?l2,?e2,?t2)),
+	  terminates (list_tail(?l2,?e2,?t2) & ?r = fun('.',[?t1,?t2]))],
+	 terminates (list_tail(?l2,?e2,?t2) & ?r = fun('.',[?t1,?t2]))),
+	terminates 
+	(one_arg(?l1,?l2,?t1) & list_tail(?l2,?e2,?t2) &
+	 ?r = fun('.',[?t1,?t2])),
+	terminates one_arg(?l1,?l2,?r),
+	assume(succeeds one_arg(?l1,?l2,?r),
+	 [gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1) by
+           lemma(one_arg:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           terminates expect(?l2,close_list,?e2) by 
+            lemma(expect:error:termination),
+           succeeds token_list(?l2) & gr(?l2) & 
+           succeeds lh(?l2) @=< lh(?l1),
+           [gr(close_list),
+	    terminates expect(?l2,close_list,?e2) by 
+             lemma(expect:termination)],
+           terminates expect(?l2,close_list,?e2))],
+	 terminates expect(?l2,close_list,?e2)),
+	terminates (one_arg(?l1,?l2,?r) & expect(?l2,close_list,?e2)),
+	terminates (~ ?x = comma &
+	   (?x = head_tail_sep & one_arg(?l1,?l2,?r) &
+	    expect(?l2,close_list,?e2) \/
+	    ~ ?x = head_tail_sep & ?e2 = error(tail_begin / [?x|?l1]) &
+	    ?r = error)),
+	terminates 
+	 (~ ?x = close_list &
+	  (?x = comma & one_arg(?l1,?l2,?t1) & list_tail(?l2,?e2,?t2) &
+	   ?r = fun('.',[?t1,?t2]) \/
+	   ~ ?x = comma &
+	   (?x = head_tail_sep & one_arg(?l1,?l2,?r) &
+	    expect(?l2,close_list,?e2) \/
+	    ~ ?x = head_tail_sep & ?e2 = error(tail_begin / [?x|?l1]) &
+	    ?r = error)))],
+       terminates (?x = close_list & ?e2 = ?l1 & ?r = con([])) &
+       terminates 
+       (~ ?x = close_list &
+        (?x = comma & one_arg(?l1,?l2,?t1) & list_tail(?l2,?e2,?t2) &
+         ?r = fun('.',[?t1,?t2]) \/
+         ~ ?x = comma &
+         (?x = head_tail_sep & one_arg(?l1,?l2,?r) &
+          expect(?l2,close_list,?e2) \/
+          ~ ?x = head_tail_sep & ?e2 = error(tail_begin / [?x|?l1]) &
+          ?r = error)))),
+      all [x,l1,l2,t1,t2]: ?e1 = [?x|?l1] => 
+       terminates (?x = close_list & ?e2 = ?l1 & ?r = con([])) &
+       terminates 
+       (~ ?x = close_list &
+        (?x = comma & one_arg(?l1,?l2,?t1) & list_tail(?l2,?e2,?t2) &
+         ?r = fun('.',[?t1,?t2]) \/
+         ~ ?x = comma &
+         (?x = head_tail_sep & one_arg(?l1,?l2,?r) &
+          expect(?l2,close_list,?e2) \/
+          ~ ?x = head_tail_sep & ?e2 = error(tail_begin / [?x|?l1]) &
+          ?r = error))),
+      terminates list_tail(?e1,?e2,?r) by completion],
+     terminates list_tail(?e1,?e2,?r)),
+
+    assume(succeeds token_list(?e1) & gr(?e1) & succeeds integer(?m1) &
+     succeeds integer(?m2) & succeeds lh(?e1) @< s(?k),
+     [gr(?m1) by axiom(integer:gr),
+      gr(?m2) by axiom(integer:gr),
+      assume(?e1 = [name(?x)|?l1],
+       [def succeeds token_list([name(?x)|?l1]) by completion,
+	def succeeds token(name(?x)) by completion,
+	succeeds atom(?x),
+	terminates infix_op(?x) by lemma(infix_op:termination),
+	terminates infix_prec(?x,?n3,?n4,?n5) by 
+         lemma(infix_prec:termination),
+	succeeds lh([name(?x)|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	gr([name(?x)|?l1]), gr(?l1),
+	assume(succeeds infix_prec(?x,?n3,?n4,?n5),
+	 [succeeds integer(?n3) & succeeds integer(?n4) &
+          succeeds integer(?n5) by lemma(infix_prec:integer),
+	  terminates ?n3 =< ?m2 by axiom(leq:termination),
+	  terminates ?m1 =< ?n4 by axiom(leq:termination),
+	  succeeds 0 =< ?n5 by corollary(infix_prec:zero),
+	  terminates term(?l1,?n5,?l2,?t2),
+	  assume(succeeds term(?l1,?n5,?l2,?t2),
+	   [gr(?l2) & succeeds error(?l2) \/
+            succeeds token_list(?l2) & gr(?l2) &
+            succeeds lh(?l2) @=< lh(?l1) by lemma(term:lh:error),
+	    cases(gr(?l2) & succeeds error(?l2),
+             terminates more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) by 
+              lemma(more:error:termination),
+             succeeds token_list(?l2) & gr(?l2) &
+             succeeds lh(?l2) @=< lh(?l1),
+             [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	      terminates more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2)],
+             terminates more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2))],
+	   terminates more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2)),
+	  terminates 
+	  (term(?l1,?n5,?l2,?t2) &
+	   more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2)),
+	  gr(?m1) by axiom(integer:gr),
+	  gr(?n4) by axiom(integer:gr),
+	  terminates (~ ?m1 =< ?n4 &
+	   ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+	    ?r2 = error),
+	  terminates 
+	  (?n3 =< ?m2 &
+	   (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+	    more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+	    ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+	    ?r2 = error)),
+	  gr(?n3) by axiom(integer:gr),
+	  gr(?m2) by axiom(integer:gr),
+	  terminates (~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)],
+	 terminates 
+	 (?n3 =< ?m2 &
+	  (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+	   more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+	   ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+	   ?r2 = error)) &
+	 terminates (~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+	terminates 
+	(infix_prec(?x,?n3,?n4,?n5) &
+	 (?n3 =< ?m2 &
+	  (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+	   more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+	   ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+	   ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+	terminates 
+        (infix_op(?x) & infix_prec(?x,?n3,?n4,?n5) &
+         (?n3 =< ?m2 &
+          (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+           more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+           ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+           ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+        terminates postfix_op(?x) by lemma(postfix_op:termination),
+	gr(?x) by axiom(atom:gr),
+	terminates postfix_op(?x) by lemma(postfix_op:termination),
+	terminates postfix_prec(?x,?n3,?n4) by 
+         lemma(postfix_prec:termination),
+	assume(succeeds postfix_prec(?x,?n3,?n4),
+	 [succeeds integer(?n3) & succeeds integer(?n4) by 
+           lemma(postfix_prec:integer),
+	  terminates ?n3 =< ?m2 by axiom(leq:termination),
+	  terminates ?m1 =< ?n4 by axiom(leq:termination),
+	  gr(?m1) by axiom(integer:gr),
+	  gr(?n4) by axiom(integer:gr),
+	  terminates more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2),
+	  terminates 
+	  (?n3 =< ?m2 &
+	   (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+	    ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+	    ?r2 = error)),
+	  gr(?n3) by axiom(integer:gr),
+	  gr(?m2) by axiom(integer:gr),
+	  terminates (~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)],
+	 terminates 
+	 (?n3 =< ?m2 &
+	  (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+	   ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+	   ?r2 = error)) &
+	 terminates (~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+	terminates 
+	(postfix_prec(?x,?n3,?n4) &
+	 (?n3 =< ?m2 &
+	  (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+	   ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+	   ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+	terminates 
+	(postfix_op(?x) & postfix_prec(?x,?n3,?n4) &
+	 (?n3 =< ?m2 &
+	  (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+	   ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+	   ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)),
+	terminates 
+	(~ infix_op(?x) &
+	 (postfix_op(?x) & postfix_prec(?x,?n3,?n4) &
+	  (?n3 =< ?m2 &
+	   (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+	    ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+	    ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & 
+	   ?r2 = ?r1) \/
+	  ~ postfix_op(?x) & ?e2 = [name(?x)|?l1] & ?r2 = ?r1))],
+       terminates 
+       (infix_op(?x) & infix_prec(?x,?n3,?n4,?n5) &
+        (?n3 =< ?m2 &
+         (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+          more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+          ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+          ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)) &
+       terminates 
+       (~ infix_op(?x) &
+        (postfix_op(?x) & postfix_prec(?x,?n3,?n4) &
+         (?n3 =< ?m2 &
+          (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+           ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+           ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1) \/
+         ~ postfix_op(?x) & ?e2 = [name(?x)|?l1] & ?r2 = ?r1))),
+      assume(?e1 = [comma|?l1],
+       [terminates 1000 =< ?m2 by axiom(leq:termination),
+	terminates ?m1 =< 999 by axiom(leq:termination),
+	gr([comma|?l1]), gr(?l1),
+	def succeeds token_list([comma|?l1]) by completion,
+	succeeds lh([comma|?l1]) @< s(?k),
+	succeeds lh(?l1) @< ?k by lemma(lh:cons:less),
+	terminates term(?l1,1000,?l2,?t2),
+	assume(succeeds term(?l1,1000,?l2,?t2),
+	 [succeeds 0 =< 1000 by builtin,
+	  gr(?l2) & succeeds error(?l2) \/
+          succeeds token_list(?l2) & gr(?l2) & succeeds lh(?l2) @=< lh(?l1) by
+           lemma(term:lh:error),
+	  cases(gr(?l2) & succeeds error(?l2),
+           terminates more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2) by 
+            lemma(more:error:termination),
+           succeeds token_list(?l2) & gr(?l2) & 
+           succeeds lh(?l2) @=< lh(?l1),
+           [succeeds lh(?l2) @< ?k by theorem(leq:less:transitive),
+	    terminates more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2)],
+           terminates more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2))],
+	 terminates more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2)),
+	terminates 
+	(term(?l1,1000,?l2,?t2) &
+	 more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2)),
+	terminates (~ ?m1 =< 999 &
+	 ?e2 = error(more_comma_as_infix / [comma|?l1]) & ?r2 = error),
+	terminates 
+        (1000 =< ?m2 &
+         (?m1 =< 999 & term(?l1,1000,?l2,?t2) &
+          more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2) \/
+          ~ ?m1 =< 999 & ?e2 = error(more_comma_as_infix / [comma|?l1]) &
+          ?r2 = error)),
+	terminates 1000 =< ?m2 by axiom(leq:termination),
+        terminates (~ 1000 =< ?m2 & ?e2 = [comma|?l1] & ?r2 = ?r1)],
+       terminates 
+       (1000 =< ?m2 &
+        (?m1 =< 999 & term(?l1,1000,?l2,?t2) &
+         more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2) \/
+         ~ ?m1 =< 999 & ?e2 = error(more_comma_as_infix / [comma|?l1]) &
+         ?r2 = error)) &
+       terminates (~ 1000 =< ?m2 & ?e2 = [comma|?l1] & ?r2 = ?r1)),
+      (all [x,l1,n3,n4,n5,l2,t2]: ?e1 = [name(?x)|?l1] => 
+        terminates 
+        (infix_op(?x) & infix_prec(?x,?n3,?n4,?n5) &
+         (?n3 =< ?m2 &
+          (?m1 =< ?n4 & term(?l1,?n5,?l2,?t2) &
+           more(?l2,?n3,?m2,fun(?x,[?r1,?t2]),?e2,?r2) \/
+           ~ ?m1 =< ?n4 & ?e2 = error(more_infix_prec / [name(?x)|?l1]) &
+           ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1)) &
+        terminates 
+        (~ infix_op(?x) &
+         (postfix_op(?x) & postfix_prec(?x,?n3,?n4) &
+          (?n3 =< ?m2 &
+           (?m1 =< ?n4 & more(?l1,?n3,?m2,fun(?x,[?r1]),?e2,?r2) \/
+            ~ ?m1 =< ?n4 & ?e2 = error(more_postfix_prec / [name(?x)|?l1]) &
+            ?r2 = error) \/ ~ ?n3 =< ?m2 & ?e2 = [name(?x)|?l1] & ?r2 = ?r1) \/
+          ~ postfix_op(?x) & ?e2 = [name(?x)|?l1] & ?r2 = ?r1))) &
+      (all [l1,l2,t2]: ?e1 = [comma|?l1] => 
+        terminates 
+        (1000 =< ?m2 &
+         (?m1 =< 999 & term(?l1,1000,?l2,?t2) &
+          more(?l2,1000,?m2,fun(',',[?r1,?t2]),?e2,?r2) \/
+          ~ ?m1 =< 999 & ?e2 = error(more_comma_as_infix / [comma|?l1]) &
+          ?r2 = error)) &
+        terminates (~ 1000 =< ?m2 & ?e2 = [comma|?l1] & ?r2 = ?r1)) &
+      (?e2 = ?e1 & ?r2 = ?r1 => terminates more_begin(?e1) & gr(?e1)),
+      terminates more(?e1,?m1,?m2,?r1,?e2,?r2) by completion],
+     terminates more(?e1,?m1,?m2,?r1,?e2,?r2))],
+   (all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< s(?k) & succeeds integer(?m) & succeeds 0 =< ?m =>
+     terminates term(?e1,?m,?e2,?r)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< s(?k) => terminates one_arg(?e1,?e2,?r)) &
+   (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< s(?k) => terminates arg_seq(?e1,?e2,?rs)) &
+   (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds lh(?e1) @< s(?k) => terminates list_tail(?e1,?e2,?r)) &
+   (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+     succeeds integer(?m1) & succeeds integer(?m2) &
+     succeeds lh(?e1) @< s(?k) => terminates more(?e1,?m1,?m2,?r1,?e2,?r2)))])
+).
+
+:- theorem(term:termination,
+all [l1,n,l2,t]: succeeds token_list(?l1) & gr(?l1) &
+ succeeds integer(?n) & succeeds 0 =< ?n => terminates term(?l1,?n,?l2,?t),
+assume(succeeds token_list(?l1) & gr(?l1) & succeeds integer(?n) &
+ succeeds 0 =< ?n,
+ [succeeds list(?l1) by lemma(token_list:list),
+  succeeds nat(lh(?l1)) by corollary(lh:types),
+  succeeds lh(?l1) @< s(lh(?l1)) by lemma(less:one),
+  succeeds nat(s(lh(?l1))) by sld,
+  (all [e1,m,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+    succeeds lh(?e1) @< s(lh(?l1)) & succeeds integer(?m) & 
+    succeeds 0 =< ?m => terminates term(?e1,?m,?e2,?r)) &
+  (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+    succeeds lh(?e1) @< s(lh(?l1)) => terminates one_arg(?e1,?e2,?r)) &
+  (all [e1,e2,rs]: succeeds token_list(?e1) & gr(?e1) &
+    succeeds lh(?e1) @< s(lh(?l1)) => terminates arg_seq(?e1,?e2,?rs)) &
+  (all [e1,e2,r]: succeeds token_list(?e1) & gr(?e1) &
+    succeeds lh(?e1) @< s(lh(?l1)) => terminates list_tail(?e1,?e2,?r)) &
+  (all [e1,m1,m2,e2,r1,r2]: succeeds token_list(?e1) & gr(?e1) &
+    succeeds integer(?m1) & succeeds integer(?m2) &
+    succeeds lh(?e1) @< s(lh(?l1)) => 
+     terminates more(?e1,?m1,?m2,?r1,?e2,?r2)) by lemma(term:termination),
+  terminates term(?l1,?n,?l2,?t)],
+ terminates term(?l1,?n,?l2,?t))
+).
+
+:- bye(termination).

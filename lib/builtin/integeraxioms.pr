@@ -1,0 +1,34 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Sun Feb 25 17:01:05 1996 */
+/* Filename: integeraxioms.pr */
+/* Abstract: Axioms for the built-in predicate integer/1. */
+
+:- initialize.
+:- thm_file($(lib)/builtin/integeraxioms).
+:- tex_file($(tmp)/integeraxioms).
+
+:- axiom(integer:ground,
+all x: succeeds integer(?x) => gr(?x)
+).
+
+:- axiom(integer:less:termination,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ terminates ?x < ?y
+).
+
+:- axiom(integer:less:total,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ succeeds ?x < ?y \/ ?x = ?y \/ succeeds ?y < ?x
+).
+
+:- axiom(integer:leq:termination,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ terminates ?x =< ?y
+).
+
+:- axiom(integer:leq:total,
+all [x,y]: succeeds integer(?x) & succeeds integer(?y) =>
+ succeeds ?x =< ?y \/ succeeds ?y =< ?x
+).
+
+:- bye(integeraxioms).

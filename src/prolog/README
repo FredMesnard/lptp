@@ -1,0 +1,135 @@
+#   Author: Robert F. Staerk <robert.staerk@unifr.ch> 
+#  Created: Fri Aug 14 09:52:55 1998 
+# Filename: README 
+# Abstract: The meaning of the predicates used in system.pl
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__lptp_home(X)
+
+Description: 
+
+   X is the full path name of the lptp directory.
+   X is a Prolog atom.
+
+Example: 
+
+   ?- io__lptp_home(X).
+
+   X = '/home/staerk/lptp'
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__path_sep(X)
+
+Description:
+
+   X is the path separator of the operating system.
+   X is a Prolog atom.
+
+Example: 
+
+   ?- io__path_sep(X).
+
+   X = /
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: once(X)
+
+Description:
+
+   X should be a ground term representing a goal.
+   X is called once. If it succeeds, the remaining choices in the
+   computation of X are discarded.
+  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: concat_atom(X,Y)
+
+Description:
+
+   X should be a list of Prolog atoms.
+   Y is the concatenation of the atoms of the list X.
+   Y is a Prolog atom. 
+
+Example: 
+
+   ?- concat_atom([pro,log],Y).
+
+   Y = prolog.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: atom_length(X,Y)
+
+Description:
+
+   X should be a Prolog atom.
+   Y is the number of characters of X.
+
+Example: 
+
+   ?- atom_length(prolog,Y).
+
+   Y = 6
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__get_stream(X,Y,Z).
+
+Description:
+
+   X should be a file name.
+   Y should be the atom `read' or `write'.
+   Z is a stream associated to X.
+
+Example: 
+
+   ?- io__get_stream('/tmp/foo',write,Z).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__set_output(X)
+
+Description:
+
+   X should be a stream. 
+   The current output stream is set to X.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__set_input(X)
+
+Description:
+
+   X should be a stream. 
+   The current input stream is set to X.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: db__user_stream(X).
+
+Description:
+
+   X is the current user stream.
+   The predicate db__user_stream/1 has to be dynamic.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: io__original_user(X).
+
+Description:
+
+   X is the original user stream.
+
+Example:
+
+   ?- io__original_user(X).
+
+   X = user
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicate: read_with_variables(X,Y)
+
+Description:
+
+    X is the next term read from the current input stream.
+    Y is the list of variable names of X.
+
+Example: 
+
+    ?- read_with_variables(X,Y).
+    f(A,B,_,A).
+
+    X = f(_6711,_6728,_6745,_6711)
+    Y = ['A'=_6711,'B'=_6728]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

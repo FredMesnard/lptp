@@ -1,0 +1,2179 @@
+/*   Author: Robert Staerk <staerk@saul.cis.upenn.edu> */
+/*  Created: Wed Mar  6 17:05:04 1996 */
+/* Filename: write.pr */
+/* Abstract: write(T,L) implies parse(L,T). */
+
+:- initialize.
+
+:- tex_file($(tmp)/write).
+:- thm_file($(tmp)/write).
+
+:- needs_gr($(lib)/list/list).
+:- needs_gr($(examples)/parser/src/write).
+:- needs_gr($(examples)/parser/src/grammar).
+
+:- needs_thm($(lib)/list/list).
+:- needs_thm($(tmp)/axioms).
+:- needs_thm($(tmp)/precedence).
+:- needs_thm($(tmp)/grammar).
+
+:- lemma(add_layout:wf_term,
+all [l,l1,l2,n,t]: succeeds wf_term(?l,?n,?t) &
+ succeeds add_layout(?l ** ?l1,?l2) =>
+  (ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+    ?x <> open(nolayout)),
+assume(succeeds wf_term(?l,?n,?t) & succeeds add_layout(?l ** ?l1,?l2),
+ [succeeds list(?l) by corollary(wf_term:list),
+  ex [x,l0]: ?l = [?x|?l0] by corollary(wf_term:cons),
+  exist([x,l0],
+   ?l = [?x|?l0],
+   [succeeds wf_term([?x|?l0],?n,?t),
+    def succeeds list([?x|?l0]) by completion,
+    [?x|?l0] ** ?l1 = [?x|?l0 ** ?l1] by corollary(app:cons),
+    ?l ** ?l1 = [?x|?l0] ** ?l1 = [?x|?l0 ** ?l1],
+    def succeeds add_layout([?x|?l0 ** ?l1],?l2) by completion,
+    cases(?x = open(nolayout) & ?l2 = [open(layout)|?l0 ** ?l1],
+     [succeeds wf_term([open(nolayout)|?l0],?n,?t),
+      succeeds wf_term([open(layout)|?l0],?n,?t) by corollary(wf_term:layout),
+      open(layout) <> open(nolayout),
+      [open(layout)|?l0] ** ?l1 = [open(layout)|?l0 ** ?l1] by 
+       corollary(app:cons),
+      [open(layout)|?l0] ** ?l1 = ?l2,
+      ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+      ?x <> open(nolayout)],
+     ?x <> open(nolayout) & ?l2 = [?x|?l0 ** ?l1],
+     [[?x|?l0] ** ?l1 = ?l2,
+      ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+      ?x <> open(nolayout)],
+     ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+      ?x <> open(nolayout))],
+   ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+    ?x <> open(nolayout))],
+ ex [x,l3]: succeeds wf_term([?x|?l3],?n,?t) & [?x|?l3] ** ?l1 = ?l2 &
+  ?x <> open(nolayout))
+).
+
+:- lemma(open_par:close_par,
+all [m,n,l1,l2,l3,l4,t]: succeeds 0 =< ?m & succeeds close_par(?m,?n,?l1,?l2) &
+ succeeds wf_term(?l3,?n,?t) & succeeds open_par(?m,?n,?l3 ** ?l2,?l4) =>
+  (ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+    succeeds wf_term(?l5,?k,?t)),
+assume(succeeds 0 =< ?m &
+ succeeds close_par(?m,?n,?l1,?l2) & succeeds wf_term(?l3,?n,?t) &
+ succeeds open_par(?m,?n,?l3 ** ?l2,?l4),
+ [def succeeds close_par(?m,?n,?l1,?l2) by completion,
+  cases(succeeds ?m < ?n & ?l2 = [close|?l1],
+   [def succeeds open_par(?m,?n,?l3 ** ?l2,?l4) by completion,
+    cases(succeeds ?m < ?n & ?l4 = [open(nolayout)|?l3 ** ?l2],
+     [succeeds ?n =< 1200 by corollary(wf_term:1200),
+      succeeds list(?l3) by corollary(wf_term:list),
+      succeeds list([open(nolayout)|?l3]) by sld,
+      succeeds append([open(nolayout)|?l3],[close],
+       [open(nolayout)|?l3] ** [close]) by existence(**,2),
+      succeeds wf_term([open(nolayout)|?l3] ** [close],0,?t) by sld,
+      [open(nolayout)|?l3] ** [close] ** ?l1 =
+       [open(nolayout)|?l3 ** [close|?l1]] by concatenation,
+      [open(nolayout)|?l3 ** [close|?l1]] =
+       [open(nolayout)|?l3 ** ?l2] = ?l4,
+      [open(nolayout)|?l3] ** [close] ** ?l1 = ?l4,
+      ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+      succeeds wf_term(?l5,?k,?t)],
+     fails ?m < ?n & ?l4 = ?l3 ** ?l2,
+     [],
+     ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+      succeeds wf_term(?l5,?k,?t))],
+   fails ?m < ?n & ?l2 = ?l1,
+   [def succeeds open_par(?m,?n,?l3 ** ?l2,?l4) by completion,
+    cases(succeeds ?m < ?n & ?l4 = [open(nolayout)|?l3 ** ?l2],
+     [],
+     fails ?m < ?n & ?l4 = ?l3 ** ?l2,
+     [?l3 ** ?l2 = ?l4,
+      ?l3 ** ?l1 = ?l4,
+      succeeds ?n =< ?m by axiom(less:failure:leq:success),
+      ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+      succeeds wf_term(?l5,?k,?t)],
+     ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+      succeeds wf_term(?l5,?k,?t))],
+   ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+    succeeds wf_term(?l5,?k,?t))],
+ ex [l5,k]: ?l5 ** ?l1 = ?l4 & succeeds ?k =< ?m &
+  succeeds wf_term(?l5,?k,?t))
+).
+
+:- lemma(un_parse:wf_term,
+succeeds consistent_op =>
+ (all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) =>
+    succeeds parse_tree(?r) & succeeds 0 =< ?m =>
+     (ex [e0,k]: ?e0 ** ?e1 = ?e2 & succeeds ?k =< ?m &
+       succeeds wf_term(?e0,?k,?r))) &
+ (all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) =>
+    succeeds parse_tree(?r) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_one_arg(?e0,?r))) &
+ (all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) =>
+    succeeds parse_tree_list(?rs) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_arg_seq(?e0,?rs))) &
+ (all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) =>
+    succeeds parse_tree(?r) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_list_tail(?e0,?r))),
+assume(succeeds consistent_op,
+induction(
+ [all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) => 
+    succeeds parse_tree(?r) & succeeds 0 =< ?m => 
+     (ex [e0,k]: ?e0 ** ?e1 = ?e2 & succeeds ?k =< ?m &
+       succeeds wf_term(?e0,?k,?r)),
+  all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) => succeeds parse_tree(?r) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_one_arg(?e0,?r)),
+  all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) => 
+    succeeds parse_tree_list(?rs) => 
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_arg_seq(?e0,?rs)),
+  all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) => 
+    succeeds parse_tree(?r) => 
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_list_tail(?e0,?r))],
+ [step([x,0,l],
+   [],
+   assume(succeeds parse_tree(variable(?x)) & succeeds 0 =< ?0,
+    [[variable(?x)] ** ?l = [variable(?x)|?l] by concatenation,
+     succeeds wf_term([variable(?x)],0,variable(?x)) by sld,
+     ex [e0,k]: ?e0 ** ?l = [variable(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,variable(?x))],
+    ex [e0,k]: ?e0 ** ?l = [variable(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,variable(?x))),
+   succeeds parse_tree(variable(?x)) & succeeds 0 =< ?0 => 
+    (ex [e0,k]: ?e0 ** ?l = [variable(?x)|?l] & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,variable(?x)))),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(integer(?x)) & succeeds 0 =< ?0,
+    [[integer(?x)] ** ?l = [integer(?x)|?l] by concatenation,
+     succeeds wf_term([integer(?x)],0,integer(?x)) by sld,
+     ex [e0,k]: ?e0 ** ?l = [integer(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,integer(?x))],
+    ex [e0,k]: ?e0 ** ?l = [integer(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,integer(?x))),
+   succeeds parse_tree(integer(?x)) & succeeds 0 =< ?0 => 
+    (ex [e0,k]: ?e0 ** ?l = [integer(?x)|?l] & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,integer(?x)))),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(float_number(?x)) & succeeds 0 =< ?0,
+    [[float_number(?x)] ** ?l = [float_number(?x)|?l] by concatenation,
+     succeeds wf_term([float_number(?x)],0,float_number(?x)) by sld,
+     ex [e0,k]: ?e0 ** ?l = [float_number(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,float_number(?x))],
+    ex [e0,k]: ?e0 ** ?l = [float_number(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,float_number(?x))),
+   succeeds parse_tree(float_number(?x)) & succeeds 0 =< ?0 => 
+    (ex [e0,k]: ?e0 ** ?l = [float_number(?x)|?l] & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,float_number(?x)))),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(char_code_list(?x)) & succeeds 0 =< ?0,
+    [[char_code_list(?x)] ** ?l = [char_code_list(?x)|?l] by concatenation,
+     succeeds wf_term([char_code_list(?x)],0,char_code_list(?x)) by sld,
+     ex [e0,k]: ?e0 ** ?l = [char_code_list(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,char_code_list(?x))],
+    ex [e0,k]: ?e0 ** ?l = [char_code_list(?x)|?l] & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,char_code_list(?x))),
+   succeeds parse_tree(char_code_list(?x)) & succeeds 0 =< ?0 => 
+    (ex [e0,k]: ?e0 ** ?l = [char_code_list(?x)|?l] & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,char_code_list(?x)))),
+  step([x,0,l1,l2],
+   [?x = [] & ?l2 = [open_list,close_list|?l1] \/
+    ?x <> [] &
+    (?x = '{}' & ?l2 = [open_curly,close_curly|?l1] \/
+     ?x <> '{}' &
+     (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+      fails symbol_op(?x) & ?l2 = [name(?x)|?l1]))],
+   assume(succeeds parse_tree(con(?x)) & succeeds 0 =< ?0,
+    cases(?x = [] & ?l2 = [open_list,close_list|?l1],
+     [succeeds wf_term([open_list,close_list],0,con([])) by sld,
+      succeeds wf_term([open_list,close_list],0,con(?x)),
+      [open_list,close_list] ** ?l1 = [open_list,close_list|?l1] by
+       concatenation,
+      [open_list,close_list] ** ?l1 = ?l2,
+      ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,con(?x))],
+     ?x <> [] &
+     (?x = '{}' & ?l2 = [open_curly,close_curly|?l1] \/
+      ?x <> '{}' &
+      (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+       fails symbol_op(?x) & ?l2 = [name(?x)|?l1])),
+     cases(?x = '{}' & ?l2 = [open_curly,close_curly|?l1],
+      [succeeds wf_term([open_curly,close_curly],0,con('{}')) by sld,
+       succeeds wf_term([open_curly,close_curly],0,con(?x)),
+       [open_curly,close_curly] ** ?l1 = [open_curly,close_curly|?l1] by
+	concatenation,
+       [open_curly,close_curly] ** ?l1 = ?l2,
+       ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+       succeeds wf_term(?e0,?k,con(?x))],
+      ?x <> '{}' &
+      (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+       fails symbol_op(?x) & ?l2 = [name(?x)|?l1]),
+      cases(succeeds symbol_op(?x) &
+       ?l2 = [open(nolayout),name(?x),close|?l1],
+       [succeeds wf_term([open(nolayout),name(?x),close],0,con(?x)) by sld,
+	[open(nolayout),name(?x),close] ** ?l1 =
+	 [open(nolayout),name(?x),close|?l1] by concatenation,
+	[open(nolayout),name(?x),close] ** ?l1 = ?l2,
+	ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+        succeeds wf_term(?e0,?k,con(?x))],
+       fails symbol_op(?x) & ?l2 = [name(?x)|?l1],
+       [succeeds wf_term([name(?x)],0,con(?x)) by sld,
+	[name(?x)] ** ?l1 = [name(?x)|?l1] by concatenation,
+	[name(?x)] ** ?l1 = ?l2,
+	ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+        succeeds wf_term(?e0,?k,con(?x))],
+       ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+        succeeds wf_term(?e0,?k,con(?x))),
+      ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+       succeeds wf_term(?e0,?k,con(?x))),
+     ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,con(?x))),
+    ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+     succeeds wf_term(?e0,?k,con(?x))),
+   succeeds parse_tree(con(?x)) & succeeds 0 =< ?0 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< ?0 &
+      succeeds wf_term(?e0,?k,con(?x)))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds 0 =< ?n3 => 
+     (ex [e0,k]: ?e0 ** ?l2 = ?l3 & succeeds ?k =< ?n3 &
+       succeeds wf_term(?e0,?k,?t1)),
+    ?ts = [],
+    succeeds prefix_op(?x),
+    ?x <> (-),
+    succeeds prefix_prec(?x,?n2,?n3),
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t1,?n3,?l2,?l3),
+    succeeds add_layout(?l3,?l4),
+    succeeds open_par(?n1,?n2,[name(?x)|?l4],?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1])) by completion,
+     def succeeds parse_tree_list([?t1]) by completion,
+     succeeds 0 =< ?n3 by corollary(prefix_prec:zero),
+     ex [e0,k]: ?e0 ** ?l2 = ?l3 & succeeds ?k =< ?n3 &
+       succeeds wf_term(?e0,?k,?t1),
+     exist([e0,k],
+      ?e0 ** ?l2 = ?l3 & succeeds ?k =< ?n3 & succeeds wf_term(?e0,?k,?t1),
+      [succeeds add_layout(?e0 ** ?l2,?l4),
+       ex [y,e1]: succeeds wf_term([?y|?e1],?k,?t1) & [?y|?e1] ** ?l2 = ?l4 &
+        ?y <> open(nolayout) by lemma(add_layout:wf_term),
+       exist([y,e1],
+        succeeds wf_term([?y|?e1],?k,?t1) & [?y|?e1] ** ?l2 = ?l4 &
+        ?y <> open(nolayout),
+        [succeeds wf_term([name(?x),?y|?e1],?n2,fun(?x,[?t1])) by sld,
+	 succeeds wf_term([name(?x),?y|?e1],?n2,fun(?x,[?t1|?ts])),
+	 succeeds list([?y|?e1]) by corollary(wf_term:list),
+	 [name(?x),?y|?e1] ** ?l2 = [name(?x)|[?y|?e1] ** ?l2] by
+	  concatenation,
+	 [name(?x),?y|?e1] ** ?l2 = [name(?x)|?l4],
+	 succeeds open_par(?n1,?n2,[name(?x),?y|?e1] ** ?l2,?l5),
+	 ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+          succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])) by 
+          lemma(open_par:close_par)],
+        ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t2) & succeeds 0 =< ?n4 => 
+     (ex [e0,k]: ?e0 ** ?l2 = ?l3 & succeeds ?k =< ?n4 &
+       succeeds wf_term(?e0,?k,?t2)),
+    succeeds parse_tree(?t1) & succeeds 0 =< ?n3 => 
+     (ex [e0,k]: ?e0 ** [?y|?l3] = ?l4 & succeeds ?k =< ?n3 &
+       succeeds wf_term(?e0,?k,?t1)),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    succeeds singleton(?ts),
+    succeeds infix_op(?x),
+    succeeds infix_prec(?x,?n2,?n3,?n4),
+    ?ts = [?t2],
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t2,?n4,?l2,?l3),
+    ?x = (',') & ?y = comma \/ ?x <> (',') & ?y = name(?x),
+    succeeds un_parse(?t1,?n3,[?y|?l3],?l4),
+    succeeds open_par(?n1,?n2,?l4,?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     succeeds ?n2 =< 1200 & succeeds 0 =< ?n3 & succeeds 0 =< ?n4 by 
+      lemma(infix_prec:precedence),
+     ex [e0,k]: ?e0 ** ?l2 = ?l3 & succeeds ?k =< ?n4 &
+       succeeds wf_term(?e0,?k,?t2),
+     exist([e0,k0],
+      ?e0 ** ?l2 = ?l3 & succeeds ?k0 =< ?n4 & succeeds wf_term(?e0,?k0,?t2),
+      [ex [e0,k]: ?e0 ** [?y|?l3] = ?l4 & succeeds ?k =< ?n3 &
+       succeeds wf_term(?e0,?k,?t1),
+       exist([e1,k1],
+        ?e1 ** [?y|?l3] = ?l4 & succeeds ?k1 =< ?n3 &
+        succeeds wf_term(?e1,?k1,?t1),
+        [succeeds list(?e0) by corollary(wf_term:list),
+	 succeeds list(?e1) by corollary(wf_term:list),
+	 succeeds ?n3 =< ?n2 & succeeds ?n4 =< ?n2 by 
+            lemma(infix_prec:leq),
+	 cases(?x = (',') & ?y = comma,
+          [succeeds infix_prec(',',1000,999,1000) by 
+            lemma(consistent_op:comma:infix_prec),
+	   1000 = ?n2 & 999 = ?n3 & 1000 = ?n4 by 
+            lemma(infix_prec:function),
+	   succeeds ?k0 =< 1000,
+	   succeeds ?k1 =< 999,
+	   succeeds append(?e1,[comma|?e0],?e1 ** [comma|?e0])
+	    by existence(**,2),
+	   succeeds wf_term(?e1 ** [comma|?e0],1000,fun(',',[?t1,?t2]))
+	    by sld,
+	   succeeds wf_term(?e1 ** [?y|?e0],?n2,fun(?x,[?t1,?t2]))],
+          ?x <> (',') & ?y = name(?x),
+          [succeeds append(?e1,[name(?x)|?e0],?e1 ** [name(?x)|?e0])
+	    by existence(**,2),
+	   succeeds wf_term(?e1 ** [name(?x)|?e0],?n2,fun(?x,[?t1,?t2]))
+	    by sld,
+	   succeeds wf_term(?e1 ** [?y|?e0],?n2,fun(?x,[?t1,?t2]))],
+          succeeds wf_term(?e1 ** [?y|?e0],?n2,fun(?x,[?t1,?t2]))),
+	 succeeds wf_term(?e1 ** [?y|?e0],?n2,fun(?x,[?t1|?ts])),
+	 ?e1 ** [?y|?e0] ** ?l2 = ?e1 ** [?y|?e0 ** ?l2] by concatenation,
+	 ?e1 ** [?y|?e0] ** ?l2 = ?e1 ** [?y|?e0 ** ?l2] =
+	  ?e1 ** [?y|?l3] = ?l4,
+	 succeeds open_par(?n1,?n2,?e1 ** [?y|?e0] ** ?l2,?l5),
+	 ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+          succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])) by 
+          lemma(open_par:close_par)],
+        ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds 0 =< ?n3 => 
+     (ex [e0,k]: ?e0 ** [name(?x)|?l2] = ?l3 & succeeds ?k =< ?n3 &
+       succeeds wf_term(?e0,?k,?t1)),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts = [],
+    succeeds postfix_op(?x),
+    succeeds postfix_prec(?x,?n2,?n3),
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t1,?n3,[name(?x)|?l2],?l3),
+    succeeds open_par(?n1,?n2,?l3,?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1])) by completion,
+     def succeeds parse_tree_list([?t1]) by completion,
+     succeeds ?n2 =< 1200 & succeeds 0 =< ?n3 by 
+      lemma(postfix_prec:precedence),
+     ex [e0,k]: ?e0 ** [name(?x)|?l2] = ?l3 & succeeds ?k =< ?n3 &
+      succeeds wf_term(?e0,?k,?t1),
+     exist([e0,k],
+      ?e0 ** [name(?x)|?l2] = ?l3 & succeeds ?k =< ?n3 &
+      succeeds wf_term(?e0,?k,?t1),
+      [succeeds list(?e0) by corollary(wf_term:list),
+       succeeds append(?e0,[name(?x)],?e0 ** [name(?x)]) by
+	existence(**,2),
+       succeeds wf_term(?e0 ** [name(?x)],?n2,fun(?x,[?t1])) by sld,
+       succeeds wf_term(?e0 ** [name(?x)],?n2,fun(?x,[?t1|?ts])),
+       ?e0 ** [name(?x)] ** ?l2 = ?e0 ** [name(?x)|?l2] by
+	concatenation,
+       ?e0 ** [name(?x)] ** ?l2 = ?l3,
+       succeeds open_par(?n1,?n2,?e0 ** [name(?x)] ** ?l2,?l5),
+       ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+        succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])) by 
+        lemma(open_par:close_par)],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t2) => 
+     (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_list_tail(?e0,?t2)),
+    succeeds parse_tree(?t1) => 
+     (ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1)),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    succeeds singleton(?ts),
+    ?x = '.',
+    ?ts = [?t2],
+    succeeds un_list_tail(?t2,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l5 = [open_list|?l3]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+     exist(e0,
+      ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+      [ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_list_tail(?e0,?t2),
+       exist(e1,
+        ?e1 ** ?l1 = ?l2 & succeeds wf_list_tail(?e1,?t2),
+        [succeeds list(?e0) by corollary(wf_one_arg:list),
+	 succeeds list(?e1) by corollary(wf_list_tail:list),
+	 succeeds append([open_list|?e0],?e1,[open_list|?e0] ** ?e1) by
+	  existence(**,2),
+	 succeeds wf_term([open_list|?e0] ** ?e1,0,fun('.',[?t1,?t2])) by sld,
+	 succeeds wf_term([open_list|?e0] ** ?e1,0,fun(?x,[?t1|?ts])),
+	 [open_list|?e0] ** ?e1 ** ?l1 = [open_list|?e0 ** (?e1 ** ?l1)]
+	  by concatenation,
+	 [open_list|?e0 ** (?e1 ** ?l1)] = [open_list|?e0 ** ?l2] =
+	  [open_list|?l3] = ?l5,
+	 [open_list|?e0] ** ?e1 ** ?l1 = ?l5,
+	 ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))],
+        ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds 0 =< 1200 => 
+     (ex [e0,k]: ?e0 ** [close_curly|?l1] = ?l2 & succeeds ?k =< 1200 &
+       succeeds wf_term(?e0,?k,?t1)),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    fails singleton(?ts) \/ ?x <> '.',
+    ?ts = [],
+    ?x = '{}',
+    succeeds un_parse(?t1,1200,[close_curly|?l1],?l2),
+    ?l5 = [open_curly|?l2]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1])) by completion,
+     def succeeds parse_tree_list([?t1]) by completion,
+     ex [e0,k]: ?e0 ** [close_curly|?l1] = ?l2 & succeeds ?k =< 1200 &
+      succeeds wf_term(?e0,?k,?t1),
+     exist([e0,k],
+      ?e0 ** [close_curly|?l1] = ?l2 & succeeds ?k =< 1200 &
+      succeeds wf_term(?e0,?k,?t1),
+      [succeeds ?k =< 1200 by corollary(wf_term:1200),
+       succeeds list(?e0) by corollary(wf_term:list),
+       succeeds append([open_curly|?e0],[close_curly],
+	[open_curly|?e0] ** [close_curly]) by existence(**,2),
+       succeeds wf_term([open_curly|?e0] ** [close_curly],0,fun('{}',[?t1]))
+	by sld,
+       succeeds wf_term([open_curly|?e0] ** [close_curly],0,fun(?x,[?t1|?ts])),
+       [open_curly|?e0] ** [close_curly] ** ?l1 =
+        [open_curly|?e0 ** [close_curly|?l1]] by concatenation,
+       [open_curly|?e0 ** [close_curly|?l1]] = [open_curly|?l2] = ?l5,
+       [open_curly|?e0] ** [close_curly] ** ?l1 = ?l5,
+       ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree_list(?ts) => 
+     (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e0,?ts)),
+    succeeds parse_tree(?t1) => 
+     (ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1)),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    fails singleton(?ts) \/ ?x <> '.',
+    ?ts <> [] \/ ?x <> '{}',
+    succeeds un_arg_seq(?ts,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l5 = [name(?x),open(nolayout)|?l3]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1,
+    [def succeeds parse_tree(fun(?x,[?t1|?ts])) by completion,
+     def succeeds parse_tree_list([?t1|?ts]) by completion,
+     ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+     exist(e0,
+      ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+      [ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e0,?ts),
+       exist(e1,
+        ?e1 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e1,?ts),
+        [succeeds list(?e0) by corollary(wf_one_arg:list),
+	 succeeds list(?e1) by corollary(wf_arg_seq:list),
+	 succeeds append([name(?x),open(nolayout)|?e0],?e1,
+	  [name(?x),open(nolayout)|?e0] ** ?e1) by existence(**,2),
+	 succeeds wf_term([name(?x),open(nolayout)|?e0] ** ?e1,0,
+	  fun(?x,[?t1|?ts])) by sld,
+	 [name(?x),open(nolayout)|?e0] ** ?e1 ** ?l1 =
+	  [name(?x),open(nolayout)|?e0 ** (?e1 ** ?l1)] by concatenation,
+	 [name(?x),open(nolayout)|?e0 ** (?e1 ** ?l1)] =
+	  [name(?x),open(nolayout)|?e0 ** ?l2] =
+	  [name(?x),open(nolayout)|?l3] = ?l5,
+	 [name(?x),open(nolayout)|?e0] ** ?e1 ** ?l1 = ?l5,
+	 ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))],
+        ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+         succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+      ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+       succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))],
+    ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+     succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts]))),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds 0 =< ?n1 => 
+    (ex [e0,k]: ?e0 ** ?l1 = ?l5 & succeeds ?k =< ?n1 &
+      succeeds wf_term(?e0,?k,fun(?x,[?t1|?ts])))),
+  step([t,l1,l2,x],
+   [succeeds con_tree(?t),
+    ?t = con(?x),
+    ?l2 = [name(?x)|?l1]],
+   assume(succeeds parse_tree(?t),
+    [def succeeds parse_tree(con(?x)) by completion,
+     succeeds atom(?x),
+     terminates symbol_op(?x) by lemma(symbol_op:termination),
+     succeeds symbol_op(?x) \/ fails symbol_op(?x),
+     cases(succeeds symbol_op(?x),
+      [succeeds wf_one_arg([name(?x)],con(?x)) by sld],
+      fails symbol_op(?x),
+      [succeeds wf_term([name(?x)],0,con(?x)) by sld,
+       succeeds 0 =< 999 by builtin,
+       succeeds wf_one_arg([name(?x)],con(?x)) by sld],
+      succeeds wf_one_arg([name(?x)],con(?x))),
+     succeeds wf_one_arg([name(?x)],?t),
+     [name(?x)] ** ?l1 = [name(?x)|?l1] by concatenation,
+     [name(?x)] ** ?l1 = ?l2,
+     ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t)],
+    ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t)),
+   succeeds parse_tree(?t) => 
+    (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t))),
+  step([t,l1,l2,x],
+   [succeeds parse_tree(?t) & succeeds 0 =< 999 => 
+     (ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< 999 &
+       succeeds wf_term(?e0,?k,?t)),
+    fails con_tree(?t),
+    succeeds un_parse(?t,999,?l1,?l2)],
+   assume(succeeds parse_tree(?t),
+    [succeeds 0 =< 999 by builtin,
+     ex [e0,k]: ?e0 ** ?l1 = ?l2 & succeeds ?k =< 999 &
+       succeeds wf_term(?e0,?k,?t),
+     exist([e0,k],
+      ?e0 ** ?l1 = ?l2 & succeeds ?k =< 999 & succeeds wf_term(?e0,?k,?t),
+      [succeeds wf_one_arg(?e0,?t) by sld,
+       ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t)],
+      ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t))],
+    ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t)),
+   succeeds parse_tree(?t) => 
+    (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_one_arg(?e0,?t))),
+  step([l],
+   [],
+   assume(succeeds parse_tree_list([]),
+    [succeeds wf_arg_seq([close],[]) by sld,
+     [close] ** ?l = [close|?l] by concatenation,
+     ex e0: ?e0 ** ?l = [close|?l] & succeeds wf_arg_seq(?e0,[])],
+    ex e0: ?e0 ** ?l = [close|?l] & succeeds wf_arg_seq(?e0,[])),
+   succeeds parse_tree_list([]) => 
+    (ex e0: ?e0 ** ?l = [close|?l] & succeeds wf_arg_seq(?e0,[]))),
+  step([t,a,l1,l3,l2],
+   [succeeds parse_tree_list(?a) => 
+     (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e0,?a)),
+    succeeds parse_tree(?t) => 
+     (ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t)),
+    succeeds un_arg_seq(?a,?l1,?l2),
+    succeeds un_one_arg(?t,?l2,?l3)],
+   assume(succeeds parse_tree_list([?t|?a]),
+    [def succeeds parse_tree_list([?t|?a]) by completion,
+     ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t),
+     exist(e0,
+      ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t),
+      [ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e0,?a),
+       exist(e1,
+        ?e1 ** ?l1 = ?l2 & succeeds wf_arg_seq(?e1,?a),
+        [succeeds list(?e0) by corollary(wf_one_arg:list),
+	 succeeds list(?e1) by corollary(wf_arg_seq:list),
+	 succeeds append([comma|?e0],?e1,[comma|?e0] ** ?e1) by
+	  existence(**,2),
+	 succeeds wf_arg_seq([comma|?e0] ** ?e1,[?t|?a]) by sld,
+	 [comma|?e0] ** ?e1 ** ?l1 = [comma|?e0 ** (?e1 ** ?l1)] by
+	  concatenation,
+	 [comma|?e0 ** (?e1 ** ?l1)] = [comma|?e0 ** ?l2] =
+	  [comma|?l3],
+	 [comma|?e0] ** ?e1 ** ?l1 = [comma|?l3],
+	 ex e0: ?e0 ** ?l1 = [comma|?l3] & succeeds wf_arg_seq(?e0,[?t|?a])],
+        ex e0: ?e0 ** ?l1 = [comma|?l3] & succeeds wf_arg_seq(?e0,[?t|?a]))],
+      ex e0: ?e0 ** ?l1 = [comma|?l3] & succeeds wf_arg_seq(?e0,[?t|?a]))],
+    ex e0: ?e0 ** ?l1 = [comma|?l3] & succeeds wf_arg_seq(?e0,[?t|?a])),
+   succeeds parse_tree_list([?t|?a]) => 
+    (ex e0: ?e0 ** ?l1 = [comma|?l3] & succeeds wf_arg_seq(?e0,[?t|?a]))),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [?t = con([]),
+    ?l4 = [close_list|?l1]],
+   assume(succeeds parse_tree(?t),
+    [succeeds wf_list_tail([close_list],con([])) by sld,
+     succeeds wf_list_tail([close_list],?t),
+     [close_list] ** ?l1 = [close_list|?l1] by concatenation,
+     [close_list] ** ?l1 = ?l4,
+     ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)],
+    ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)),
+   succeeds parse_tree(?t) => 
+    (ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t))),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [succeeds parse_tree(?t2) => 
+     (ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_list_tail(?e0,?t2)),
+    succeeds parse_tree(?t1) => 
+     (ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1)),
+    ?t <> con([]),
+    succeeds list_tree(?t),
+    ?t = fun('.',[?t1,?t2]),
+    succeeds un_list_tail(?t2,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l4 = [comma|?l3]],
+   assume(succeeds parse_tree(?t),
+    [def succeeds parse_tree(fun('.',[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     ex e0: ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+     exist(e0,
+      ?e0 ** ?l2 = ?l3 & succeeds wf_one_arg(?e0,?t1),
+      [ex e0: ?e0 ** ?l1 = ?l2 & succeeds wf_list_tail(?e0,?t2),
+       exist(e1,
+        ?e1 ** ?l1 = ?l2 & succeeds wf_list_tail(?e1,?t2),
+        [succeeds list(?e0) by corollary(wf_one_arg:list),
+	 succeeds list(?e1) by corollary(wf_list_tail:list),
+	 succeeds append([comma|?e0],?e1,[comma|?e0] ** ?e1) by
+	  existence(**,2),
+	 succeeds wf_list_tail([comma|?e0] ** ?e1,fun('.',[?t1,?t2])) by sld,
+	 succeeds wf_list_tail([comma|?e0] ** ?e1,?t),
+	 [comma|?e0] ** ?e1 ** ?l1 = [comma|?e0 ** (?e1 ** ?l1)] by
+	  concatenation,
+	 [comma|?e0 ** (?e1 ** ?l1)] = [comma|?e0 ** ?l2] = [comma|?l3] = ?l4,
+	 [comma|?e0] ** ?e1 ** ?l1 = ?l4,
+	 ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)],
+        ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t))],
+      ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t))],
+    ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)),
+   succeeds parse_tree(?t) => 
+    (ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t))),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [succeeds parse_tree(?t) => 
+     (ex e0: ?e0 ** [close_list|?l1] = ?l2 & succeeds wf_one_arg(?e0,?t)),
+    ?t <> con([]),
+    fails list_tree(?t),
+    succeeds un_one_arg(?t,[close_list|?l1],?l2),
+    ?l4 = [head_tail_sep|?l2]],
+   assume(succeeds parse_tree(?t),
+    [ex e0: ?e0 ** [close_list|?l1] = ?l2 & succeeds wf_one_arg(?e0,?t),
+     exist(e0,
+      ?e0 ** [close_list|?l1] = ?l2 & succeeds wf_one_arg(?e0,?t),
+      [succeeds list(?e0) by corollary(wf_one_arg:list),
+       succeeds append([head_tail_sep|?e0],[close_list],
+	[head_tail_sep|?e0] ** [close_list]) by existence(**,2),
+       succeeds wf_list_tail([head_tail_sep|?e0] ** [close_list],?t) by sld,
+       [head_tail_sep|?e0] ** [close_list] ** ?l1 =
+        [head_tail_sep|?e0 ** [close_list|?l1]] by concatenation,
+       [head_tail_sep|?e0 ** [close_list|?l1]] = [head_tail_sep|?l2] = ?l4,
+       [head_tail_sep|?e0] ** [close_list] ** ?l1 = ?l4,
+       ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)],
+      ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t))],
+    ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)),
+   succeeds parse_tree(?t) => 
+    (ex e0: ?e0 ** ?l1 = ?l4 & succeeds wf_list_tail(?e0,?t)))]),
+ (all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) =>
+    succeeds parse_tree(?r) & succeeds 0 =< ?m =>
+     (ex [e0,k]: ?e0 ** ?e1 = ?e2 & succeeds ?k =< ?m &
+       succeeds wf_term(?e0,?k,?r))) &
+ (all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) =>
+    succeeds parse_tree(?r) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_one_arg(?e0,?r))) &
+ (all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) =>
+    succeeds parse_tree_list(?rs) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_arg_seq(?e0,?rs))) &
+ (all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) =>
+    succeeds parse_tree(?r) =>
+     (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_list_tail(?e0,?r))))
+).
+
+:- theorem(un_parse:wf_term,
+all [l,t]: succeeds consistent_op & succeeds parse_tree(?t) &
+ succeeds un_parse(?t,?l) => succeeds dcg(?l,?t),
+assume(succeeds consistent_op & succeeds parse_tree(?t) &
+ succeeds un_parse(?t,?l),
+ [(all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) => 
+     succeeds parse_tree(?r) & succeeds 0 =< ?m => 
+      (ex [e0,k]: ?e0 ** ?e1 = ?e2 & succeeds ?k =< ?m &
+        succeeds wf_term(?e0,?k,?r))) &
+  (all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) => 
+     succeeds parse_tree(?r) => 
+      (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_one_arg(?e0,?r))) &
+  (all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) => 
+     succeeds parse_tree_list(?rs) => 
+      (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_arg_seq(?e0,?rs))) &
+  (all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) => 
+     succeeds parse_tree(?r) => 
+      (ex e0: ?e0 ** ?e1 = ?e2 & succeeds wf_list_tail(?e0,?r))) by 
+   lemma(un_parse:wf_term),
+  def succeeds un_parse(?t,?l) by completion,
+  succeeds un_parse(?t,1200,[],?l),
+  succeeds parse_tree(?t) & succeeds 0 =< 1200 =>
+   (ex [e0,k]: ?e0 ** [] = ?l & succeeds ?k =< 1200 &
+     succeeds wf_term(?e0,?k,?t)),
+  succeeds 0 =< 1200 by builtin,
+  ex [e0,k]: ?e0 ** [] = ?l & succeeds ?k =< 1200 &
+   succeeds wf_term(?e0,?k,?t),
+  exist([e0,k],
+   ?e0 ** [] = ?l & succeeds ?k =< 1200 & succeeds wf_term(?e0,?k,?t),
+   [?e0 ** [] = ?e0 by concatenation,
+    ?e0 = ?l,
+    succeeds wf_term(?l,?k,?t),
+    succeeds dcg(?l,?t) by sld],
+   succeeds dcg(?l,?t))],
+ succeeds dcg(?l,?t))
+).
+
+:- lemma(parse_tree:gr,
+(all t: succeeds parse_tree(?t) => gr(?t)) &
+(all ts: succeeds parse_tree_list(?ts) => gr(?ts)),
+induction(
+ [all t: succeeds parse_tree(?t) => gr(?t),
+  all ts: succeeds parse_tree_list(?ts) => gr(?ts)],
+ [step([x],[succeeds atomic(?x)],
+   [gr(?x) by axiom(atomic:gr),
+    gr(variable(?x))],
+   gr(variable(?x))),
+  step([x],
+   [succeeds integer(?x)],
+   [gr(?x) by axiom(integer:gr),
+    gr(integer(?x))],
+   gr(integer(?x))),
+  step([x],
+   [succeeds number(?x)],
+   [gr(?x) by axiom(number:gr),
+    gr(float_number(?x))],
+   gr(float_number(?x))),
+  step([x],
+   [succeeds char_code_list(?x)],
+   [gr(?x) by axiom(char_code_list:gr),
+    gr(char_code_list(?x))],
+   gr(char_code_list(?x))),
+  step([x],
+   [succeeds atom(?x)],
+   [gr(?x) by axiom(atom:gr),
+    gr(con(?x))],
+   gr(con(?x))),
+  step([x,ts],
+   [gr(?ts),
+    succeeds atom(?x),
+    succeeds parse_tree_list(?ts)],
+   [gr(?x) by axiom(atom:gr),
+    gr(fun(?x,?ts))],
+   gr(fun(?x,?ts))),
+  step([],
+   [],
+   [],
+   gr([])),
+  step([t,ts],
+   [gr(?t),
+    gr(?ts),
+    succeeds parse_tree(?t),
+    succeeds parse_tree_list(?ts)],
+   [],
+   gr([?t|?ts]))])
+).
+
+:- lemma(close_par:termination,
+all [m,n,l1,l2]: succeeds integer(?m) & succeeds integer(?n) =>
+  terminates close_par(?m,?n,?l1,?l2),
+assume(succeeds integer(?m) & succeeds integer(?n),
+ [terminates ?m < ?n by axiom(less:termination),
+  gr(?m) by axiom(integer:gr),
+  gr(?n) by axiom(integer:gr),
+  terminates (?m < ?n & ?l2 = [close|?l1]) &
+  terminates (~ ?m < ?n & ?l2 = ?l1),
+  terminates close_par(?m,?n,?l1,?l2) by completion],
+ terminates close_par(?m,?n,?l1,?l2))
+).
+
+:- lemma(open_par:termination,
+all [m,n,l1,l2]: succeeds integer(?m) & succeeds integer(?n) =>
+  terminates open_par(?m,?n,?l1,?l2),
+assume(succeeds integer(?m) & succeeds integer(?n),
+ [terminates ?m < ?n by axiom(less:termination),
+  gr(?m) by axiom(integer:gr),
+  gr(?n) by axiom(integer:gr),
+  terminates (?m < ?n & ?l2 = [open|?l1]) &
+  terminates (~ ?m < ?n & ?l2 = ?l1),
+  terminates open_par(?m,?n,?l1,?l2) by completion],
+ terminates open_par(?m,?n,?l1,?l2))
+).
+
+:- lemma(add_layout:termination,
+all [l1,l2]: gr(?l1) => terminates add_layout(?l1,?l2),
+assume(gr(?l1),
+ [assume(?l1 = [?x|?0],
+   [gr([?x|?0]),
+    terminates (~ ?x = open(nolayout) & ?l2 = [?x|?0])],
+   terminates (?x = open(nolayout) & ?l2 = [open(layout)|?0]) &
+   terminates (~ ?x = open(nolayout) & ?l2 = [?x|?0])),
+  all [x,0]: ?l1 = [?x|?0] => 
+    terminates (?x = open(nolayout) & ?l2 = [open(layout)|?0]) &
+    terminates (~ ?x = open(nolayout) & ?l2 = [?x|?0]),
+  terminates add_layout(?l1,?l2) by completion],
+ terminates add_layout(?l1,?l2))
+).
+
+:- lemma(open_par:token_list,
+all [m,n,l1,l2]: succeeds open_par(?m,?n,?l1,?l2) &
+ succeeds token_list(?l1) => succeeds token_list(?l2),
+assume(succeeds open_par(?m,?n,?l1,?l2) & succeeds token_list(?l1),
+ [def succeeds open_par(?m,?n,?l1,?l2) by completion,
+  cases(succeeds ?m < ?n & ?l2 = [open(nolayout)|?l1],
+   [succeeds token_list([open(nolayout)|?l1]),
+    succeeds token_list(?l2)],
+   fails ?m < ?n & ?l2 = ?l1,
+   [],
+   succeeds token_list(?l2))],
+ succeeds token_list(?l2))
+).
+
+:- lemma(close_par:token_list,
+all [m,n,l1,l2]: succeeds close_par(?m,?n,?l1,?l2) &
+ succeeds token_list(?l1) => succeeds token_list(?l2),
+assume(succeeds close_par(?m,?n,?l1,?l2) & succeeds token_list(?l1),
+ [def succeeds close_par(?m,?n,?l1,?l2) by completion,
+  cases(succeeds ?m < ?n & ?l2 = [close|?l1],
+   [succeeds token_list([close|?l1]),
+    succeeds token_list(?l2)],
+   fails ?m < ?n & ?l2 = ?l1,
+   [],
+   succeeds token_list(?l2))],
+ succeeds token_list(?l2))
+).
+
+:- lemma(add_layout:token_list,
+all [l1,l2]: succeeds add_layout(?l1,?l2) & succeeds token_list(?l1) =>
+  succeeds token_list(?l2),
+assume(succeeds add_layout(?l1,?l2) & succeeds token_list(?l1),
+ [def succeeds add_layout(?l1,?l2) by completion,
+  exist([x,l0],
+   ?l1 = [?x|?l0] &
+   (?x = open(nolayout) & ?l2 = [open(layout)|?l0] \/
+    ?x <> open(nolayout) & ?l2 = [?x|?l0]),
+   cases(?x = open(nolayout) & ?l2 = [open(layout)|?l0],
+    [def succeeds token_list([?x|?l0]) by completion,
+     succeeds token_list([open(layout)|?l0]),
+     succeeds token_list(?l2)],
+    ?x <> open(nolayout) & ?l2 = [?x|?l0],
+    [],
+    succeeds token_list(?l2)),
+   succeeds token_list(?l2))],
+ succeeds token_list(?l2))
+).
+
+:- lemma(un_parse:token_list,
+(all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) =>
+   succeeds parse_tree(?r) & succeeds token_list(?e1) =>
+    succeeds token_list(?e2)) &
+(all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) =>
+   succeeds parse_tree(?r) & succeeds token_list(?e1) =>
+    succeeds token_list(?e2)) &
+(all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) =>
+   succeeds parse_tree_list(?rs) & succeeds token_list(?e1) =>
+    succeeds token_list(?e2)) &
+(all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) =>
+   succeeds parse_tree(?r) & succeeds token_list(?e1) =>
+    succeeds token_list(?e2)),
+induction(
+ [all [r,m,e1,e2]: succeeds un_parse(?r,?m,?e1,?e2) => 
+    succeeds parse_tree(?r) & succeeds token_list(?e1) => 
+     succeeds token_list(?e2),
+  all [r,e1,e2]: succeeds un_one_arg(?r,?e1,?e2) => succeeds parse_tree(?r) &
+    succeeds token_list(?e1) => succeeds token_list(?e2),
+  all [rs,e1,e2]: succeeds un_arg_seq(?rs,?e1,?e2) => 
+    succeeds parse_tree_list(?rs) & succeeds token_list(?e1) => 
+     succeeds token_list(?e2),
+  all [r,e1,e2]: succeeds un_list_tail(?r,?e1,?e2) => 
+    succeeds parse_tree(?r) & succeeds token_list(?e1) => 
+     succeeds token_list(?e2)],
+ [step([x,0,l],
+   [],
+   assume(succeeds parse_tree(variable(?x)) & succeeds token_list(?l),
+    [def succeeds parse_tree(variable(?x)) by completion,
+     succeeds token_list([variable(?x)|?l])],
+    succeeds token_list([variable(?x)|?l])),
+   succeeds parse_tree(variable(?x)) & succeeds token_list(?l) => 
+    succeeds token_list([variable(?x)|?l])),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(integer(?x)) & succeeds token_list(?l),
+    [def succeeds parse_tree(integer(?x)) by completion,
+     succeeds token_list([integer(?x)|?l])],
+    succeeds token_list([integer(?x)|?l])),
+   succeeds parse_tree(integer(?x)) & succeeds token_list(?l) => 
+    succeeds token_list([integer(?x)|?l])),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(float_number(?x)) & succeeds token_list(?l),
+    [def succeeds parse_tree(float_number(?x)) by completion,
+     succeeds token_list([float_number(?x)|?l])],
+    succeeds token_list([float_number(?x)|?l])),
+   succeeds parse_tree(float_number(?x)) & succeeds token_list(?l) => 
+    succeeds token_list([float_number(?x)|?l])),
+  step([x,0,l],
+   [],
+   assume(succeeds parse_tree(char_code_list(?x)) & succeeds token_list(?l),
+    [def succeeds parse_tree(char_code_list(?x)) by completion,
+     succeeds token_list([char_code_list(?x)|?l])],
+    succeeds token_list([char_code_list(?x)|?l])),
+   succeeds parse_tree(char_code_list(?x)) & succeeds token_list(?l) => 
+    succeeds token_list([char_code_list(?x)|?l])),
+  step([x,0,l1,l2],
+   [?x = [] & ?l2 = [open_list,close_list|?l1] \/
+    ?x <> [] &
+    (?x = '{}' & ?l2 = [open_curly,close_curly|?l1] \/
+     ?x <> '{}' &
+     (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+      fails symbol_op(?x) & ?l2 = [name(?x)|?l1]))],
+   assume(succeeds parse_tree(con(?x)) & succeeds token_list(?l1),
+    cases(?x = [] & ?l2 = [open_list,close_list|?l1],
+     [succeeds token_list([open_list,close_list|?l1]),
+      succeeds token_list(?l2)],
+     ?x <> [] &
+     (?x = '{}' & ?l2 = [open_curly,close_curly|?l1] \/
+      ?x <> '{}' &
+      (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+       fails symbol_op(?x) & ?l2 = [name(?x)|?l1])),
+     cases(?x = '{}' & ?l2 = [open_curly,close_curly|?l1],
+      [succeeds token_list([open_curly,close_curly|?l1]),
+       succeeds token_list(?l2)],
+      ?x <> '{}' &
+      (succeeds symbol_op(?x) & ?l2 = [open(nolayout),name(?x),close|?l1] \/
+       fails symbol_op(?x) & ?l2 = [name(?x)|?l1]),
+      [def succeeds parse_tree(con(?x)) by completion,
+       cases(succeeds symbol_op(?x) &
+	?l2 = [open(nolayout),name(?x),close|?l1],
+	[succeeds token_list([open(nolayout),name(?x),close|?l1]),
+	 succeeds token_list(?l2)],
+	fails symbol_op(?x) & ?l2 = [name(?x)|?l1],
+	[succeeds token_list([name(?x)|?l1]),
+	 succeeds token_list(?l2)],
+	succeeds token_list(?l2))],
+      succeeds token_list(?l2)),
+     succeeds token_list(?l2)),
+    succeeds token_list(?l2)),
+   succeeds parse_tree(con(?x)) & succeeds token_list(?l1) => 
+    succeeds token_list(?l2)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    ?ts = [],
+    succeeds prefix_op(?x),
+    ?x <> (-),
+    succeeds prefix_prec(?x,?n2,?n3),
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t1,?n3,?l2,?l3),
+    succeeds add_layout(?l3,?l4),
+    succeeds open_par(?n1,?n2,[name(?x)|?l4],?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [succeeds token_list(?l2) by lemma(close_par:token_list),
+     def succeeds parse_tree(fun(?x,[?t1|?ts])) by completion,
+     def succeeds parse_tree_list([?t1|?ts]) by completion,
+     succeeds token_list(?l3),
+     succeeds token_list(?l4) by lemma(add_layout:token_list),
+     succeeds token_list([name(?x)|?l4]),
+     succeeds token_list(?l5) by lemma(open_par:token_list)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t2) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    succeeds parse_tree(?t1) & succeeds token_list([?y|?l3]) => 
+     succeeds token_list(?l4),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    succeeds singleton(?ts),
+    succeeds infix_op(?x),
+    succeeds infix_prec(?x,?n2,?n3,?n4),
+    ?ts = [?t2],
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t2,?n4,?l2,?l3),
+    ?x = (',') & ?y = comma \/ ?x <> (',') & ?y = name(?x),
+    succeeds un_parse(?t1,?n3,[?y|?l3],?l4),
+    succeeds open_par(?n1,?n2,?l4,?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [succeeds token_list(?l2) by lemma(close_par:token_list),
+     def succeeds parse_tree(fun(?x,[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     succeeds token_list(?l3),
+     cases(?x = (',') & ?y = comma,
+      [],
+      ?x <> (',') & ?y = name(?x),
+      [],
+      succeeds token_list([?y|?l3])),
+     succeeds token_list(?l4),
+     succeeds token_list(?l5) by lemma(open_par:token_list)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds token_list([name(?x)|?l2]) => 
+     succeeds token_list(?l3),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts = [],
+    succeeds postfix_op(?x),
+    succeeds postfix_prec(?x,?n2,?n3),
+    succeeds close_par(?n1,?n2,?l1,?l2),
+    succeeds un_parse(?t1,?n3,[name(?x)|?l2],?l3),
+    succeeds open_par(?n1,?n2,?l3,?l5)],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [succeeds token_list(?l2) by lemma(close_par:token_list),
+     def succeeds parse_tree(fun(?x,[?t1])) by completion,
+     def succeeds parse_tree_list([?t1]) by completion,
+     succeeds token_list([name(?x)|?l2]),
+     succeeds token_list(?l3),
+     succeeds token_list(?l5) by lemma(open_par:token_list)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t2) & succeeds token_list(?l1) => 
+     succeeds token_list(?l2),
+    succeeds parse_tree(?t1) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    succeeds singleton(?ts),
+    ?x = '.',
+    ?ts = [?t2],
+    succeeds un_list_tail(?t2,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l5 = [open_list|?l3]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [def succeeds parse_tree(fun(?x,[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     succeeds token_list(?l3),
+     succeeds token_list([open_list|?l3]),
+     succeeds token_list(?l5)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree(?t1) & succeeds token_list([close_curly|?l1]) => 
+     succeeds token_list(?l2),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    fails singleton(?ts) \/ ?x <> '.',
+    ?ts = [],
+    ?x = '{}',
+    succeeds un_parse(?t1,1200,[close_curly|?l1],?l2),
+    ?l5 = [open_curly|?l2]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [def succeeds parse_tree(fun(?x,[?t1])) by completion,
+     def succeeds parse_tree_list([?t1]) by completion,
+     succeeds token_list([close_curly|?l1]),
+     succeeds token_list(?l2),
+     succeeds token_list([open_curly|?l2]),
+     succeeds token_list(?l5)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([x,t1,ts,n1,l1,l5,n2,n3,l2,l3,l4,n4,t2,y],
+   [succeeds parse_tree_list(?ts) & succeeds token_list(?l1) => 
+     succeeds token_list(?l2),
+    succeeds parse_tree(?t1) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    ?ts <> [] \/ fails prefix_op(?x) \/ ?x = (-),
+    fails singleton(?ts) \/ fails infix_op(?x),
+    ?ts <> [] \/ fails postfix_op(?x),
+    fails singleton(?ts) \/ ?x <> '.',
+    ?ts <> [] \/ ?x <> '{}',
+    succeeds un_arg_seq(?ts,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l5 = [name(?x),open(nolayout)|?l3]],
+   assume(succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1),
+    [def succeeds parse_tree(fun(?x,[?t1|?ts])) by completion,
+     def succeeds parse_tree_list([?t1|?ts]) by completion,
+     succeeds token_list(?l2),
+     succeeds token_list(?l3),
+     succeeds token_list([name(?x),open(nolayout)|?l3]),
+     succeeds token_list(?l5)],
+    succeeds token_list(?l5)),
+   succeeds parse_tree(fun(?x,[?t1|?ts])) & succeeds token_list(?l1) => 
+    succeeds token_list(?l5)),
+  step([t,l1,l2,x],
+   [succeeds con_tree(?t),
+    ?t = con(?x),
+    ?l2 = [name(?x)|?l1]],
+   assume(succeeds parse_tree(?t) & succeeds token_list(?l1),
+    [def succeeds parse_tree(con(?x)) by completion,
+     succeeds token_list([name(?x)|?l1]),
+     succeeds token_list(?l2)],
+    succeeds token_list(?l2)),
+   succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+    succeeds token_list(?l2)),
+  step([t,l1,l2,x],
+   [succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+     succeeds token_list(?l2),
+    fails con_tree(?t),
+    succeeds un_parse(?t,999,?l1,?l2)],
+   [],
+   succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+    succeeds token_list(?l2)),
+  step([l],
+   [],
+   assume(succeeds parse_tree_list([]) & succeeds token_list(?l),
+    [],
+    succeeds token_list([close|?l])),
+   succeeds parse_tree_list([]) & succeeds token_list(?l) => 
+    succeeds token_list([close|?l])),
+  step([t,a,l1,l3,l2],
+   [succeeds parse_tree_list(?a) & succeeds token_list(?l1) => 
+     succeeds token_list(?l2),
+    succeeds parse_tree(?t) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    succeeds un_arg_seq(?a,?l1,?l2),
+    succeeds un_one_arg(?t,?l2,?l3)],
+   assume(succeeds parse_tree_list([?t|?a]) & succeeds token_list(?l1),
+    [def succeeds parse_tree_list([?t|?a]) by completion,
+     succeeds token_list(?l2),
+     succeeds token_list(?l3),
+     succeeds token_list([comma|?l3])],
+    succeeds token_list([comma|?l3])),
+   succeeds parse_tree_list([?t|?a]) & succeeds token_list(?l1) => 
+    succeeds token_list([comma|?l3])),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [?t = con([]),
+    ?l4 = [close_list|?l1]],
+   assume(succeeds parse_tree(?t) & succeeds token_list(?l1),
+    [succeeds token_list([close_list|?l1]),
+     succeeds token_list(?l4)],
+    succeeds token_list(?l4)),
+   succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+    succeeds token_list(?l4)),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [succeeds parse_tree(?t2) & succeeds token_list(?l1) => 
+     succeeds token_list(?l2),
+    succeeds parse_tree(?t1) & succeeds token_list(?l2) => 
+     succeeds token_list(?l3),
+    ?t <> con([]),
+    succeeds list_tree(?t),
+    ?t = fun('.',[?t1,?t2]),
+    succeeds un_list_tail(?t2,?l1,?l2),
+    succeeds un_one_arg(?t1,?l2,?l3),
+    ?l4 = [comma|?l3]],
+   assume(succeeds parse_tree(?t) & succeeds token_list(?l1),
+    [def succeeds parse_tree(fun('.',[?t1,?t2])) by completion,
+     def succeeds parse_tree_list([?t1,?t2]) by completion,
+     def succeeds parse_tree_list([?t2]) by completion,
+     succeeds token_list(?l2),
+     succeeds token_list(?l3),
+     succeeds token_list([comma|?l3]),
+     succeeds token_list(?l4)],
+    succeeds token_list(?l4)),
+   succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+    succeeds token_list(?l4)),
+  step([t,l1,l4,t1,t2,l2,l3],
+   [succeeds parse_tree(?t) & succeeds token_list([close_list|?l1]) => 
+     succeeds token_list(?l2),
+    ?t <> con([]),
+    fails list_tree(?t),
+    succeeds un_one_arg(?t,[close_list|?l1],?l2),
+    ?l4 = [head_tail_sep|?l2]],
+   assume(succeeds parse_tree(?t) & succeeds token_list(?l1),
+    [succeeds token_list([close_list|?l1]),
+     succeeds token_list(?l2),
+     succeeds token_list([head_tail_sep|?l2]),
+     succeeds token_list(?l4)],
+    succeeds token_list(?l4)),
+   succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+    succeeds token_list(?l4))])
+).
+
+:- corollary(un_parse:token_list,
+all [t,n,l1,l2]: succeeds un_parse(?t,?n,?l1,?l2) &
+ succeeds parse_tree(?t) & succeeds token_list(?l1) =>
+  succeeds token_list(?l2),
+assume(succeeds un_parse(?t,?n,?l1,?l2) & succeeds parse_tree(?t) &
+ succeeds token_list(?l1),
+ [succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+   succeeds token_list(?l2) by lemma(un_parse:token_list),
+  succeeds token_list(?l2)],
+ succeeds token_list(?l2))
+).
+
+:- corollary(un_one_arg:token_list,
+all [t,n,l1,l2]: succeeds un_one_arg(?t,?l1,?l2) &
+ succeeds parse_tree(?t) & succeeds token_list(?l1) =>
+  succeeds token_list(?l2),
+assume(succeeds un_one_arg(?t,?l1,?l2) & succeeds parse_tree(?t) &
+ succeeds token_list(?l1),
+ [succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+   succeeds token_list(?l2) by lemma(un_parse:token_list),
+  succeeds token_list(?l2)],
+ succeeds token_list(?l2))
+).
+
+:- corollary(un_arg_seq:token_list,
+all [ts,n,l1,l2]: succeeds un_arg_seq(?ts,?l1,?l2) &
+ succeeds parse_tree_list(?ts) & succeeds token_list(?l1) =>
+  succeeds token_list(?l2),
+assume(succeeds un_arg_seq(?ts,?l1,?l2) & succeeds parse_tree_list(?ts) &
+ succeeds token_list(?l1),
+ [succeeds parse_tree_list(?ts) & succeeds token_list(?l1) => 
+   succeeds token_list(?l2) by lemma(un_parse:token_list),
+  succeeds token_list(?l2)],
+ succeeds token_list(?l2))
+).
+
+:- corollary(un_list_tail:token_list,
+all [t,n,l1,l2]: succeeds un_list_tail(?t,?l1,?l2) &
+ succeeds parse_tree(?t) & succeeds token_list(?l1) =>
+  succeeds token_list(?l2),
+assume(succeeds un_list_tail(?t,?l1,?l2) & succeeds parse_tree(?t) &
+ succeeds token_list(?l1),
+ [succeeds parse_tree(?t) & succeeds token_list(?l1) => 
+   succeeds token_list(?l2) by lemma(un_parse:token_list),
+  succeeds token_list(?l2)],
+ succeeds token_list(?l2))
+).
+
+:- definition_pred(termination_tree,1,
+all r: termination_tree(?r) <=>
+ (all [m,e1,e2]: succeeds integer(?m) & succeeds token_list(?e1) =>
+    terminates un_parse(?r,?m,?e1,?e2)) &
+ (all [e1,e2]: succeeds token_list(?e1) =>
+    terminates un_one_arg(?r,?e1,?e2)) &
+ (all [e1,e2]: succeeds token_list(?e1) =>
+    terminates un_list_tail(?r,?e1,?e2))
+).
+
+:- lemma(termination_tree:un_parse,
+all [r,m,e1,e2]: termination_tree(?r) & succeeds integer(?m) &
+ succeeds token_list(?e1) => terminates un_parse(?r,?m,?e1,?e2),
+assume(termination_tree(?r) & succeeds integer(?m) &
+ succeeds token_list(?e1),
+ [(all [m,e1,e2]: succeeds integer(?m) & succeeds token_list(?e1) => 
+     terminates un_parse(?r,?m,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_one_arg(?r,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_list_tail(?r,?e1,?e2)) by 
+   elimination(termination_tree,1),
+  terminates un_parse(?r,?m,?e1,?e2)],
+ terminates un_parse(?r,?m,?e1,?e2))
+).
+
+:- lemma(termination_tree:un_one_arg,
+all [r,e1,e2]: termination_tree(?r) & succeeds token_list(?e1) =>
+  terminates un_one_arg(?r,?e1,?e2),
+assume(termination_tree(?r) & succeeds token_list(?e1),
+ [(all [m,e1,e2]: succeeds integer(?m) & succeeds token_list(?e1) => 
+     terminates un_parse(?r,?m,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_one_arg(?r,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_list_tail(?r,?e1,?e2)) by 
+   elimination(termination_tree,1),
+  terminates un_one_arg(?r,?e1,?e2)],
+ terminates un_one_arg(?r,?e1,?e2))
+).
+
+:- lemma(termination_tree:un_list_tail,
+all [r,e1,e2]: termination_tree(?r) & succeeds token_list(?e1) =>
+  terminates un_list_tail(?r,?e1,?e2),
+assume(termination_tree(?r) & succeeds token_list(?e1),
+ [(all [m,e1,e2]: succeeds integer(?m) & succeeds token_list(?e1) => 
+     terminates un_parse(?r,?m,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_one_arg(?r,?e1,?e2)) &
+  (all [e1,e2]: succeeds token_list(?e1) => 
+     terminates un_list_tail(?r,?e1,?e2)) by 
+   elimination(termination_tree,1),
+  terminates un_list_tail(?r,?e1,?e2)],
+ terminates un_list_tail(?r,?e1,?e2))
+).
+
+:- lemma(termination_tree:variable,
+all x: succeeds atomic(?x) => termination_tree(variable(?x)),
+assume(succeeds atomic(?x),
+ [succeeds integer(?m) & succeeds token_list(?e1) => 
+   terminates un_parse(variable(?x),?m,?e1,?e2),
+  gr(?x) by axiom(atomic:gr),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(variable(?x)) & variable(?x) = con(?0) & ?e2 = [name(?0)|?e1]) &
+    terminates 
+    (~ con_tree(variable(?x)) & un_parse(variable(?x),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(variable(?x)) & variable(?x) = con(?0) & 
+      ?e2 = [name(?0)|?e1]) &
+     terminates 
+     (~ con_tree(variable(?x)) & un_parse(variable(?x),999,?e1,?e2)),
+    terminates un_one_arg(variable(?x),?e1,?e2) by completion],
+   terminates un_one_arg(variable(?x),?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(variable(?x)) & variable(?x) = con(?1) &
+     ?l2 = [name(?1),close_list|?e1]) &
+    terminates 
+    (~ con_tree(variable(?x)) &
+     un_parse(variable(?x),999,[close_list|?e1],?l2)),
+    all 1: 
+     terminates 
+     (con_tree(variable(?x)) & variable(?x) = con(?1) &
+      ?l2 = [name(?1),close_list|?e1]) &
+     terminates 
+     (~ con_tree(variable(?x)) &
+      un_parse(variable(?x),999,[close_list|?e1],?l2)),
+    terminates un_one_arg(variable(?x),[close_list|?e1],?l2) by completion,
+    terminates 
+    (~ variable(?x) = con([]) &
+     (list_tree(variable(?x)) & variable(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(variable(?x)) &
+      un_one_arg(variable(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (variable(?x) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ variable(?x) = con([]) &
+     (list_tree(variable(?x)) & variable(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(variable(?x)) &
+      un_one_arg(variable(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (variable(?x) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ variable(?x) = con([]) &
+      (list_tree(variable(?x)) & variable(?x) = fun('.',[?t1,?t2]) &
+       un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3] \/
+       ~ list_tree(variable(?x)) &
+       un_one_arg(variable(?x),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(variable(?x),?e1,?e2) by completion],
+   terminates un_list_tail(variable(?x),?e1,?e2)),
+  termination_tree(variable(?x)) by introduction(termination_tree,1)],
+ termination_tree(variable(?x)))
+).
+
+:- lemma(termination_tree:integer,
+all x: succeeds integer(?x) => termination_tree(integer(?x)),
+assume(succeeds integer(?x),
+ [succeeds integer(?m) & succeeds token_list(?e1) => 
+   terminates un_parse(integer(?x),?m,?e1,?e2),
+  gr(?x) by axiom(integer:gr),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(integer(?x)) & integer(?x) = con(?0) & ?e2 = [name(?0)|?e1]) &
+    terminates 
+    (~ con_tree(integer(?x)) & un_parse(integer(?x),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(integer(?x)) & integer(?x) = con(?0) & ?e2 = [name(?0)|?e1]) &
+     terminates 
+     (~ con_tree(integer(?x)) & un_parse(integer(?x),999,?e1,?e2)),
+    terminates un_one_arg(integer(?x),?e1,?e2) by completion],
+   terminates un_one_arg(integer(?x),?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(integer(?x)) & integer(?x) = con(?1) &
+     ?l2 = [name(?1),close_list|?e1]) &
+    terminates 
+    (~ con_tree(integer(?x)) &
+     un_parse(integer(?x),999,[close_list|?e1],?l2)),
+    all 1: 
+     terminates 
+     (con_tree(integer(?x)) & integer(?x) = con(?1) &
+      ?l2 = [name(?1),close_list|?e1]) &
+     terminates 
+     (~ con_tree(integer(?x)) &
+      un_parse(integer(?x),999,[close_list|?e1],?l2)),
+    terminates un_one_arg(integer(?x),[close_list|?e1],?l2) by completion,
+    terminates 
+    (~ integer(?x) = con([]) &
+     (list_tree(integer(?x)) & integer(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(integer(?x)) &
+      un_one_arg(integer(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (integer(?x) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ integer(?x) = con([]) &
+     (list_tree(integer(?x)) & integer(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(integer(?x)) &
+      un_one_arg(integer(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (integer(?x) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ integer(?x) = con([]) &
+      (list_tree(integer(?x)) & integer(?x) = fun('.',[?t1,?t2]) &
+       un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3] \/
+       ~ list_tree(integer(?x)) &
+       un_one_arg(integer(?x),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(integer(?x),?e1,?e2) by completion],
+   terminates un_list_tail(integer(?x),?e1,?e2)),
+  termination_tree(integer(?x)) by introduction(termination_tree,1)],
+ termination_tree(integer(?x)))
+).
+
+:- lemma(termination_tree:float_number,
+all x: succeeds number(?x) => termination_tree(float_number(?x)),
+assume(succeeds number(?x),
+ [succeeds integer(?m) & succeeds token_list(?e1) => 
+   terminates un_parse(float_number(?x),?m,?e1,?e2),
+  gr(?x) by axiom(number:gr),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(float_number(?x)) & float_number(?x) = con(?0) &
+     ?e2 = [name(?0)|?e1]) &
+    terminates 
+    (~ con_tree(float_number(?x)) & un_parse(float_number(?x),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(float_number(?x)) & float_number(?x) = con(?0) &
+      ?e2 = [name(?0)|?e1]) &
+     terminates 
+     (~ con_tree(float_number(?x)) & un_parse(float_number(?x),999,?e1,?e2)),
+    terminates un_one_arg(float_number(?x),?e1,?e2) by completion],
+   terminates un_one_arg(float_number(?x),?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(float_number(?x)) & float_number(?x) = con(?1) &
+     ?l2 = [name(?1),close_list|?e1]) &
+    terminates 
+    (~ con_tree(float_number(?x)) &
+     un_parse(float_number(?x),999,[close_list|?e1],?l2)),
+    all 1: 
+     terminates 
+     (con_tree(float_number(?x)) & float_number(?x) = con(?1) &
+      ?l2 = [name(?1),close_list|?e1]) &
+     terminates 
+     (~ con_tree(float_number(?x)) &
+      un_parse(float_number(?x),999,[close_list|?e1],?l2)),
+    terminates un_one_arg(float_number(?x),[close_list|?e1],?l2) by 
+     completion,
+    terminates 
+    (~ float_number(?x) = con([]) &
+     (list_tree(float_number(?x)) & float_number(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(float_number(?x)) &
+      un_one_arg(float_number(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (float_number(?x) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ float_number(?x) = con([]) &
+     (list_tree(float_number(?x)) & float_number(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(float_number(?x)) &
+      un_one_arg(float_number(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (float_number(?x) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ float_number(?x) = con([]) &
+      (list_tree(float_number(?x)) & float_number(?x) = fun('.',[?t1,?t2]) &
+       un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3] \/
+       ~ list_tree(float_number(?x)) &
+       un_one_arg(float_number(?x),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(float_number(?x),?e1,?e2) by completion],
+   terminates un_list_tail(float_number(?x),?e1,?e2)),
+  termination_tree(float_number(?x)) by introduction(termination_tree,1)],
+ termination_tree(float_number(?x)))
+).
+
+:- lemma(termination_tree:char_code_list,
+all x: succeeds char_code_list(?x) => termination_tree(char_code_list(?x)),
+assume(succeeds char_code_list(?x),
+ [succeeds integer(?m) & succeeds token_list(?e1) => 
+   terminates un_parse(char_code_list(?x),?m,?e1,?e2),
+  gr(?x) by axiom(char_code_list:gr),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(char_code_list(?x)) & char_code_list(?x) = con(?0) &
+     ?e2 = [name(?0)|?e1]) &
+    terminates 
+    (~ con_tree(char_code_list(?x)) &
+     un_parse(char_code_list(?x),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(char_code_list(?x)) & char_code_list(?x) = con(?0) &
+      ?e2 = [name(?0)|?e1]) &
+     terminates 
+     (~ con_tree(char_code_list(?x)) &
+      un_parse(char_code_list(?x),999,?e1,?e2)),
+    terminates un_one_arg(char_code_list(?x),?e1,?e2) by completion],
+   terminates un_one_arg(char_code_list(?x),?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(char_code_list(?x)) & char_code_list(?x) = con(?1) &
+     ?l2 = [name(?1),close_list|?e1]) &
+    terminates 
+    (~ con_tree(char_code_list(?x)) &
+     un_parse(char_code_list(?x),999,[close_list|?e1],?l2)),
+    all 1: 
+     terminates 
+     (con_tree(char_code_list(?x)) & char_code_list(?x) = con(?1) &
+      ?l2 = [name(?1),close_list|?e1]) &
+     terminates 
+     (~ con_tree(char_code_list(?x)) &
+      un_parse(char_code_list(?x),999,[close_list|?e1],?l2)),
+    terminates un_one_arg(char_code_list(?x),[close_list|?e1],?l2) by 
+     completion,
+    terminates 
+    (~ char_code_list(?x) = con([]) &
+     (list_tree(char_code_list(?x)) & char_code_list(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(char_code_list(?x)) &
+      un_one_arg(char_code_list(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (char_code_list(?x) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ char_code_list(?x) = con([]) &
+     (list_tree(char_code_list(?x)) & char_code_list(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(char_code_list(?x)) &
+      un_one_arg(char_code_list(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (char_code_list(?x) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ char_code_list(?x) = con([]) &
+      (list_tree(char_code_list(?x)) & 
+       char_code_list(?x) = fun('.',[?t1,?t2]) & un_list_tail(?t2,?e1,?l2) &
+       un_one_arg(?t1,?l2,?l3) & ?e2 = [comma|?l3] \/
+       ~ list_tree(char_code_list(?x)) &
+       un_one_arg(char_code_list(?x),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(char_code_list(?x),?e1,?e2) by completion],
+   terminates un_list_tail(char_code_list(?x),?e1,?e2)),
+  termination_tree(char_code_list(?x)) by introduction(termination_tree,1)],
+ termination_tree(char_code_list(?x)))
+).
+
+:- lemma(termination_tree:con,
+all x: succeeds atom(?x) => termination_tree(con(?x)),
+assume(succeeds atom(?x),
+ [gr(?x) by axiom(atom:gr),
+  terminates symbol_op(?x) by lemma(symbol_op:termination),
+  assume(succeeds integer(?m) & succeeds token_list(?e1),
+   [terminates 
+    (~ ?x = [] &
+     (?x = '{}' & ?e2 = [open_curly,close_curly|?e1] \/
+      ~ ?x = '{}' &
+      (symbol_op(?x) & ?e2 = [open(nolayout),name(?x),close|?e1] \/
+       ~ symbol_op(?x) & ?e2 = [name(?x)|?e1]))),
+    terminates (?x = [] & ?e2 = [open_list,close_list|?e1]) &
+    terminates 
+    (~ ?x = [] &
+     (?x = '{}' & ?e2 = [open_curly,close_curly|?e1] \/
+      ~ ?x = '{}' &
+      (symbol_op(?x) & ?e2 = [open(nolayout),name(?x),close|?e1] \/
+       ~ symbol_op(?x) & ?e2 = [name(?x)|?e1]))),
+    terminates un_parse(con(?x),?m,?e1,?e2) by completion],
+   terminates un_parse(con(?x),?m,?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(con(?x)) & con(?x) = con(?0) & ?e2 = [name(?0)|?e1]) &
+    terminates (~ con_tree(con(?x)) & un_parse(con(?x),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(con(?x)) & con(?x) = con(?0) & ?e2 = [name(?0)|?e1]) &
+     terminates (~ con_tree(con(?x)) & un_parse(con(?x),999,?e1,?e2)),
+    terminates un_one_arg(con(?x),?e1,?e2) by completion],
+   terminates un_one_arg(con(?x),?e1,?e2)),
+  assume(succeeds token_list(?e1),
+   [terminates 
+    (con_tree(con(?x)) & con(?x) = con(?1) &
+     ?l2 = [name(?1),close_list|?e1]) &
+    terminates 
+    (~ con_tree(con(?x)) & un_parse(con(?x),999,[close_list|?e1],?l2)),
+    all 1: 
+     terminates 
+     (con_tree(con(?x)) & con(?x) = con(?1) &
+      ?l2 = [name(?1),close_list|?e1]) &
+     terminates 
+     (~ con_tree(con(?x)) & un_parse(con(?x),999,[close_list|?e1],?l2)),
+    terminates un_one_arg(con(?x),[close_list|?e1],?l2) by completion,
+    terminates 
+    (~ con(?x) = con([]) &
+     (list_tree(con(?x)) & con(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(con(?x)) & un_one_arg(con(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (con(?x) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ con(?x) = con([]) &
+     (list_tree(con(?x)) & con(?x) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(con(?x)) & un_one_arg(con(?x),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (con(?x) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ con(?x) = con([]) &
+      (list_tree(con(?x)) & con(?x) = fun('.',[?t1,?t2]) &
+       un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3] \/
+       ~ list_tree(con(?x)) & un_one_arg(con(?x),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(con(?x),?e1,?e2) by completion],
+   terminates un_list_tail(con(?x),?e1,?e2)),
+  termination_tree(con(?x)) by introduction(termination_tree,1)],
+ termination_tree(con(?x)))
+).
+
+:- lemma(arg_seq:termination,
+all [rs,e1,e2]: succeeds parse_tree_list(?rs) & succeeds token_list(?e1) &
+ (all r: succeeds member(?r,?rs) => termination_tree(?r)) =>
+  terminates un_arg_seq(?rs,?e1,?e2),
+[induction(
+  [all rs: succeeds parse_tree_list(?rs) => 
+     (all [e1,e2]: succeeds token_list(?e1) &
+       (all r: succeeds member(?r,?rs) => termination_tree(?r)) => 
+        terminates un_arg_seq(?rs,?e1,?e2))],
+  [step([],
+    [],
+    succeeds token_list(?e1) &
+    (all r: succeeds member(?r,[]) => termination_tree(?r)) => 
+     terminates un_arg_seq([],?e1,?e2),
+    all [e1,e2]: succeeds token_list(?e1) &
+     (all r: succeeds member(?r,[]) => termination_tree(?r)) => 
+      terminates un_arg_seq([],?e1,?e2)),
+   step([t,ts],
+    [all [e1,e2]: succeeds token_list(?e1) &
+      (all r: succeeds member(?r,?ts) => termination_tree(?r)) => 
+       terminates un_arg_seq(?ts,?e1,?e2),
+     succeeds parse_tree(?t),
+     succeeds parse_tree_list(?ts)],
+    assume(succeeds token_list(?e1) &
+     (all r: succeeds member(?r,[?t|?ts]) => termination_tree(?r)),
+     [assume(?e2 = [comma|?l3],
+       [assume(succeeds member(?r,?ts),[],termination_tree(?r)),
+	all r: succeeds member(?r,?ts) => termination_tree(?r),
+	terminates un_arg_seq(?ts,?e1,?l2),
+	assume(succeeds un_arg_seq(?ts,?e1,?l2),
+	 [succeeds token_list(?l2) by corollary(un_arg_seq:token_list),
+	  termination_tree(?t),
+	  terminates un_one_arg(?t,?l2,?l3) by 
+           lemma(termination_tree:un_one_arg)],
+	 terminates un_one_arg(?t,?l2,?l3)),
+	terminates (un_arg_seq(?ts,?e1,?l2) & un_one_arg(?t,?l2,?l3))],
+       terminates (un_arg_seq(?ts,?e1,?l2) & un_one_arg(?t,?l2,?l3))),
+      all [l3,l2]: ?e2 = [comma|?l3] => 
+        terminates (un_arg_seq(?ts,?e1,?l2) & un_one_arg(?t,?l2,?l3)),
+      terminates un_arg_seq([?t|?ts],?e1,?e2) by completion],
+     terminates un_arg_seq([?t|?ts],?e1,?e2)),
+    all [e1,e2]: succeeds token_list(?e1) &
+     (all r: succeeds member(?r,[?t|?ts]) => termination_tree(?r)) => 
+      terminates un_arg_seq([?t|?ts],?e1,?e2))]),
+ assume(succeeds parse_tree_list(?rs) & succeeds token_list(?e1) &
+  (all r: succeeds member(?r,?rs) => termination_tree(?r)),
+  [all [e1,e2]: succeeds token_list(?e1) &
+    (all r: succeeds member(?r,?rs) => termination_tree(?r)) => 
+     terminates un_arg_seq(?rs,?e1,?e2),
+   succeeds token_list(?e1) &
+   (all r: succeeds member(?r,?rs) => termination_tree(?r)) => 
+    terminates un_arg_seq(?rs,?e1,?e2),
+   terminates un_arg_seq(?rs,?e1,?e2)],
+  terminates un_arg_seq(?rs,?e1,?e2))]
+).
+
+:- lemma(termination_tree:fun,
+all [rs,x]: (all r: succeeds member(?r,?rs) => termination_tree(?r)) &
+ succeeds atom(?x) & succeeds parse_tree_list(?rs) => 
+  termination_tree(fun(?x,?rs)),
+assume((all r: succeeds member(?r,?rs) => termination_tree(?r)) &
+ succeeds atom(?x) & succeeds parse_tree_list(?rs),
+ [gr(?x) by axiom(atom:gr),
+  gr(?rs) by lemma(parse_tree:gr),
+
+  assume(succeeds integer(?m) & succeeds token_list(?e1),
+   [assume(?rs = [?t1|?ts],
+     [def succeeds parse_tree_list([?t1|?ts]) by completion,
+
+      terminates prefix_op(?x) by lemma(prefix_op:termination),
+      terminates prefix_prec(?x,?n2,?n3) by 
+       lemma(prefix_prec:termination),
+      assume(succeeds prefix_prec(?x,?n2,?n3),
+       [succeeds integer(?n2) & succeeds integer(?n3) by 
+         lemma(prefix_prec:integer),
+	terminates close_par(?m,?n2,?e1,?l2) by 
+         lemma(close_par:termination),
+	assume(succeeds close_par(?m,?n2,?e1,?l2),
+	 [succeeds token_list(?l2) by lemma(close_par:token_list),
+	  terminates un_parse(?t1,?n3,?l2,?l3) by 
+           lemma(termination_tree:un_parse),
+	  assume(succeeds un_parse(?t1,?n3,?l2,?l3),
+	   [succeeds token_list(?l3) by corollary(un_parse:token_list),
+	    gr(?l3) by lemma(token_list:gr),
+	    terminates add_layout(?l3,?l4) by 
+             lemma(add_layout:termination),
+	    assume(succeeds add_layout(?l3,?l4),
+	     [succeeds token_list(?l4) by lemma(add_layout:token_list),
+	      succeeds token_list([name(?x)|?l4]),
+	      terminates open_par(?m,?n2,[name(?x)|?l4],?e2) by 
+               lemma(open_par:termination)],
+	     terminates open_par(?m,?n2,[name(?x)|?l4],?e2)),
+	    terminates 
+	    (add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2))],
+	   terminates 
+	   (add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2))),
+	  terminates 
+	  (un_parse(?t1,?n3,?l2,?l3) & add_layout(?l3,?l4) &
+	   open_par(?m,?n2,[name(?x)|?l4],?e2))],
+	 terminates 
+	 (un_parse(?t1,?n3,?l2,?l3) & add_layout(?l3,?l4) &
+	  open_par(?m,?n2,[name(?x)|?l4],?e2))),
+	terminates 
+	(close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,?l2,?l3) &
+	 add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2))],
+       terminates 
+       (close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,?l2,?l3) &
+	add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2))),
+
+      terminates 
+      (prefix_prec(?x,?n2,?n3) & close_par(?m,?n2,?e1,?l2) &
+       un_parse(?t1,?n3,?l2,?l3) & add_layout(?l3,?l4) &
+       open_par(?m,?n2,[name(?x)|?l4],?e2)),
+
+      terminates 
+      (?ts = [] & prefix_op(?x) & ~ ?x = (-) & prefix_prec(?x,?n2,?n3) &
+       close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,?l2,?l3) &
+       add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2)),
+
+      gr(?ts) by lemma(parse_tree:gr),
+      terminates infix_op(?x) by lemma(infix_op:termination),
+      terminates infix_prec(?x,?n2,?n3,?n4) by 
+       lemma(infix_prec:termination),
+      assume(succeeds infix_prec(?x,?n2,?n3,?n4),
+       [assume(?ts = [?t2],
+         [succeeds integer(?n2) & succeeds integer(?n3) &
+          succeeds integer(?n4) by lemma(infix_prec:integer),
+	  terminates close_par(?m,?n2,?e1,?l2) by 
+           lemma(close_par:termination),
+	  assume(succeeds close_par(?m,?n2,?e1,?l2),
+	   [succeeds token_list(?l2) by lemma(close_par:token_list),
+	    def succeeds parse_tree_list([?t2]) by completion,
+	    succeeds member(?t2,?ts),
+	    terminates un_parse(?t2,?n4,?l2,?l3) by 
+             lemma(termination_tree:un_parse),
+	    assume(succeeds un_parse(?t2,?n4,?l2,?l3),
+	     [assume(?x = (',') & ?y = comma \/ ?x <> (',') & ?y = name(?x),
+               [succeeds token_list(?l3) by 
+                 corollary(un_parse:token_list),
+		cases(?x = (',') & ?y = comma,
+		 [],
+		 ?x <> (',') & ?y = name(?x),
+		 [],
+		 succeeds token(?y)),
+		succeeds token_list([?y|?l3]),
+		terminates un_parse(?t1,?n3,[?y|?l3],?l4) by 
+                 lemma(termination_tree:un_parse),
+		assume(succeeds un_parse(?t1,?n3,[?y|?l3],?l4),
+		 [succeeds token_list(?l4) by 
+                   corollary(un_parse:token_list),
+		  terminates open_par(?m,?n2,?l4,?e2) by 
+                   lemma(open_par:termination)],
+		 terminates open_par(?m,?n2,?l4,?e2)),
+		terminates 
+		(un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))],
+               terminates 
+               (un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))),
+              terminates 
+              ((?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+               un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))],
+	     terminates 
+	     ((?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	      un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))),
+	    terminates 
+	    (un_parse(?t2,?n4,?l2,?l3) &
+	     (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	     un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))],
+	   terminates 
+	   (un_parse(?t2,?n4,?l2,?l3) &
+	    (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	    un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))),
+	  terminates 
+	  (close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+	   (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	   un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))],
+         terminates 
+         (close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+          (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+          un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))),
+        terminates 
+        (?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & 
+         un_parse(?t2,?n4,?l2,?l3) &
+         (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+         un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))],
+       terminates 
+       (?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & 
+	un_parse(?t2,?n4,?l2,?l3) &
+	(?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2))),
+      terminates 
+      (infix_prec(?x,?n2,?n3,?n4) & ?ts = [?t2] & 
+       close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+       (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+       un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2)),
+      terminates 
+      (singleton(?ts) & infix_op(?x) & infix_prec(?x,?n2,?n3,?n4) &
+       ?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+       (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+       un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2)),
+
+      terminates postfix_op(?x) by lemma(postfix_op:termination),
+      terminates postfix_prec(?x,?n2,?n3) by 
+       lemma(postfix_prec:termination),
+      assume(succeeds postfix_prec(?x,?n2,?n3),
+       [succeeds integer(?n2) & succeeds integer(?n3) by 
+         lemma(postfix_prec:integer),
+	terminates close_par(?m,?n2,?e1,?l2) by 
+         lemma(close_par:termination),
+	assume(succeeds close_par(?m,?n2,?e1,?l2),
+	 [succeeds token_list(?l2) by lemma(close_par:token_list),
+	  succeeds token_list([name(?x)|?l2]),
+	  terminates un_parse(?t1,?n3,[name(?x)|?l2],?l3) by 
+           lemma(termination_tree:un_parse),
+	  terminates open_par(?m,?n2,?l3,?e2) by 
+           lemma(open_par:termination),
+	  terminates 
+	  (un_parse(?t1,?n3,[name(?x)|?l2],?l3) & open_par(?m,?n2,?l3,?e2))],
+	 terminates 
+	 (un_parse(?t1,?n3,[name(?x)|?l2],?l3) & open_par(?m,?n2,?l3,?e2))),
+	terminates 
+	(close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+	 open_par(?m,?n2,?l3,?e2))],
+       terminates 
+       (close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+	open_par(?m,?n2,?l3,?e2))),
+      terminates 
+      (postfix_prec(?x,?n2,?n3) & close_par(?m,?n2,?e1,?l2) &
+       un_parse(?t1,?n3,[name(?x)|?l2],?l3) & open_par(?m,?n2,?l3,?e2)),
+      terminates 
+      (?ts = [] & postfix_op(?x) & postfix_prec(?x,?n2,?n3) &
+       close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+       open_par(?m,?n2,?l3,?e2)),
+
+      assume(?ts = [?t2],
+       [succeeds member(?t2,?ts),
+	terminates un_list_tail(?t2,?e1,?l2) by 
+         lemma(termination_tree:un_list_tail),
+	assume(succeeds un_list_tail(?t2,?e1,?l2),
+	 [def succeeds parse_tree_list([?t2]) by completion,
+	  succeeds token_list(?l2) by corollary(un_list_tail:token_list),
+	  terminates un_one_arg(?t1,?l2,?l3) by 
+           lemma(termination_tree:un_one_arg),
+	  terminates (un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3])],
+	 terminates (un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3])),
+	terminates 
+	(un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+	 ?e2 = [open_list|?l3])],
+       terminates 
+       (un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+	?e2 = [open_list|?l3])),
+      terminates 
+      (?ts = [?t2] & un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [open_list|?l3]),
+      terminates 
+      (singleton(?ts) & ?x = '.' & ?ts = [?t2] & un_list_tail(?t2,?e1,?l2) &
+       un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3]),
+
+      succeeds token_list([close_curly|?e1]),
+      terminates un_parse(?t1,1200,[close_curly|?e1],?l2) by 
+       lemma(termination_tree:un_parse),
+      terminates 
+      (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+       ?e2 = [open_curly|?l2]),
+
+      assume(succeeds member(?r,?ts),[],termination_tree(?r)),
+      all r: succeeds member(?r,?ts) => termination_tree(?r),
+      terminates un_arg_seq(?ts,?e1,?l2) by lemma(arg_seq:termination),
+      assume(succeeds un_arg_seq(?ts,?e1,?l2),
+       [succeeds token_list(?l2) by corollary(un_arg_seq:token_list),
+	terminates un_one_arg(?t1,?l2,?l3) by 
+         lemma(termination_tree:un_one_arg),
+	terminates 
+	(un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])],
+       terminates 
+       (un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])),
+      terminates 
+      (un_arg_seq(?ts,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [name(?x),open(nolayout)|?l3]),
+      terminates 
+      (~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+       un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3]),
+
+      terminates 
+      (~ (singleton(?ts) & ?x = '.') &
+       (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+	?e2 = [open_curly|?l2] \/
+	~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+	un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])),
+
+      terminates 
+      (~ (?ts = [] & postfix_op(?x)) &
+       (singleton(?ts) & ?x = '.' & ?ts = [?t2] & un_list_tail(?t2,?e1,?l2) &
+	un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3] \/
+	~ (singleton(?ts) & ?x = '.') &
+	(?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+	 ?e2 = [open_curly|?l2] \/
+	 ~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+	 un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3]))),
+
+      terminates 
+      (~ (singleton(?ts) & infix_op(?x)) &
+       (?ts = [] & postfix_op(?x) & postfix_prec(?x,?n2,?n3) &
+	close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+	open_par(?m,?n2,?l3,?e2) \/
+	~ (?ts = [] & postfix_op(?x)) &
+	(singleton(?ts) & ?x = '.' & ?ts = [?t2] & un_list_tail(?t2,?e1,?l2) &
+	 un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3] \/
+	 ~ (singleton(?ts) & ?x = '.') &
+	 (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+	  ?e2 = [open_curly|?l2] \/
+	  ~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+	  un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])))),
+
+      terminates 
+      (~ (?ts = [] & prefix_op(?x) & ~ ?x = (-)) &
+       (singleton(?ts) & infix_op(?x) & infix_prec(?x,?n2,?n3,?n4) &
+	?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & 
+	un_parse(?t2,?n4,?l2,?l3) &
+	(?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+	un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2) \/
+	~ (singleton(?ts) & infix_op(?x)) &
+	(?ts = [] & postfix_op(?x) & postfix_prec(?x,?n2,?n3) &
+	 close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+	 open_par(?m,?n2,?l3,?e2) \/
+	 ~ (?ts = [] & postfix_op(?x)) &
+	 (singleton(?ts) & ?x = '.' & ?ts = [?t2] & 
+	  un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+	  ?e2 = [open_list|?l3] \/
+	  ~ (singleton(?ts) & ?x = '.') &
+	  (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+	   ?e2 = [open_curly|?l2] \/
+	   ~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+	   un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])))))],
+
+     terminates 
+     (?ts = [] & prefix_op(?x) & ~ ?x = (-) & prefix_prec(?x,?n2,?n3) &
+      close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,?l2,?l3) &
+      add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2)) &
+     terminates 
+     (~ (?ts = [] & prefix_op(?x) & ~ ?x = (-)) &
+      (singleton(?ts) & infix_op(?x) & infix_prec(?x,?n2,?n3,?n4) &
+       ?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+       (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+       un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2) \/
+       ~ (singleton(?ts) & infix_op(?x)) &
+       (?ts = [] & postfix_op(?x) & postfix_prec(?x,?n2,?n3) &
+        close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+        open_par(?m,?n2,?l3,?e2) \/
+        ~ (?ts = [] & postfix_op(?x)) &
+        (singleton(?ts) & ?x = '.' & ?ts = [?t2] & un_list_tail(?t2,?e1,?l2) &
+         un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3] \/
+         ~ (singleton(?ts) & ?x = '.') &
+         (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+          ?e2 = [open_curly|?l2] \/
+          ~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+          un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3])))))),
+
+    all [t1,ts,n2,n3,l2,l3,l4,n4,t2,y]: ?rs = [?t1|?ts] => 
+      terminates 
+      (?ts = [] & prefix_op(?x) & ~ ?x = (-) & prefix_prec(?x,?n2,?n3) &
+       close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,?l2,?l3) &
+       add_layout(?l3,?l4) & open_par(?m,?n2,[name(?x)|?l4],?e2)) &
+      terminates 
+      (~ (?ts = [] & prefix_op(?x) & ~ ?x = (-)) &
+       (singleton(?ts) & infix_op(?x) & infix_prec(?x,?n2,?n3,?n4) &
+        ?ts = [?t2] & close_par(?m,?n2,?e1,?l2) & un_parse(?t2,?n4,?l2,?l3) &
+        (?x = (',') & ?y = comma \/ ~ ?x = (',') & ?y = name(?x)) &
+        un_parse(?t1,?n3,[?y|?l3],?l4) & open_par(?m,?n2,?l4,?e2) \/
+        ~ (singleton(?ts) & infix_op(?x)) &
+        (?ts = [] & postfix_op(?x) & postfix_prec(?x,?n2,?n3) &
+         close_par(?m,?n2,?e1,?l2) & un_parse(?t1,?n3,[name(?x)|?l2],?l3) &
+         open_par(?m,?n2,?l3,?e2) \/
+         ~ (?ts = [] & postfix_op(?x)) &
+         (singleton(?ts) & ?x = '.' & ?ts = [?t2] & un_list_tail(?t2,?e1,?l2) &
+          un_one_arg(?t1,?l2,?l3) & ?e2 = [open_list|?l3] \/
+          ~ (singleton(?ts) & ?x = '.') &
+          (?ts = [] & ?x = '{}' & un_parse(?t1,1200,[close_curly|?e1],?l2) &
+           ?e2 = [open_curly|?l2] \/
+           ~ (?ts = [] & ?x = '{}') & un_arg_seq(?ts,?e1,?l2) &
+           un_one_arg(?t1,?l2,?l3) & ?e2 = [name(?x),open(nolayout)|?l3]))))),
+    terminates un_parse(fun(?x,?rs),?m,?e1,?e2) by completion],
+   terminates un_parse(fun(?x,?rs),?m,?e1,?e2)),
+
+  all [m,e1,e2]: succeeds integer(?m) & succeeds token_list(?e1) =>
+    terminates un_parse(fun(?x,?rs),?m,?e1,?e2),
+
+  assume(succeeds token_list(?e1),
+   [terminates un_parse(fun(?x,?rs),999,?e1,?e2),
+    terminates 
+    (~ con_tree(fun(?x,?rs)) & un_parse(fun(?x,?rs),999,?e1,?e2)),
+    terminates 
+    (con_tree(fun(?x,?rs)) & fun(?x,?rs) = con(?0) & ?e2 = [name(?0)|?e1]) &
+    terminates 
+    (~ con_tree(fun(?x,?rs)) & un_parse(fun(?x,?rs),999,?e1,?e2)),
+    all 0: 
+     terminates 
+     (con_tree(fun(?x,?rs)) & fun(?x,?rs) = con(?0) & ?e2 = [name(?0)|?e1]) &
+     terminates 
+     (~ con_tree(fun(?x,?rs)) & un_parse(fun(?x,?rs),999,?e1,?e2)),
+    terminates un_one_arg(fun(?x,?rs),?e1,?e2) by completion],
+   terminates un_one_arg(fun(?x,?rs),?e1,?e2)),
+
+  all [e1,e2]: succeeds token_list(?e1) =>
+    terminates un_one_arg(fun(?x,?rs),?e1,?e2),
+
+  assume(succeeds token_list(?e1),
+   [assume(fun(?x,?rs) = fun('.',[?t1,?t2]),
+     [def succeeds parse_tree_list([?t1,?t2]) by completion,
+      def succeeds parse_tree_list([?t2]) by completion,
+      succeeds member(?t2,[?t1,?t2]),
+      succeeds member(?t2,?rs),
+      terminates un_list_tail(?t2,?e1,?l2) by 
+       lemma(termination_tree:un_list_tail),
+      assume(succeeds un_list_tail(?t2,?e1,?l2),
+       [succeeds token_list(?l2) by corollary(un_list_tail:token_list),
+	succeeds member(?t1,[?t1,?t2]),
+	succeeds member(?t1,?rs),
+        terminates un_one_arg(?t1,?l2,?l3) by 
+         lemma(termination_tree:un_one_arg),
+	terminates (un_one_arg(?t1,?l2,?l3) & ?e2 = [comma|?l3])],
+       terminates (un_one_arg(?t1,?l2,?l3) & ?e2 = [comma|?l3])),
+      terminates 
+      (un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3])],
+     terminates 
+     (un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3])),
+    terminates 
+    (fun(?x,?rs) = fun('.',[?t1,?t2]) & un_list_tail(?t2,?e1,?l2) &
+     un_one_arg(?t1,?l2,?l3) & ?e2 = [comma|?l3]),
+    terminates 
+    (list_tree(fun(?x,?rs)) & fun(?x,?rs) = fun('.',[?t1,?t2]) &
+     un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+     ?e2 = [comma|?l3]),
+    succeeds token_list([close_list|?e1]),
+    terminates un_one_arg(fun(?x,?rs),[close_list|?e1],?l2),
+    terminates 
+    (~ list_tree(fun(?x,?rs)) &
+     un_one_arg(fun(?x,?rs),[close_list|?e1],?l2) &
+     ?e2 = [head_tail_sep|?l2]),
+    terminates 
+    (~ fun(?x,?rs) = con([]) &
+     (list_tree(fun(?x,?rs)) & fun(?x,?rs) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(fun(?x,?rs)) &
+      un_one_arg(fun(?x,?rs),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    terminates (fun(?x,?rs) = con([]) & ?e2 = [close_list|?e1]) &
+    terminates 
+    (~ fun(?x,?rs) = con([]) &
+     (list_tree(fun(?x,?rs)) & fun(?x,?rs) = fun('.',[?t1,?t2]) &
+      un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+      ?e2 = [comma|?l3] \/
+      ~ list_tree(fun(?x,?rs)) &
+      un_one_arg(fun(?x,?rs),[close_list|?e1],?l2) &
+      ?e2 = [head_tail_sep|?l2])),
+    all [t1,t2,l2,l3]: 
+     terminates (fun(?x,?rs) = con([]) & ?e2 = [close_list|?e1]) &
+     terminates 
+     (~ fun(?x,?rs) = con([]) &
+      (list_tree(fun(?x,?rs)) & fun(?x,?rs) = fun('.',[?t1,?t2]) &
+       un_list_tail(?t2,?e1,?l2) & un_one_arg(?t1,?l2,?l3) &
+       ?e2 = [comma|?l3] \/
+       ~ list_tree(fun(?x,?rs)) &
+       un_one_arg(fun(?x,?rs),[close_list|?e1],?l2) &
+       ?e2 = [head_tail_sep|?l2])),
+    terminates un_list_tail(fun(?x,?rs),?e1,?e2) by completion],
+   terminates un_list_tail(fun(?x,?rs),?e1,?e2)),
+
+  termination_tree(fun(?x,?rs)) by introduction(termination_tree,1)],
+ termination_tree(fun(?x,?rs)))
+).
+
+:- lemma(un_parse:termination,
+(all r: succeeds parse_tree(?r) => termination_tree(?r)) &
+(all rs: succeeds parse_tree_list(?rs) =>
+   (all r: succeeds member(?r,?rs) => termination_tree(?r))),
+induction(
+ [all r: succeeds parse_tree(?r) => termination_tree(?r),
+  all rs: succeeds parse_tree_list(?rs) => 
+    (all r: succeeds member(?r,?rs) => termination_tree(?r))],
+ [step([x],
+   [succeeds atomic(?x)],
+   termination_tree(variable(?x)) by lemma(termination_tree:variable),
+   termination_tree(variable(?x))),
+  step([x],
+   [succeeds integer(?x)],
+   termination_tree(integer(?x)) by lemma(termination_tree:integer),
+   termination_tree(integer(?x))),
+  step([x],
+   [succeeds number(?x)],
+   termination_tree(float_number(?x)) by 
+    lemma(termination_tree:float_number),
+   termination_tree(float_number(?x))),
+  step([x],
+   [succeeds char_code_list(?x)],
+   termination_tree(char_code_list(?x)) by 
+    lemma(termination_tree:char_code_list),
+   termination_tree(char_code_list(?x))),
+  step([x],
+   [succeeds atom(?x)],
+   termination_tree(con(?x)) by lemma(termination_tree:con),
+   termination_tree(con(?x))),
+  step([x,ts],
+   [all r: succeeds member(?r,?ts) => termination_tree(?r),
+    succeeds atom(?x),
+    succeeds parse_tree_list(?ts)],
+   termination_tree(fun(?x,?ts)) by lemma(termination_tree:fun),
+   termination_tree(fun(?x,?ts))),
+  step([],
+   [],
+   assume(succeeds member(?r,[]),
+    [def succeeds member(?r,[]) by completion,
+     ff],
+    termination_tree(?r)),
+   all r: succeeds member(?r,[]) => termination_tree(?r)),
+  step([t,ts],
+   [termination_tree(?t),
+    all r: succeeds member(?r,?ts) => termination_tree(?r),
+    succeeds parse_tree(?t),
+    succeeds parse_tree_list(?ts)],
+   assume(succeeds member(?r,[?t|?ts]),
+    [def succeeds member(?r,[?t|?ts]) by completion,
+     cases(?r = ?t,
+      [],
+      succeeds member(?r,?ts),
+      [],
+      termination_tree(?r))],
+    termination_tree(?r)),
+   all r: succeeds member(?r,[?t|?ts]) => termination_tree(?r))])
+).
+
+:- bye(write).

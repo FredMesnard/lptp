@@ -1,0 +1,63 @@
+
+:- assert_clauses(n(insert,3),[
+ clause([n(insert,3),$(x),[n([],0)],[n('.',2),$(x),[n([],0)]]],
+  [&],
+  [x]/0),
+ clause([n(insert,3),$(x),[n('.',2),$(y),$(l)],[n('.',2),$(x),[n('.',2),$(y),$(l)]]],
+  [n(@=<,2),$(x),$(y)],
+  [x,y,l]/0),
+ clause([n(insert,3),$(x),[n('.',2),$(y),$(l1)],[n('.',2),$(y),$(l2)]],
+  [&,[~,[n(@=<,2),$(x),$(y)]],[n(insert,3),$(x),$(l1),$(l2)]],
+  [x,y,l1,l2]/0)
+]).
+
+:- assert_clauses(n(insert_sort,2),[
+ clause([n(insert_sort,2),[n([],0)],[n([],0)]],
+  [&],
+  []/0),
+ clause([n(insert_sort,2),[n('.',2),$(x),$(l1)],$(l3)],
+  [&,[n(insert_sort,2),$(l1),$(l2)],[n(insert,3),$(x),$(l2),$(l3)]],
+  [x,l1,l3,l2]/0)
+]).
+
+:- assert_clauses(n(ordered,1),[
+ clause([n(ordered,1),[n([],0)]],
+  [&],
+  []/0),
+ clause([n(ordered,1),[n('.',2),$(x),[n([],0)]]],
+  [&],
+  [x]/0),
+ clause([n(ordered,1),[n('.',2),$(x),[n('.',2),$(y),$(l)]]],
+  [&,[n(@=<,2),$(x),$(y)],[n(ordered,1),[n('.',2),$(y),$(l)]]],
+  [x,y,l]/0)
+]).
+
+:- assert_clauses(n(permutation_sort,2),[
+ clause([n(permutation_sort,2),$(l1),$(l2)],
+  [&,[n(permutation,2),$(l1),$(l2)],[n(ordered,1),$(l2)]],
+  [l1,l2]/0)
+]).
+
+:- assert_clauses(n(quick_sort,2),[
+ clause([n(quick_sort,2),$(l1),$(l2)],
+  [n(quick_sort,3),$(l1),[n([],0)],$(l2)],
+  [l1,l2]/0)
+]).
+
+:- assert_clauses(n(quick_sort,3),[
+ clause([n(quick_sort,3),[n([],0)],$(l),$(l)],
+  [&],
+  [l]/0),
+ clause([n(quick_sort,3),[n('.',2),$(x),$(l1)],$(l2),$(l6)],
+  [&,[n(split,4),$(x),$(l1),$(l3),$(l4)],[n(quick_sort,3),$(l3),$(l2),$(l5)],[n(quick_sort,3),$(l4),[n('.',2),$(x),$(l5)],$(l6)]],
+  [x,l1,l2,l6,l3,l4,l5]/0)
+]).
+
+:- assert_clauses(n(split,4),[
+ clause([n(split,4),$(x),[n([],0)],[n([],0)],[n([],0)]],
+  [&],
+  [x]/0),
+ clause([n(split,4),$(x),[n('.',2),$(y),$(l1)],$(l2),$(l3)],
+  [&,[\/,[&,[n(@=<,2),$(x),$(y)],[=,$(l2),[n('.',2),$(y),$(l4)]],[=,$(l3),$(l5)]],[&,[~,[n(@=<,2),$(x),$(y)]],[=,$(l2),$(l4)],[=,$(l3),[n('.',2),$(y),$(l5)]]]],[n(split,4),$(x),$(l1),$(l4),$(l5)]],
+  [x,y,l1,l2,l3,l4,l5]/0)
+]).
