@@ -179,7 +179,7 @@ assume(succeeds interpretation(?i) & fails member(neg(p(?x)),?i),
  succeeds interpretation([p(?x)|?i]))
 ).
 
-:- lemma(interpretation:neg:success,
+:- lemma(interpretation:negation:success,
 all [x,i]: succeeds interpretation(?i) & ~ succeeds member(p(?x),?i) => 
  succeeds interpretation([neg(p(?x))|?i]),
 assume(succeeds interpretation(?i) & ~ succeeds member(p(?x),?i),
@@ -208,13 +208,13 @@ assume(succeeds interpretation(?i) & ~ succeeds member(p(?x),?i),
  succeeds interpretation([neg(p(?x))|?i]))
 ).
 
-:- corollary(interpretation:neg:failure,
-all [x,i]: succeeds interpretation(?i) & fails member(p(?x),?i) => 
+:- corollary(interpretation:negation:failure,
+all [x,i]: succeeds interpretation(?i) & fails member(p(?x),?i) =>
  succeeds interpretation([neg(p(?x))|?i]),
 assume(succeeds interpretation(?i) & fails member(p(?x),?i),
  [contra(succeeds member(p(?x),?i),[]),
   succeeds interpretation([neg(p(?x))|?i]) by 
-   lemma(interpretation:neg:success)],
+   lemma(interpretation:negation:success)],
  succeeds interpretation([neg(p(?x))|?i]))
 ).
 
@@ -291,7 +291,7 @@ induction(
    [fails member(p(?x),?i)],
    [assume(succeeds interpretation(?i),
      succeeds interpretation([neg(p(?x))|?i]) by 
-      corollary(interpretation:neg:failure),
+      corollary(interpretation:negation:failure),
      succeeds interpretation([neg(p(?x))|?i])),
     assume(succeeds literal_list(?i),
      [],
