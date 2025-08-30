@@ -1,7 +1,7 @@
 # LPTP - A Logic Program Theorem Prover
 
-Note that a [web-based version of LPTP](https://ciao-lang.org/playground/lptp.html)  
-is now avalaible. Please use a modern browser such as Google Chrome.
+Note that a [web-based version of LPTP](https://ciao-lang.org/playground/lptp.html) is now avalaible. 
+Please use a modern browser such as Google Chrome.
 
 ## How to learn LPTP?
 
